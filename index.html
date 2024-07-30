@@ -83,7 +83,7 @@
             align-items: center;
         }
         .counter button {
-            font-size: 16px;
+            font-size: 14px; /* Reduced font size for better fit */
             width: 40px;
             height: 40px;
             margin: 2px;
@@ -97,11 +97,11 @@
             background-color: #2980b9;
         }
         .counter span {
-            font-size: 24px; /* Increased size for better visibility */
-            min-width: 60px; /* Increased width for better alignment */
+            font-size: 24px;
+            min-width: 60px;
             text-align: center;
             margin: 10px 0;
-            font-weight: bold; /* Make number more noticeable */
+            font-weight: bold;
             color: #34495e;
         }
         .resource-name {
@@ -255,13 +255,13 @@
                         <span class="resource-name">${resource.name}</span>
                         <div class="counter">
                             <div>
-                                <button onclick="updateCount(${index}, -10)">-10</button>
-                                <button onclick="updateCount(${index}, -5)">-5</button>
-                                <button onclick="updateCount(${index}, -1)">-</button>
+                                <button onclick="updateCount(${index}, -10)" style="width: 50px;">-10</button>
+                                <button onclick="updateCount(${index}, -5)" style="width: 50px;">-5</button>
+                                <button onclick="updateCount(${index}, -1)" style="width: 40px;">-</button>
                                 <span>${resource.count}</span>
-                                <button onclick="updateCount(${index}, 1)">+</button>
-                                <button onclick="updateCount(${index}, 5)">+5</button>
-                                <button onclick="updateCount(${index}, 10)">+10</button>
+                                <button onclick="updateCount(${index}, 1)" style="width: 40px;">+</button>
+                                <button onclick="updateCount(${index}, 5)" style="width: 50px;">+5</button>
+                                <button onclick="updateCount(${index}, 10)" style="width: 50px;">+10</button>
                             </div>
                         </div>
                         <button class="settings-button" onclick="toggleSettings(${index})">
