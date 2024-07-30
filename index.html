@@ -112,18 +112,28 @@
             color: #34495e;
             margin-bottom: 10px;
         }
-        .change-image-container {
+        .change-image-container, .remove-button-container {
             margin: 10px 0;
+            text-align: center;
+        }
+        .change-image-button, .remove-button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .change-image-button {
+            background-color: #3498db;
+            color: #fff;
+        }
+        .change-image-button:hover {
+            background-color: #2980b9;
         }
         .remove-button {
             background-color: #e74c3c;
             color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 10px;
         }
         .remove-button:hover {
             background-color: #c0392b;
@@ -261,9 +271,11 @@
                             </div>
                         </div>
                         <div class="change-image-container">
-                            <button onclick="changeImage(${index})">Change Image</button>
+                            <button class="change-image-button" onclick="changeImage(${index})">Change Image</button>
                         </div>
-                        <button class="remove-button" onclick="removeResource(${index})">Remove</button>
+                        <div class="remove-button-container">
+                            <button class="remove-button" onclick="removeResource(${index})">Remove</button>
+                        </div>
                     </div>
                 `;
                 container.appendChild(resourceElement);
