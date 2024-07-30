@@ -20,13 +20,18 @@
             margin-bottom: 20px;
         }
         .controls {
-            text-align: center;
+            display: flex;
+            justify-content: center;
             margin-bottom: 20px;
         }
         .controls input[type="file"],
         .controls input[type="text"],
         .controls button {
             margin: 5px;
+        }
+        .controls .button-group {
+            display: flex;
+            align-items: center;
         }
         .resource {
             display: flex;
@@ -56,18 +61,6 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            cursor: move;
-        }
-        .resizable {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 24px;
-            height: 24px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 50%;
-            cursor: se-resize;
-            display: none;
         }
         .counter {
             display: flex;
@@ -83,7 +76,7 @@
             align-items: center;
         }
         .counter button {
-            font-size: 14px; /* Reduced font size for better fit */
+            font-size: 14px;
             width: 40px;
             height: 40px;
             margin: 2px;
@@ -110,40 +103,8 @@
             font-size: 18px;
             color: #34495e;
         }
-        .image-controls {
-            display: none;
-            flex-direction: column;
+        .change-image-container {
             margin-top: 10px;
-        }
-        .image-controls label {
-            margin: 5px 0;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .image-controls input {
-            margin: 5px 0;
-        }
-        .settings-button, .done-button {
-            padding: 8px 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        .settings-button {
-            background-color: #3498db;
-            color: #fff;
-        }
-        .settings-button:hover {
-            background-color: #2980b9;
-        }
-        .done-button {
-            background-color: #27ae60;
-            color: #fff;
-        }
-        .done-button:hover {
-            background-color: #1e8449;
         }
         button {
             padding: 10px 15px;
@@ -159,7 +120,7 @@
             background-color: #27ae60;
         }
         input[type="file"] {
-            display: inline-block;
+            display: none;
         }
         @media (max-width: 600px) {
             .resource {
@@ -177,19 +138,19 @@
     <div class="controls">
         <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
         <input type="text" id="resourceName" placeholder="Resource Name">
-        <button onclick="addResource()">Add Resource</button>
+        <div class="button-group">
+            <button onclick="addResource()">Add Resource</button>
+            <button onclick="exportData()">Export Data</button>
+            <button onclick="triggerImport()">Import Data</button>
+        </div>
     </div>
     <div id="resources"></div>
-    <div class="controls">
-        <button onclick="exportData()">Export Data</button>
-        <button onclick="triggerImport()">Import Data</button>
-        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
-    </div>
+
+    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
     <script>
         let resources = [];
         let dragInfo = null;
-        let resizeInfo = null;
         let unnamedCounter = 1;  // Counter for unnamed resources
 
         function addResource() {
@@ -212,8 +173,7 @@
                         offsetX: 50,
                         offsetY: 50,
                         width: 100,
-                        height: 100,
-                        settingsVisible: false
+                        height: 100
                     };
                     resources.push(resource);
                     renderResources();
@@ -227,8 +187,7 @@
                     offsetX: 50,
                     offsetY: 50,
                     width: 100,
-                    height: 100,
-                    settingsVisible: false
+                    height: 100
                 };
                 resources.push(resource);
                 renderResources();
@@ -246,9 +205,8 @@
                     <div class="resource-image-container" id="container-${index}">
                         ${resource.image 
                             ? `<img src="${resource.image}" alt="${resource.name}" class="resource-image"
-                                style="width: ${resource.width}px; height: ${resource.height}px; transform: translate(-${resource.offsetX}%, -${resource.offsetY}%);"
-                                onclick="startDrag(${index}, event)">
-                                <div class="resizable" onmousedown="startResize(${index}, event)" style="display: ${resource.settingsVisible ? 'block' : 'none'};"></div>`
+                                style="width: ${resource.width}px; height: ${resource.height}px;"
+                                onclick="startDrag(${index}, event)">`
                             : `<span>${resource.name}</span>`}
                     </div>
                     <div>
@@ -264,19 +222,8 @@
                                 <button onclick="updateCount(${index}, 10)" style="width: 50px;">+10</button>
                             </div>
                         </div>
-                        <button class="settings-button" onclick="toggleSettings(${index})">
-                            ${resource.settingsVisible ? 'Hide Settings' : 'Settings'}
-                        </button>
-                        <div class="image-controls" id="controls-${index}" style="display: ${resource.settingsVisible ? 'flex' : 'none'};">
-                            <label for="offsetX-${index}">Horizontal Position:</label>
-                            <input type="range" id="offsetX-${index}" min="0" max="100" value="${resource.offsetX}" onchange="updateImageOffset(${index}, 'X', this.value)">
-                            <label for="offsetY-${index}">Vertical Position:</label>
-                            <input type="range" id="offsetY-${index}" min="0" max="100" value="${resource.offsetY}" onchange="updateImageOffset(${index}, 'Y', this.value)">
-                            <label for="width-${index}">Width:</label>
-                            <input type="number" id="width-${index}" value="${resource.width}" onchange="updateImageSize(${index}, 'width', this.value)">
-                            <label for="height-${index}">Height:</label>
-                            <input type="number" id="height-${index}" value="${resource.height}" onchange="updateImageSize(${index}, 'height', this.value)">
-                            <button class="done-button" onclick="hideSettings(${index})">Done</button>
+                        <div class="change-image-container">
+                            <button onclick="changeImage(${index})">Change Image</button>
                         </div>
                     </div>
                 `;
@@ -290,55 +237,34 @@
             renderResources();
         }
 
-        function updateImageOffset(index, axis, value) {
-            resources[index][`offset${axis}`] = value;
-            renderResources();
-        }
-
-        function updateImageSize(index, dimension, value) {
-            resources[index][dimension] = value;
-            renderResources();
-        }
-
-        function toggleSettings(index) {
-            resources[index].settingsVisible = !resources[index].settingsVisible;
-            renderResources();
-            if (resources[index].settingsVisible) {
-                enableDragAndResize(index);
-            } else {
-                disableDragAndResize(index);
+        function changeImage(index) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg, image/png, image/gif';
+            input.style.display = 'none';
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        resources[index].image = e.target.result;
+                        renderResources();
+                    }
+                    reader.readAsDataURL(file);
+                }
             }
-        }
-
-        function hideSettings(index) {
-            resources[index].settingsVisible = false;
-            renderResources();
-            disableDragAndResize(index);
-        }
-
-        function enableDragAndResize(index) {
-            window.addEventListener('mousemove', drag);
-            window.addEventListener('mouseup', stopDrag);
-            window.addEventListener('mousedown', (e) => startResize(index, e));
-            window.addEventListener('click', endDragAndResizeOnClick);
-        }
-
-        function disableDragAndResize(index) {
-            window.removeEventListener('mousemove', drag);
-            window.removeEventListener('mouseup', stopDrag);
-            window.removeEventListener('mousedown', (e) => startResize(index, e));
-            window.removeEventListener('click', endDragAndResizeOnClick);
+            document.body.appendChild(input);
+            input.click();
+            document.body.removeChild(input);
         }
 
         function startDrag(index, e) {
-            if (resources[index].settingsVisible) {
-                e.preventDefault();
-                dragInfo = {
-                    index: index,
-                    startX: e.clientX,
-                    startY: e.clientY
-                };
-            }
+            e.preventDefault();
+            dragInfo = {
+                index: index,
+                startX: e.clientX,
+                startY: e.clientY
+            };
         }
 
         function drag(event) {
@@ -357,43 +283,6 @@
 
         function stopDrag() {
             dragInfo = null;
-        }
-
-        function startResize(index, e) {
-            if (e.target.classList.contains('resizable')) {
-                e.preventDefault();
-                const img = document.querySelector(`#container-${index} .resource-image`);
-                resizeInfo = {
-                    index: index,
-                    startX: e.clientX,
-                    startY: e.clientY,
-                    startWidth: img.clientWidth,
-                    startHeight: img.clientHeight
-                };
-            }
-        }
-
-        function resize(event) {
-            if (resizeInfo) {
-                const { index, startWidth, startHeight } = resizeInfo;
-                const dx = event.clientX - resizeInfo.startX;
-                const dy = event.clientY - resizeInfo.startY;
-                resources[index].width = Math.max(50, startWidth + dx);
-                resources[index].height = Math.max(50, startHeight + dy);
-                renderResources();
-                resizeInfo.startX = event.clientX;
-                resizeInfo.startY = event.clientY;
-            }
-        }
-
-        function stopResize() {
-            resizeInfo = null;
-        }
-
-        function endDragAndResizeOnClick(e) {
-            if (dragInfo) {
-                stopDrag();
-            }
         }
 
         function exportData() {
@@ -427,8 +316,8 @@
             }
         }
 
-        window.addEventListener('mousemove', resize);
-        window.addEventListener('mouseup', stopResize);
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', stopDrag);
     </script>
 </body>
 </html>
