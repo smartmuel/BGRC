@@ -6,68 +6,109 @@
     <title>Board Game Resource Counter</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls input[type="file"],
+        .controls input[type="text"],
+        .controls button {
+            margin: 5px;
         }
         .resource {
             display: flex;
-            flex-wrap: wrap;
             align-items: center;
             margin-bottom: 20px;
             border: 1px solid #ddd;
-            padding: 10px;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             position: relative;
         }
         .resource-image-container {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             overflow: hidden;
-            position: relative;
-            margin-right: 10px;
+            margin-right: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: default;
-            background-color: #f0f0f0;
-            color: #333;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            position: relative;
         }
         .resource-image {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
             cursor: move;
         }
         .resizable {
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 20px;
-            height: 20px;
-            background: rgba(0, 0, 0, 0.5);
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
             cursor: se-resize;
-            display: none; /* Hidden by default */
+            display: none;
         }
         .counter {
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+        }
+        .counter div {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             align-items: center;
         }
         .counter button {
-            font-size: 18px;
-            width: 30px;
-            height: 30px;
-            margin: 0 5px;
+            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            margin: 2px;
+            border: none;
+            background-color: #3498db;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .counter button:hover {
+            background-color: #2980b9;
         }
         .counter span {
-            font-size: 18px;
-            min-width: 30px;
+            font-size: 24px; /* Increased size for better visibility */
+            min-width: 60px; /* Increased width for better alignment */
             text-align: center;
+            margin: 10px 0;
+            font-weight: bold; /* Make number more noticeable */
+            color: #34495e;
         }
         .resource-name {
-            margin-right: 10px;
+            margin-right: 15px;
             font-weight: bold;
+            font-size: 18px;
+            color: #34495e;
         }
         .image-controls {
             display: none;
@@ -77,12 +118,48 @@
         .image-controls label {
             margin: 5px 0;
             font-weight: bold;
+            color: #2c3e50;
         }
         .image-controls input {
             margin: 5px 0;
         }
         .settings-button, .done-button {
+            padding: 8px 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
             margin-left: 10px;
+        }
+        .settings-button {
+            background-color: #3498db;
+            color: #fff;
+        }
+        .settings-button:hover {
+            background-color: #2980b9;
+        }
+        .done-button {
+            background-color: #27ae60;
+            color: #fff;
+        }
+        .done-button:hover {
+            background-color: #1e8449;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #2ecc71;
+            color: #fff;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        input[type="file"] {
+            display: inline-block;
         }
         @media (max-width: 600px) {
             .resource {
@@ -90,21 +167,24 @@
                 align-items: flex-start;
             }
             .resource-image-container {
-                margin-bottom: 10px;
+                margin-bottom: 15px;
             }
         }
     </style>
 </head>
 <body>
     <h1>Board Game Resource Counter</h1>
+    <div class="controls">
+        <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
+        <input type="text" id="resourceName" placeholder="Resource Name">
+        <button onclick="addResource()">Add Resource</button>
+    </div>
     <div id="resources"></div>
-    <input type="file" id="imageUpload" accept="image/*">
-    <input type="text" id="resourceName" placeholder="Resource Name">
-    <button onclick="addResource()">Add Resource</button>
-    <br><br>
-    <button onclick="exportData()">Export Data</button>
-    <input type="file" id="importFile" accept=".json">
-    <button onclick="importData()">Import Data</button>
+    <div class="controls">
+        <button onclick="exportData()">Export Data</button>
+        <button onclick="triggerImport()">Import Data</button>
+        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+    </div>
 
     <script>
         let resources = [];
@@ -174,9 +254,15 @@
                     <div>
                         <span class="resource-name">${resource.name}</span>
                         <div class="counter">
-                            <button onclick="updateCount(${index}, -1)">-</button>
-                            <span>${resource.count}</span>
-                            <button onclick="updateCount(${index}, 1)">+</button>
+                            <div>
+                                <button onclick="updateCount(${index}, -10)">-10</button>
+                                <button onclick="updateCount(${index}, -5)">-5</button>
+                                <button onclick="updateCount(${index}, -1)">-</button>
+                                <span>${resource.count}</span>
+                                <button onclick="updateCount(${index}, 1)">+</button>
+                                <button onclick="updateCount(${index}, 5)">+5</button>
+                                <button onclick="updateCount(${index}, 10)">+10</button>
+                            </div>
                         </div>
                         <button class="settings-button" onclick="toggleSettings(${index})">
                             ${resource.settingsVisible ? 'Hide Settings' : 'Settings'}
@@ -187,9 +273,9 @@
                             <label for="offsetY-${index}">Vertical Position:</label>
                             <input type="range" id="offsetY-${index}" min="0" max="100" value="${resource.offsetY}" onchange="updateImageOffset(${index}, 'Y', this.value)">
                             <label for="width-${index}">Width:</label>
-                            <input type="range" id="width-${index}" min="50" max="300" value="${resource.width}" onchange="updateImageSize(${index}, 'width', this.value)">
+                            <input type="number" id="width-${index}" value="${resource.width}" onchange="updateImageSize(${index}, 'width', this.value)">
                             <label for="height-${index}">Height:</label>
-                            <input type="range" id="height-${index}" min="50" max="300" value="${resource.height}" onchange="updateImageSize(${index}, 'height', this.value)">
+                            <input type="number" id="height-${index}" value="${resource.height}" onchange="updateImageSize(${index}, 'height', this.value)">
                             <button class="done-button" onclick="hideSettings(${index})">Done</button>
                         </div>
                     </div>
@@ -231,120 +317,107 @@
         }
 
         function enableDragAndResize(index) {
-            document.addEventListener('mousemove', dragMove);
-            document.addEventListener('mouseup', dragEnd);
-            document.addEventListener('mousedown', (e) => startResize(index, e));
-            document.addEventListener('click', endDragAndResizeOnClick);
+            window.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', stopDrag);
+            window.addEventListener('mousedown', (e) => startResize(index, e));
+            window.addEventListener('click', endDragAndResizeOnClick);
         }
 
         function disableDragAndResize(index) {
-            document.removeEventListener('mousemove', dragMove);
-            document.removeEventListener('mouseup', dragEnd);
-            document.removeEventListener('mousedown', (e) => startResize(index, e));
-            document.removeEventListener('click', endDragAndResizeOnClick);
+            window.removeEventListener('mousemove', drag);
+            window.removeEventListener('mouseup', stopDrag);
+            window.removeEventListener('mousedown', (e) => startResize(index, e));
+            window.removeEventListener('click', endDragAndResizeOnClick);
         }
 
         function startDrag(index, e) {
             if (resources[index].settingsVisible) {
                 e.preventDefault();
-                const img = document.querySelector(`#container-${index} .resource-image`);
-                const rect = img.getBoundingClientRect();
-                const startX = e.clientX;
-                const startY = e.clientY;
-                const startOffsetX = resources[index].offsetX;
-                const startOffsetY = resources[index].offsetY;
-
                 dragInfo = {
                     index: index,
-                    startX: startX,
-                    startY: startY,
-                    startOffsetX: startOffsetX,
-                    startOffsetY: startOffsetY
+                    startX: e.clientX,
+                    startY: e.clientY
                 };
             }
         }
 
-        function dragMove(e) {
+        function drag(event) {
             if (dragInfo) {
-                const { index, startX, startY, startOffsetX, startOffsetY } = dragInfo;
+                const { index } = dragInfo;
                 const container = document.getElementById(`container-${index}`);
-                const containerRect = container.getBoundingClientRect();
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-
-                resources[index].offsetX = Math.min(100, Math.max(0, startOffsetX + (dx / containerRect.width * 100)));
-                resources[index].offsetY = Math.min(100, Math.max(0, startOffsetY + (dy / containerRect.height * 100)));
+                const deltaX = (event.clientX - dragInfo.startX) / container.clientWidth * 100;
+                const deltaY = (event.clientY - dragInfo.startY) / container.clientHeight * 100;
+                resources[index].offsetX = Math.max(0, Math.min(100, resources[index].offsetX + deltaX));
+                resources[index].offsetY = Math.max(0, Math.min(100, resources[index].offsetY + deltaY));
+                dragInfo.startX = event.clientX;
+                dragInfo.startY = event.clientY;
                 renderResources();
             }
         }
 
-        function endDragAndResizeOnClick(e) {
-            if (dragInfo) {
-                dragEnd();
-            }
-        }
-
-        function dragEnd() {
+        function stopDrag() {
             dragInfo = null;
         }
 
         function startResize(index, e) {
             if (e.target.classList.contains('resizable')) {
                 e.preventDefault();
-                const container = document.getElementById(`container-${index}`);
-                const img = container.querySelector('.resource-image');
-                const rect = container.getBoundingClientRect();
-                const startX = e.clientX;
-                const startY = e.clientY;
-                const startWidth = img.clientWidth;
-                const startHeight = img.clientHeight;
-
+                const img = document.querySelector(`#container-${index} .resource-image`);
                 resizeInfo = {
                     index: index,
-                    startX: startX,
-                    startY: startY,
-                    startWidth: startWidth,
-                    startHeight: startHeight
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startWidth: img.clientWidth,
+                    startHeight: img.clientHeight
                 };
             }
         }
 
-        function resizeMove(e) {
+        function resize(event) {
             if (resizeInfo) {
-                const { index, startX, startY, startWidth, startHeight } = resizeInfo;
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-
+                const { index, startWidth, startHeight } = resizeInfo;
+                const dx = event.clientX - resizeInfo.startX;
+                const dy = event.clientY - resizeInfo.startY;
                 resources[index].width = Math.max(50, startWidth + dx);
                 resources[index].height = Math.max(50, startHeight + dy);
                 renderResources();
+                resizeInfo.startX = event.clientX;
+                resizeInfo.startY = event.clientY;
             }
         }
 
-        function resizeEnd() {
+        function stopResize() {
             resizeInfo = null;
         }
 
-        function exportData() {
-            const dataStr = JSON.stringify(resources);
-            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-            const exportFileDefaultName = 'board_game_resources.json';
-
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
+        function endDragAndResizeOnClick(e) {
+            if (dragInfo) {
+                stopDrag();
+            }
         }
 
-        function importData() {
-            const file = document.getElementById('importFile').files[0];
+        function exportData() {
+            const dataStr = JSON.stringify(resources, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resources.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerImport() {
+            document.getElementById('importFile').click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
                         resources = JSON.parse(e.target.result);
-                        // Reset the unnamed counter if resources are imported with names
-                        unnamedCounter = resources.filter(resource => resource.name.startsWith('Resource')).length + 1;
                         renderResources();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
@@ -354,9 +427,8 @@
             }
         }
 
-        // Initialize listeners for resizing
-        document.addEventListener('mousemove', resizeMove);
-        document.addEventListener('mouseup', resizeEnd);
+        window.addEventListener('mousemove', resize);
+        window.addEventListener('mouseup', stopResize);
     </script>
 </body>
 </html>
