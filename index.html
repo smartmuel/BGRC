@@ -26,7 +26,12 @@
             overflow: hidden;
             position: relative;
             margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: default;
+            background-color: #f0f0f0;
+            color: #333;
         }
         .resource-image {
             position: absolute;
@@ -105,10 +110,18 @@
         let resources = [];
         let dragInfo = null;
         let resizeInfo = null;
+        let unnamedCounter = 1;  // Counter for unnamed resources
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
-            const name = document.getElementById('resourceName').value.trim() || 'Unnamed Resource';
+            let name = document.getElementById('resourceName').value.trim();
+            
+            // Use numbering if no name is provided
+            if (!name) {
+                name = `Resource ${unnamedCounter}`;
+                unnamedCounter++;
+            }
+            
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -126,6 +139,19 @@
                     renderResources();
                 }
                 reader.readAsDataURL(file);
+            } else {
+                const resource = {
+                    name: name,
+                    image: null,
+                    count: 0,
+                    offsetX: 50,
+                    offsetY: 50,
+                    width: 100,
+                    height: 100,
+                    settingsVisible: false
+                };
+                resources.push(resource);
+                renderResources();
             }
             document.getElementById('resourceName').value = '';
         }
@@ -138,10 +164,12 @@
                 resourceElement.className = 'resource';
                 resourceElement.innerHTML = `
                     <div class="resource-image-container" id="container-${index}">
-                        <img src="${resource.image}" alt="${resource.name}" class="resource-image"
-                            style="width: ${resource.width}px; height: ${resource.height}px; transform: translate(-${resource.offsetX}%, -${resource.offsetY}%);"
-                            onclick="startDrag(${index}, event)">
-                        <div class="resizable" onmousedown="startResize(${index}, event)" style="display: ${resource.settingsVisible ? 'block' : 'none'};"></div>
+                        ${resource.image 
+                            ? `<img src="${resource.image}" alt="${resource.name}" class="resource-image"
+                                style="width: ${resource.width}px; height: ${resource.height}px; transform: translate(-${resource.offsetX}%, -${resource.offsetY}%);"
+                                onclick="startDrag(${index}, event)">
+                                <div class="resizable" onmousedown="startResize(${index}, event)" style="display: ${resource.settingsVisible ? 'block' : 'none'};"></div>`
+                            : `<span>${resource.name}</span>`}
                     </div>
                     <div>
                         <span class="resource-name">${resource.name}</span>
@@ -252,10 +280,7 @@
 
         function endDragAndResizeOnClick(e) {
             if (dragInfo) {
-                const { index } = dragInfo;
-                if (!document.getElementById(`container-${index}`).contains(e.target)) {
-                    dragEnd();
-                }
+                dragEnd();
             }
         }
 
@@ -318,6 +343,8 @@
                 reader.onload = function(e) {
                     try {
                         resources = JSON.parse(e.target.result);
+                        // Reset the unnamed counter if resources are imported with names
+                        unnamedCounter = resources.filter(resource => resource.name.startsWith('Resource')).length + 1;
                         renderResources();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
