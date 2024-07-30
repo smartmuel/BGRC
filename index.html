@@ -15,26 +15,35 @@
         }
         h1 {
             color: #2c3e50;
-            font-size: 2em;
+            font-size: 1.8em;
             text-align: center;
             margin-bottom: 20px;
         }
         .controls {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             margin-bottom: 20px;
         }
         .controls input[type="file"],
         .controls input[type="text"],
         .controls button {
             margin: 5px;
+            width: 100%;
         }
         .controls .button-group {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .controls .button-group button {
+            margin: 5px;
+            flex: 1;
+            max-width: 150px;
         }
         .resource {
             display: flex;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 20px;
             border: 1px solid #ddd;
@@ -45,17 +54,18 @@
             position: relative;
         }
         .resource-image-container {
-            width: 120px;
-            height: 120px;
+            width: 100%;
+            max-width: 120px;
+            height: auto;
+            aspect-ratio: 1;
             overflow: hidden;
-            margin-right: 15px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 8px;
-            position: relative;
         }
         .resource-image {
             max-width: 100%;
@@ -67,7 +77,6 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin-right: 20px;
         }
         .counter div {
             display: flex;
@@ -77,8 +86,8 @@
         }
         .counter button {
             font-size: 14px;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             margin: 2px;
             border: none;
             background-color: #3498db;
@@ -90,25 +99,38 @@
             background-color: #2980b9;
         }
         .counter span {
-            font-size: 24px;
-            min-width: 60px;
+            font-size: 20px;
+            min-width: 40px;
             text-align: center;
-            margin: 10px 0;
+            margin: 5px 0;
             font-weight: bold;
             color: #34495e;
         }
         .resource-name {
-            margin-right: 15px;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
             color: #34495e;
+            margin-bottom: 10px;
         }
         .change-image-container {
+            margin: 10px 0;
+        }
+        .remove-button {
+            background-color: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
             margin-top: 10px;
         }
+        .remove-button:hover {
+            background-color: #c0392b;
+        }
         button {
-            padding: 10px 15px;
-            font-size: 16px;
+            padding: 10px;
+            font-size: 14px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -124,11 +146,27 @@
         }
         @media (max-width: 600px) {
             .resource {
-                flex-direction: column;
-                align-items: flex-start;
+                padding: 10px;
             }
             .resource-image-container {
-                margin-bottom: 15px;
+                width: 80px;
+                height: 80px;
+            }
+            .counter button {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+            .counter span {
+                font-size: 18px;
+            }
+            .controls .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            .controls .button-group button {
+                max-width: 100%;
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -213,18 +251,19 @@
                         <span class="resource-name">${resource.name}</span>
                         <div class="counter">
                             <div>
-                                <button onclick="updateCount(${index}, -10)" style="width: 50px;">-10</button>
-                                <button onclick="updateCount(${index}, -5)" style="width: 50px;">-5</button>
-                                <button onclick="updateCount(${index}, -1)" style="width: 40px;">-</button>
+                                <button onclick="updateCount(${index}, -10)">-10</button>
+                                <button onclick="updateCount(${index}, -5)">-5</button>
+                                <button onclick="updateCount(${index}, -1)">-</button>
                                 <span>${resource.count}</span>
-                                <button onclick="updateCount(${index}, 1)" style="width: 40px;">+</button>
-                                <button onclick="updateCount(${index}, 5)" style="width: 50px;">+5</button>
-                                <button onclick="updateCount(${index}, 10)" style="width: 50px;">+10</button>
+                                <button onclick="updateCount(${index}, 1)">+</button>
+                                <button onclick="updateCount(${index}, 5)">+5</button>
+                                <button onclick="updateCount(${index}, 10)">+10</button>
                             </div>
                         </div>
                         <div class="change-image-container">
                             <button onclick="changeImage(${index})">Change Image</button>
                         </div>
+                        <button class="remove-button" onclick="removeResource(${index})">Remove</button>
                     </div>
                 `;
                 container.appendChild(resourceElement);
@@ -238,11 +277,10 @@
         }
 
         function changeImage(index) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/jpeg, image/png, image/gif';
-            input.style.display = 'none';
-            input.onchange = function(event) {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/jpeg, image/png, image/gif';
+            fileInput.onchange = function(event) {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
@@ -253,36 +291,12 @@
                     reader.readAsDataURL(file);
                 }
             }
-            document.body.appendChild(input);
-            input.click();
-            document.body.removeChild(input);
+            fileInput.click();
         }
 
-        function startDrag(index, e) {
-            e.preventDefault();
-            dragInfo = {
-                index: index,
-                startX: e.clientX,
-                startY: e.clientY
-            };
-        }
-
-        function drag(event) {
-            if (dragInfo) {
-                const { index } = dragInfo;
-                const container = document.getElementById(`container-${index}`);
-                const deltaX = (event.clientX - dragInfo.startX) / container.clientWidth * 100;
-                const deltaY = (event.clientY - dragInfo.startY) / container.clientHeight * 100;
-                resources[index].offsetX = Math.max(0, Math.min(100, resources[index].offsetX + deltaX));
-                resources[index].offsetY = Math.max(0, Math.min(100, resources[index].offsetY + deltaY));
-                dragInfo.startX = event.clientX;
-                dragInfo.startY = event.clientY;
-                renderResources();
-            }
-        }
-
-        function stopDrag() {
-            dragInfo = null;
+        function removeResource(index) {
+            resources.splice(index, 1);
+            renderResources();
         }
 
         function exportData() {
@@ -315,9 +329,6 @@
                 reader.readAsText(file);
             }
         }
-
-        window.addEventListener('mousemove', drag);
-        window.addEventListener('mouseup', stopDrag);
     </script>
 </body>
 </html>
