@@ -36,9 +36,9 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
+            gap: 5px; /* Adjust spacing between buttons */
         }
         .controls .button-group button {
-            margin: 5px;
             flex: 1;
             max-width: 150px;
         }
@@ -160,35 +160,12 @@
             display: none;
         }
         @media (max-width: 600px) {
-            .resource {
-                padding: 10px;
-                width: 90%;
-                margin: 0 auto 20px;
-            }
-            .resource-image-container {
-                width: 80px;
-                height: 80px;
-            }
-            .counter button {
-                width: 30px;
-                height: 30px;
-                font-size: 12px;
-            }
-            .counter span {
-                font-size: 18px;
-                min-width: 30px;
-            }
             .controls .button-group {
-                flex-direction: column;
-                align-items: center;
+                flex-direction: row; /* Change to row layout */
+                width: 100%;
             }
             .controls .button-group button {
-                max-width: 100%;
-                margin-bottom: 10px;
-            }
-            .resource-name-container input {
-                width: 100%;
-                font-size: 14px;
+                max-width: calc(33.33% - 10px); /* Adjust button width for 3 buttons per row */
             }
         }
     </style>
