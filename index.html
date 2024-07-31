@@ -200,8 +200,8 @@
         <input type="text" id="resourceName" placeholder="Resource Name">
         <div class="button-group">
             <button onclick="addResource()">Add Resource</button>
-            <button onclick="exportData()">Export Data</button>
-            <button onclick="triggerImport()">Import Data</button>
+            <button onclick="exportData()" id="exportButton" disabled>Export</button>
+            <button onclick="triggerImport()">Import</button>
         </div>
     </div>
     <div id="resources"></div>
@@ -212,13 +212,15 @@
         let resources = [];
         let unnamedCounter = 1;  // Counter for unnamed resources
         let debounceTimer;
+        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
         function debounce(func, delay) {
             return function(...args) {
                 if (debounceTimer) {
                     clearTimeout(debounceTimer);
                 }
-                debounceTimer = setTimeout(() => func.apply(this, args), delay);
+                const effectiveDelay = isMobile ? delay * 2 : delay; // Adjust delay for mobile
+                debounceTimer = setTimeout(() => func.apply(this, args), effectiveDelay);
             };
         }
 
@@ -226,7 +228,7 @@
             return debounce(() => {
                 resources[index].name = newValue;
                 renderResources();
-            }, 500);
+            }, 1000); // Default debounce delay for desktop
         }
 
         function addResource() {
@@ -253,6 +255,7 @@
                     };
                     resources.push(resource);
                     renderResources();
+                    updateExportButton();
                 }
                 reader.readAsDataURL(file);
             } else {
@@ -267,8 +270,18 @@
                 };
                 resources.push(resource);
                 renderResources();
+                updateExportButton();
             }
             document.getElementById('resourceName').value = '';
+        }
+
+        function updateExportButton() {
+            const exportButton = document.getElementById('exportButton');
+            if (resources.length > 0) {
+                exportButton.removeAttribute('disabled');
+            } else {
+                exportButton.setAttribute('disabled', 'true');
+            }
         }
 
         function renderResources() {
@@ -305,6 +318,7 @@
                 `;
                 container.appendChild(resourceElement);
             });
+            updateExportButton(); // Update export button status after rendering resources
         }
 
         function handleNameChange(index, newName) {
@@ -338,17 +352,20 @@
         function removeResource(index) {
             resources.splice(index, 1);
             renderResources();
+            updateExportButton(); // Update export button status after removing resource
         }
 
         function exportData() {
-            const dataStr = JSON.stringify(resources, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'resources.json';
-            a.click();
-            URL.revokeObjectURL(url);
+            if (resources.length > 0) {
+                const dataStr = JSON.stringify(resources, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'resources.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            }
         }
 
         function triggerImport() {
@@ -363,6 +380,7 @@
                     try {
                         resources = JSON.parse(e.target.result);
                         renderResources();
+                        updateExportButton(); // Update export button status after importing data
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
                     }
