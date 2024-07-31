@@ -121,6 +121,13 @@
             border-color: #3498db;
             outline: none;
         }
+        .resource-button-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px; /* Space between buttons */
+            margin-top: 10px; /* Space above the button group */
+        }
         .change-image-button, .remove-button {
             padding: 8px 12px;
             font-size: 14px;
@@ -290,8 +297,10 @@
                             <button onclick="updateCount(${index}, +10)">+10</button>
                         </div>
                     </div>
-                    <button class="change-image-button" onclick="changeImage(${index})">Change Image</button>
-                    <button class="remove-button" onclick="removeResource(${index})">Remove</button>
+                    <div class="resource-button-group">
+                        <button class="change-image-button" onclick="changeImage(${index})">Change Image</button>
+                        <button class="remove-button" onclick="removeResource(${index})">Remove</button>
+                    </div>
                 `;
                 container.appendChild(resourceElement);
             });
