@@ -42,17 +42,24 @@
             flex: 1;
             max-width: 150px;
         }
+        #resources {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
         .resource {
+            flex: 0 0 calc(50% - 10px);
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 15px;
             background-color: #ffffff;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             text-align: center;
+            box-sizing: border-box;
         }
         .resource-image-container {
             width: 100%;
@@ -160,11 +167,11 @@
             margin-bottom: 10px;
         }
         .remove-button {
-            background-color: #e74c3c; /* Red color */
+            background-color: #e74c3c;
             color: #fff;
         }
         .remove-button:hover {
-            background-color: #c0392b; /* Darker red on hover */
+            background-color: #c0392b;
         }
         @media (max-width: 600px) {
             .button-group {
@@ -173,6 +180,9 @@
             }
             .button-group button {
                 max-width: calc(33.33% - 10px);
+            }
+            .resource {
+                flex: 0 0 calc(50% - 5px);
             }
         }
     </style>
@@ -221,7 +231,12 @@
 
         function renderResources() {
             const container = document.getElementById('resources');
-            container.innerHTML = resources.map((resource, index) => `
+            container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
+            document.getElementById('exportButton').disabled = resources.length === 0;
+        }
+
+        function createResourceHTML(resource, index) {
+            return `
                 <div class="resource">
                     <div class="resource-image-container">
                         <img src="${resource.image}" alt="${resource.name}" class="resource-image">
@@ -261,8 +276,7 @@
                         <button onclick="removeResource(${index})" class="remove-button">Remove</button>
                     </div>
                 </div>
-            `).join('');
-            document.getElementById('exportButton').disabled = resources.length === 0;
+            `;
         }
 
         function updateName(index, newName) {
