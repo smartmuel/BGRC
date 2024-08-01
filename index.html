@@ -182,6 +182,14 @@
         .settings.visible {
             display: block;
         }
+        .settings label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .settings input {
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+        }
         @media (max-width: 600px) {
             .controls .button-group {
                 flex-direction: row;
@@ -256,7 +264,9 @@
                         height: 100,
                         customIncrement1: 1,
                         customIncrement2: 3,
-                        customIncrement3: 5
+                        customIncrement3: 5,
+                        minCount: 0,
+                        maxCount: Infinity
                     };
                     resources.push(resource);
                     renderResources();
@@ -274,7 +284,9 @@
                     height: 100,
                     customIncrement1: 1,
                     customIncrement2: 3,
-                    customIncrement3: 5
+                    customIncrement3: 5,
+                    minCount: 0,
+                    maxCount: Infinity
                 };
                 resources.push(resource);
                 renderResources();
@@ -290,9 +302,13 @@
         function renderResources() {
             const container = document.getElementById('resources');
             container.innerHTML = '';
+
             resources.forEach((resource, index) => {
                 const resourceElement = document.createElement('div');
                 resourceElement.className = 'resource';
+                resourceElement.draggable = true;
+                resourceElement.ondragstart = (event) => startDrag(index, event);
+                
                 resourceElement.innerHTML = `
                     <div class="resource-image-container">
                         <img src="${resource.image}" alt="${resource.name}" class="resource-image">
@@ -327,6 +343,12 @@
                         <div>
                             Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
                         </div>
+                        <div>
+                            Minimum Count: <input type="number" class="custom-increment" value="${resource.minCount === Infinity ? '' : resource.minCount}" onchange="updateMinCount(${index}, this.value)">
+                        </div>
+                        <div>
+                            Maximum Count: <input type="number" class="custom-increment" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
+                        </div>
                     </div>
                 `;
                 container.appendChild(resourceElement);
@@ -339,8 +361,10 @@
         }
 
         function updateCount(index, change) {
-            resources[index].count += change;
-            if (resources[index].count < 0) resources[index].count = 0;
+            const resource = resources[index];
+            resource.count += change;
+            if (resource.count < resource.minCount) resource.count = resource.minCount;
+            if (resource.maxCount !== Infinity && resource.count > resource.maxCount) resource.count = resource.maxCount;
             renderResources();
         }
 
@@ -349,6 +373,28 @@
             if (!isNaN(newValue) && newValue > 0) {
                 resources[index][`customIncrement${incrementNumber}`] = newValue;
                 renderResources();
+            }
+        }
+
+        function updateMinCount(index, value) {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue)) {
+                resources[index].minCount = newValue;
+                if (resources[index].count < newValue) {
+                    resources[index].count = newValue;
+                    renderResources();
+                }
+            }
+        }
+
+        function updateMaxCount(index, value) {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue)) {
+                resources[index].maxCount = newValue;
+                if (resources[index].count > newValue) {
+                    resources[index].count = newValue;
+                    renderResources();
+                }
             }
         }
 
