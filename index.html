@@ -27,7 +27,8 @@
         }
         .controls input[type="file"],
         .controls input[type="text"],
-        .controls button {
+        .controls button,
+        .controls select {
             margin: 5px;
             width: 100%;
             max-width: 300px;
@@ -36,7 +37,7 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 5px; /* Adjust spacing between buttons */
+            gap: 5px;
         }
         .controls .button-group button {
             flex: 1;
@@ -125,10 +126,10 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px; /* Space between buttons */
-            margin-top: 10px; /* Space above the button group */
+            gap: 10px;
+            margin-top: 10px;
         }
-        .change-image-button, .remove-button {
+        .change-image-button, .remove-button, .settings-button {
             padding: 8px 12px;
             font-size: 14px;
             border: none;
@@ -136,11 +137,11 @@
             cursor: pointer;
             margin: 5px;
         }
-        .change-image-button {
+        .change-image-button, .settings-button {
             background-color: #3498db;
             color: #fff;
         }
-        .change-image-button:hover {
+        .change-image-button:hover, .settings-button:hover {
             background-color: #2980b9;
         }
         .remove-button {
@@ -166,13 +167,28 @@
         input[type="file"] {
             display: none;
         }
+        .custom-increment {
+            width: 50px;
+            text-align: center;
+            margin: 0 5px;
+        }
+        .settings {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .settings.visible {
+            display: block;
+        }
         @media (max-width: 600px) {
             .controls .button-group {
-                flex-direction: row; /* Change to row layout */
+                flex-direction: row;
                 width: 100%;
             }
             .controls .button-group button {
-                max-width: calc(33.33% - 10px); /* Adjust button width for 3 buttons per row */
+                max-width: calc(33.33% - 10px);
             }
         }
     </style>
@@ -187,6 +203,10 @@
             <button onclick="exportData()" id="exportButton" disabled>Export</button>
             <button onclick="triggerImport()">Import</button>
         </div>
+        <select id="exampleSelect">
+            <option value="">Select an example</option>
+        </select>
+        <button onclick="loadSelectedExample()">Load Example</button>
     </div>
     <div id="resources"></div>
 
@@ -194,17 +214,16 @@
 
     <script>
         let resources = [];
-        let unnamedCounter = 1;  // Counter for unnamed resources
+        let unnamedCounter = 1;
         let debounceTimer;
-        let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        let settingsVisibility = {}; // Changed from const to let
 
         function debounce(func, delay) {
             return function(...args) {
                 if (debounceTimer) {
                     clearTimeout(debounceTimer);
                 }
-                const effectiveDelay = isMobile ? delay * 2 : delay; // Adjust delay for mobile
-                debounceTimer = setTimeout(() => func.apply(this, args), effectiveDelay);
+                debounceTimer = setTimeout(() => func.apply(this, args), delay);
             };
         }
 
@@ -212,14 +231,13 @@
             return debounce(() => {
                 resources[index].name = newValue;
                 renderResources();
-            }, 1000); // Default debounce delay for desktop
+            }, 1000);
         }
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
             let name = document.getElementById('resourceName').value.trim();
             
-            // Use numbering if no name is provided
             if (!name) {
                 name = `Resource ${unnamedCounter}`;
                 unnamedCounter++;
@@ -235,7 +253,10 @@
                         offsetX: 50,
                         offsetY: 50,
                         width: 100,
-                        height: 100
+                        height: 100,
+                        customIncrement1: 1,
+                        customIncrement2: 3,
+                        customIncrement3: 5
                     };
                     resources.push(resource);
                     renderResources();
@@ -245,27 +266,25 @@
             } else {
                 const resource = {
                     name: name,
-                    image: null,
+                    image: 'default-image.png',
                     count: 0,
                     offsetX: 50,
                     offsetY: 50,
                     width: 100,
-                    height: 100
+                    height: 100,
+                    customIncrement1: 1,
+                    customIncrement2: 3,
+                    customIncrement3: 5
                 };
                 resources.push(resource);
                 renderResources();
                 updateExportButton();
             }
-            document.getElementById('resourceName').value = '';
         }
 
         function updateExportButton() {
             const exportButton = document.getElementById('exportButton');
-            if (resources.length > 0) {
-                exportButton.removeAttribute('disabled');
-            } else {
-                exportButton.setAttribute('disabled', 'true');
-            }
+            exportButton.disabled = resources.length === 0;
         }
 
         function renderResources() {
@@ -275,12 +294,8 @@
                 const resourceElement = document.createElement('div');
                 resourceElement.className = 'resource';
                 resourceElement.innerHTML = `
-                    <div class="resource-image-container" id="container-${index}">
-                        ${resource.image 
-                            ? `<img src="${resource.image}" alt="${resource.name}" class="resource-image"
-                                style="width: ${resource.width}px; height: ${resource.height}px;"
-                                onclick="startDrag(${index}, event)">`
-                            : `<span>${resource.name}</span>`}
+                    <div class="resource-image-container">
+                        <img src="${resource.image}" alt="${resource.name}" class="resource-image">
                     </div>
                     <div class="resource-name-container">
                         <input type="text" id="name-${index}" value="${resource.name}" placeholder="Resource Name" 
@@ -288,23 +303,35 @@
                     </div>
                     <div class="counter">
                         <div>
-                            <button onclick="updateCount(${index}, -10)">-10</button>
-                            <button onclick="updateCount(${index}, -5)">-5</button>
-                            <button onclick="updateCount(${index}, -1)">-1</button>
+                            <button onclick="updateCount(${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
+                            <button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
+                            <button onclick="updateCount(${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
                             <span>${resource.count}</span>
-                            <button onclick="updateCount(${index}, +1)">+1</button>
-                            <button onclick="updateCount(${index}, +5)">+5</button>
-                            <button onclick="updateCount(${index}, +10)">+10</button>
+                            <button onclick="updateCount(${index}, +${resource.customIncrement1})">+${resource.customIncrement1}</button>
+                            <button onclick="updateCount(${index}, +${resource.customIncrement2})">+${resource.customIncrement2}</button>
+                            <button onclick="updateCount(${index}, +${resource.customIncrement3})">+${resource.customIncrement3}</button>
                         </div>
                     </div>
                     <div class="resource-button-group">
                         <button class="change-image-button" onclick="changeImage(${index})">Change Image</button>
                         <button class="remove-button" onclick="removeResource(${index})">Remove</button>
+                        <button class="settings-button" onclick="toggleSettings(${index})">Settings</button>
+                    </div>
+                    <div class="settings ${settingsVisibility[index] ? 'visible' : ''}" id="settings-${index}">
+                        <div>
+                            Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
+                        </div>
+                        <div>
+                            Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
+                        </div>
+                        <div>
+                            Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
+                        </div>
                     </div>
                 `;
                 container.appendChild(resourceElement);
             });
-            updateExportButton(); // Update export button status after rendering resources
+            updateExportButton();
         }
 
         function handleNameChange(index, newName) {
@@ -314,6 +341,19 @@
         function updateCount(index, change) {
             resources[index].count += change;
             if (resources[index].count < 0) resources[index].count = 0;
+            renderResources();
+        }
+
+        function updateCustomIncrement(index, incrementNumber, value) {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue) && newValue > 0) {
+                resources[index][`customIncrement${incrementNumber}`] = newValue;
+                renderResources();
+            }
+        }
+
+        function toggleSettings(index) {
+            settingsVisibility[index] = !settingsVisibility[index];
             renderResources();
         }
 
@@ -337,20 +377,27 @@
 
         function removeResource(index) {
             resources.splice(index, 1);
+            delete settingsVisibility[index];
             renderResources();
-            updateExportButton(); // Update export button status after removing resource
+            updateExportButton();
         }
 
         function exportData() {
-            if (resources.length > 0) {
-                const dataStr = JSON.stringify(resources, null, 2);
-                const blob = new Blob([dataStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'resources.json';
-                a.click();
-                URL.revokeObjectURL(url);
+            try {
+                if (resources.length > 0) {
+                    const dataStr = JSON.stringify(resources, null, 2);
+                    const blob = new Blob([dataStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'resources.json';
+                    document.body.appendChild(a); // Append to body for Firefox
+                    a.click();
+                    document.body.removeChild(a); // Remove from body
+                    URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Export Error:', error);
             }
         }
 
@@ -364,11 +411,18 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     try {
-                        resources = JSON.parse(e.target.result);
-                        renderResources();
-                        updateExportButton(); // Update export button status after importing data
+                        const parsedData = JSON.parse(e.target.result);
+                        if (Array.isArray(parsedData)) {
+                            resources = parsedData;
+                            settingsVisibility = {}; // Reset settings visibility
+                            renderResources();
+                            updateExportButton();
+                        } else {
+                            throw new Error('Invalid data format');
+                        }
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
+                        console.error('Import Error:', error);
                     }
                 }
                 reader.readAsText(file);
@@ -378,6 +432,43 @@
         function startDrag(index, event) {
             // Drag functionality to be implemented here
         }
+
+        function populateExampleDropdown() {
+            fetch('examples/example_list.json')
+                .then(response => response.json())
+                .then(exampleNames => {
+                    const select = document.getElementById('exampleSelect');
+                    exampleNames.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = `examples/${name}.json`;
+                        option.textContent = name;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading example list:', error));
+        }
+
+        function loadSelectedExample() {
+            const select = document.getElementById('exampleSelect');
+            const selectedFile = select.value;
+            if (selectedFile) {
+                fetch(selectedFile)
+                    .then(response => response.json())
+                    .then(data => {
+                        resources = data;
+                        settingsVisibility = {}; // Reset settings visibility
+                        renderResources();
+                        updateExportButton();
+                    })
+                    .catch(error => console.error('Error loading example:', error));
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateExampleDropdown();
+            // Render any existing resources on page load
+            renderResources();
+        });
     </script>
 </body>
 </html>
