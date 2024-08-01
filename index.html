@@ -92,6 +92,11 @@
             flex-wrap: wrap;
             justify-content: center;
         }
+        .counter .counter-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
         .counter button {
             font-size: 14px;
             width: 36px;
@@ -210,6 +215,7 @@
         let resources = [];
         let unnamedCounter = 1;
         let settingsVisibility = {};
+        let hasUnsavedChanges = false;
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
@@ -226,6 +232,7 @@
                 maxCount: Infinity
             };
             resources.push(resource);
+            hasUnsavedChanges = true;
             renderResources();
         }
 
@@ -285,35 +292,33 @@
 
         function updateName(index, newName) {
             resources[index].name = newName;
+            hasUnsavedChanges = true;
         }
 
         function updateCount(index, change) {
             const resource = resources[index];
             resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
+            hasUnsavedChanges = true;
             renderResources();
         }
 
         function updateCustomIncrement(index, incrementNumber, value) {
-            const newValue = parseInt(value, 10);
-            if (!isNaN(newValue) && newValue > 0) {
-                resources[index][`customIncrement${incrementNumber}`] = newValue;
-            } else {
-                resources[index][`customIncrement${incrementNumber}`] = 1; // Default value if invalid
-            }
+            resources[index][`customIncrement${incrementNumber}`] = Math.max(1, parseInt(value) || 1);
+            hasUnsavedChanges = true;
             renderResources();
         }
 
         function updateMinCount(index, value) {
-            const newValue = parseInt(value, 10);
-            resources[index].minCount = isNaN(newValue) ? 0 : newValue;
+            resources[index].minCount = parseInt(value) || 0;
             resources[index].count = Math.max(resources[index].minCount, resources[index].count);
+            hasUnsavedChanges = true;
             renderResources();
         }
 
         function updateMaxCount(index, value) {
-            const newValue = parseInt(value, 10);
-            resources[index].maxCount = isNaN(newValue) ? Infinity : Math.max(resources[index].minCount, newValue);
+            resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
+            hasUnsavedChanges = true;
             renderResources();
         }
 
@@ -330,6 +335,7 @@
                 const file = event.target.files[0];
                 if (file) {
                     resources[index].image = URL.createObjectURL(file);
+                    hasUnsavedChanges = true;
                     renderResources();
                 }
             };
@@ -341,6 +347,7 @@
             if (confirmed) {
                 resources.splice(index, 1);
                 delete settingsVisibility[index];
+                hasUnsavedChanges = true;
                 renderResources();
             }
         }
@@ -376,6 +383,7 @@
                             maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
                         }));
                         settingsVisibility = {};
+                        hasUnsavedChanges = false;
                         renderResources();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
@@ -417,11 +425,20 @@
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
                             maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
                         }));
+                        hasUnsavedChanges = false;
                         renderResources();
                     })
                     .catch(error => alert('Failed to load example'));
             }
         }
+
+        window.addEventListener('beforeunload', (event) => {
+            if (hasUnsavedChanges) {
+                event.preventDefault();
+                event.returnValue = ''; // Required for some browsers
+                return ''; // Required for some browsers
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             populateExampleDropdown();
