@@ -86,12 +86,13 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .counter-buttons {
+        .counter div {
             display: flex;
+            align-items: center;
+            flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 5px;
         }
-        .counter-buttons button {
+        .counter button {
             font-size: 14px;
             width: 36px;
             height: 36px;
@@ -102,7 +103,7 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .counter-buttons button:hover {
+        .counter button:hover {
             background-color: #2980b9;
         }
         .counter span {
@@ -282,15 +283,38 @@
             `;
         }
 
-        function updateCount(index, delta) {
+        function updateName(index, newName) {
+            resources[index].name = newName;
+        }
+
+        function updateCount(index, change) {
             const resource = resources[index];
-            const newCount = resource.count + delta;
-            resource.count = Math.max(resource.minCount, Math.min(resource.maxCount, newCount));
+            resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
             renderResources();
         }
 
-        function updateName(index, newName) {
-            resources[index].name = newName;
+        function updateCustomIncrement(index, incrementNumber, value) {
+            const newValue = parseInt(value, 10);
+            if (!isNaN(newValue) && newValue > 0) {
+                resources[index][`customIncrement${incrementNumber}`] = newValue;
+            } else {
+                resources[index][`customIncrement${incrementNumber}`] = 1; // Default value if invalid
+            }
+            renderResources();
+        }
+
+        function updateMinCount(index, value) {
+            const newValue = parseInt(value, 10);
+            resources[index].minCount = isNaN(newValue) ? 0 : newValue;
+            resources[index].count = Math.max(resources[index].minCount, resources[index].count);
+            renderResources();
+        }
+
+        function updateMaxCount(index, value) {
+            const newValue = parseInt(value, 10);
+            resources[index].maxCount = isNaN(newValue) ? Infinity : Math.max(resources[index].minCount, newValue);
+            resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
+            renderResources();
         }
 
         function toggleSettings(index) {
@@ -298,67 +322,38 @@
             renderResources();
         }
 
-        function updateCustomIncrement(index, incrementType, value) {
-            const parsedValue = parseInt(value, 10);
-            if (!isNaN(parsedValue) && parsedValue > 0) {
-                if (incrementType === 1) resources[index].customIncrement1 = parsedValue;
-                if (incrementType === 2) resources[index].customIncrement2 = parsedValue;
-                if (incrementType === 3) resources[index].customIncrement3 = parsedValue;
-            }
-            renderResources();
-        }
-
-        function updateMinCount(index, value) {
-            const parsedValue = parseInt(value, 10);
-            if (!isNaN(parsedValue)) {
-                resources[index].minCount = parsedValue;
-                if (resources[index].count < parsedValue) {
-                    resources[index].count = parsedValue;
-                }
-            }
-            renderResources();
-        }
-
-        function updateMaxCount(index, value) {
-            const parsedValue = value === '' ? Infinity : parseInt(value, 10);
-            if (parsedValue === Infinity || !isNaN(parsedValue)) {
-                resources[index].maxCount = parsedValue;
-                if (resources[index].count > parsedValue) {
-                    resources[index].count = parsedValue;
-                }
-            }
-            renderResources();
-        }
-
         function changeImage(index) {
-            document.getElementById('imageUpload').onchange = function () {
-                const file = this.files[0];
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/jpeg, image/png, image/gif';
+            fileInput.onchange = event => {
+                const file = event.target.files[0];
                 if (file) {
                     resources[index].image = URL.createObjectURL(file);
                     renderResources();
                 }
             };
-            document.getElementById('imageUpload').click();
+            fileInput.click();
         }
 
         function removeResource(index) {
-            resources.splice(index, 1);
-            renderResources();
+            const confirmed = confirm('Are you sure you want to remove this resource?');
+            if (confirmed) {
+                resources.splice(index, 1);
+                delete settingsVisibility[index];
+                renderResources();
+            }
         }
 
         function exportData() {
-            const data = JSON.stringify(resources);
-            const blob = new Blob([data], { type: 'application/json' });
+            const dataStr = JSON.stringify(resources, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'resources.json';
-            document.body.appendChild(a);
             a.click();
-            setTimeout(() => {
-                URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }, 0);
+            URL.revokeObjectURL(url);
         }
 
         function triggerImport() {
@@ -369,13 +364,22 @@
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function () {
+                reader.onload = e => {
                     try {
-                        const data = JSON.parse(reader.result);
-                        resources = data;
+                        resources = JSON.parse(e.target.result).map(resource => ({
+                            ...resource,
+                            count: typeof resource.count === 'number' ? resource.count : 0,
+                            customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
+                            customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
+                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+                            minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
+                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
+                        }));
+                        settingsVisibility = {};
                         renderResources();
                     } catch (error) {
-                        alert('Failed to import data');
+                        alert('Error importing data. Please make sure the file is valid JSON.');
+                        console.error('Import Error:', error);
                     }
                 };
                 reader.readAsText(file);
@@ -404,7 +408,15 @@
                 fetch(`examples/${exampleName}`)
                     .then(response => response.json())
                     .then(data => {
-                        resources = data;
+                        resources = data.map(resource => ({
+                            ...resource,
+                            count: typeof resource.count === 'number' ? resource.count : 0,
+                            customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
+                            customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
+                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+                            minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
+                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
+                        }));
                         renderResources();
                     })
                     .catch(error => alert('Failed to load example'));
