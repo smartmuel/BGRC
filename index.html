@@ -86,13 +86,12 @@
             align-items: center;
             margin-bottom: 10px;
         }
-        .counter div {
+        .counter-buttons {
             display: flex;
-            align-items: center;
-            flex-wrap: wrap;
             justify-content: center;
+            margin-bottom: 5px;
         }
-        .counter button {
+        .counter-buttons button {
             font-size: 14px;
             width: 36px;
             height: 36px;
@@ -103,7 +102,7 @@
             border-radius: 4px;
             cursor: pointer;
         }
-        .counter button:hover {
+        .counter-buttons button:hover {
             background-color: #2980b9;
         }
         .counter span {
@@ -245,14 +244,18 @@
                         <input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
                     </div>
                     <div class="counter">
-                        <div>
+                        <div class="counter-buttons">
                             <button onclick="updateCount(${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
-                            <button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
+                            <button onclick="updateCount(${index}, ${resource.customIncrement3})">+${resource.customIncrement3}</button>
+                        </div>
+                        <div class="counter-buttons">
                             <button onclick="updateCount(${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
                             <span>${resource.count}</span>
                             <button onclick="updateCount(${index}, ${resource.customIncrement1})">+${resource.customIncrement1}</button>
+                        </div>
+                        <div class="counter-buttons">
+                            <button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
                             <button onclick="updateCount(${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
-                            <button onclick="updateCount(${index}, ${resource.customIncrement3})">+${resource.customIncrement3}</button>
                         </div>
                     </div>
                     <button onclick="toggleSettings(${index})">Settings</button>
@@ -279,31 +282,15 @@
             `;
         }
 
+        function updateCount(index, delta) {
+            const resource = resources[index];
+            const newCount = resource.count + delta;
+            resource.count = Math.max(resource.minCount, Math.min(resource.maxCount, newCount));
+            renderResources();
+        }
+
         function updateName(index, newName) {
             resources[index].name = newName;
-        }
-
-        function updateCount(index, change) {
-            const resource = resources[index];
-            resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
-            renderResources();
-        }
-
-        function updateCustomIncrement(index, incrementNumber, value) {
-            resources[index][`customIncrement${incrementNumber}`] = Math.max(1, parseInt(value) || 1);
-            renderResources();
-        }
-
-        function updateMinCount(index, value) {
-            resources[index].minCount = parseInt(value) || 0;
-            resources[index].count = Math.max(resources[index].minCount, resources[index].count);
-            renderResources();
-        }
-
-        function updateMaxCount(index, value) {
-            resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
-            resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
-            renderResources();
         }
 
         function toggleSettings(index) {
@@ -311,38 +298,67 @@
             renderResources();
         }
 
+        function updateCustomIncrement(index, incrementType, value) {
+            const parsedValue = parseInt(value, 10);
+            if (!isNaN(parsedValue) && parsedValue > 0) {
+                if (incrementType === 1) resources[index].customIncrement1 = parsedValue;
+                if (incrementType === 2) resources[index].customIncrement2 = parsedValue;
+                if (incrementType === 3) resources[index].customIncrement3 = parsedValue;
+            }
+            renderResources();
+        }
+
+        function updateMinCount(index, value) {
+            const parsedValue = parseInt(value, 10);
+            if (!isNaN(parsedValue)) {
+                resources[index].minCount = parsedValue;
+                if (resources[index].count < parsedValue) {
+                    resources[index].count = parsedValue;
+                }
+            }
+            renderResources();
+        }
+
+        function updateMaxCount(index, value) {
+            const parsedValue = value === '' ? Infinity : parseInt(value, 10);
+            if (parsedValue === Infinity || !isNaN(parsedValue)) {
+                resources[index].maxCount = parsedValue;
+                if (resources[index].count > parsedValue) {
+                    resources[index].count = parsedValue;
+                }
+            }
+            renderResources();
+        }
+
         function changeImage(index) {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'image/jpeg, image/png, image/gif';
-            fileInput.onchange = event => {
-                const file = event.target.files[0];
+            document.getElementById('imageUpload').onchange = function () {
+                const file = this.files[0];
                 if (file) {
                     resources[index].image = URL.createObjectURL(file);
                     renderResources();
                 }
             };
-            fileInput.click();
+            document.getElementById('imageUpload').click();
         }
 
         function removeResource(index) {
-            const confirmed = confirm('Are you sure you want to remove this resource?');
-            if (confirmed) {
-                resources.splice(index, 1);
-                delete settingsVisibility[index];
-                renderResources();
-            }
+            resources.splice(index, 1);
+            renderResources();
         }
 
         function exportData() {
-            const dataStr = JSON.stringify(resources, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
+            const data = JSON.stringify(resources);
+            const blob = new Blob([data], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'resources.json';
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            }, 0);
         }
 
         function triggerImport() {
@@ -353,14 +369,13 @@
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = function () {
                     try {
-                        resources = JSON.parse(e.target.result);
-                        settingsVisibility = {};
+                        const data = JSON.parse(reader.result);
+                        resources = data;
                         renderResources();
                     } catch (error) {
-                        alert('Error importing data. Please make sure the file is valid JSON.');
-                        console.error('Import Error:', error);
+                        alert('Failed to import data');
                     }
                 };
                 reader.readAsText(file);
@@ -374,7 +389,7 @@
                     const select = document.getElementById('exampleSelect');
                     exampleNames.forEach(name => {
                         const option = document.createElement('option');
-                        option.value = `examples/${name}.json`;
+                        option.value = `${name}.json`;
                         option.textContent = name;
                         select.appendChild(option);
                     });
@@ -383,16 +398,16 @@
         }
 
         function loadSelectedExample() {
-            const selectedFile = document.getElementById('exampleSelect').value;
-            if (selectedFile) {
-                fetch(selectedFile)
+            const exampleSelect = document.getElementById('exampleSelect');
+            const exampleName = exampleSelect.value;
+            if (exampleName) {
+                fetch(`examples/${exampleName}`)
                     .then(response => response.json())
                     .then(data => {
                         resources = data;
-                        settingsVisibility = {};
                         renderResources();
                     })
-                    .catch(error => console.error('Error loading example:', error));
+                    .catch(error => alert('Failed to load example'));
             }
         }
 
