@@ -178,6 +178,9 @@
         .remove-button:hover {
             background-color: #c0392b;
         }
+        .hide-image-checkbox {
+            margin: 10px 0;
+        }
         @media (max-width: 600px) {
             .button-group {
                 flex-direction: row;
@@ -229,7 +232,8 @@
                 customIncrement2: 3,
                 customIncrement3: 5,
                 minCount: 0,
-                maxCount: Infinity
+                maxCount: Infinity,
+                hideImage: true // Default to hide image
             };
             resources.push(resource);
             hasUnsavedChanges = true;
@@ -245,9 +249,9 @@
         function createResourceHTML(resource, index) {
             return `
                 <div class="resource">
-                    <div class="resource-image-container">
+                    ${resource.hideImage ? '' : `<div class="resource-image-container">
                         <img src="${resource.image}" alt="${resource.name}" class="resource-image">
-                    </div>
+                    </div>`}
                     <div class="resource-name-container">
                         <input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
                     </div>
@@ -268,6 +272,9 @@
                     </div>
                     <button onclick="toggleSettings(${index})">Settings</button>
                     <div class="settings ${settingsVisibility[index] ? 'visible' : ''}" id="settings-${index}">
+                        <div>
+                            Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
+                        </div>
                         <div>
                             Increment 1: <input type="number" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
                         </div>
@@ -318,6 +325,12 @@
         function updateMaxCount(index, value) {
             resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
+            hasUnsavedChanges = true;
+            renderResources();
+        }
+
+        function updateHideImage(index, hide) {
+            resources[index].hideImage = hide;
             hasUnsavedChanges = true;
             renderResources();
         }
