@@ -271,18 +271,19 @@
                         </div>
                     </div>
                     <button onclick="toggleSettings(${index})">Settings</button>
-                    <div class="settings ${settingsVisibility[index] ? 'visible' : ''}" id="settings-${index}">
-                        <div>
+                    <div class="settings ${settingsVisibility[index] ? 'visible' : ''}">
+                        <div class="hide-image-checkbox">
                             Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
                         </div>
+                        ${resource.hideImage ? '' : `<button onclick="changeImage(${index})">Change Image</button>`}
                         <div>
-                            Increment 1: <input type="number" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
+                            Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
                         </div>
                         <div>
-                            Increment 2: <input type="number" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
+                            Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
                         </div>
                         <div>
-                            Increment 3: <input type="number" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
+                            Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
                         </div>
                         <div>
                             Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
@@ -290,7 +291,6 @@
                         <div>
                             Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
                         </div>
-                        <button onclick="changeImage(${index})">Change Image</button>
                         <button onclick="removeResource(${index})" class="remove-button">Remove</button>
                     </div>
                 </div>
