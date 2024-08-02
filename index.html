@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="mean">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -154,14 +154,10 @@
             margin: 0 5px;
         }
         .settings {
-            display: none;
             margin-top: 10px;
             padding: 10px;
             background-color: #f0f0f0;
             border-radius: 4px;
-        }
-        .settings.visible {
-            display: block;
         }
         .settings label {
             display: block;
@@ -181,6 +177,22 @@
         .hide-image-checkbox {
             margin: 10px 0;
         }
+        #globalSettings {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        #globalSettingsContent {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         @media (max-width: 600px) {
             .button-group {
                 flex-direction: row;
@@ -197,6 +209,15 @@
 </head>
 <body>
     <h1>Board Game Resource Counter</h1>
+    <div id="globalSettings">
+        <button onclick="toggleGlobalSettingsVisibility()">⚙️</button>
+        <div id="globalSettingsContent">
+            <label>
+                <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
+                Show All Settings
+            </label>
+        </div>
+    </div>
     <div class="controls">
         <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
         <input type="text" id="resourceName" placeholder="Resource Name">
@@ -217,8 +238,9 @@
     <script>
         let resources = [];
         let unnamedCounter = 1;
-        let settingsVisibility = {};
         let hasUnsavedChanges = false;
+        let showSettingsGlobal = false;
+        let globalSettingsVisible = false;
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
@@ -233,7 +255,7 @@
                 customIncrement3: 5,
                 minCount: 0,
                 maxCount: Infinity,
-                hideImage: true // Default to hide image
+                hideImage: true
             };
             resources.push(resource);
             hasUnsavedChanges = true;
@@ -270,8 +292,8 @@
                             <button onclick="updateCount(${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
                         </div>
                     </div>
-                    <button onclick="toggleSettings(${index})">Settings</button>
-                    <div class="settings ${settingsVisibility[index] ? 'visible' : ''}">
+                    ${showSettingsGlobal ? `
+                    <div class="settings">
                         <div class="hide-image-checkbox">
                             Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
                         </div>
@@ -293,6 +315,7 @@
                         </div>
                         <button onclick="removeResource(${index})" class="remove-button">Remove</button>
                     </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -335,11 +358,6 @@
             renderResources();
         }
 
-        function toggleSettings(index) {
-            settingsVisibility[index] = !settingsVisibility[index];
-            renderResources();
-        }
-
         function changeImage(index) {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -359,7 +377,6 @@
             const confirmed = confirm('Are you sure you want to remove this resource?');
             if (confirmed) {
                 resources.splice(index, 1);
-                delete settingsVisibility[index];
                 hasUnsavedChanges = true;
                 renderResources();
             }
@@ -391,11 +408,10 @@
                             count: typeof resource.count === 'number' ? resource.count : 0,
                             customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
                             customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
-                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
                             maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
                         }));
-                        settingsVisibility = {};
                         hasUnsavedChanges = false;
                         renderResources();
                     } catch (error) {
@@ -443,6 +459,17 @@
                     })
                     .catch(error => alert('Failed to load example'));
             }
+        }
+
+        function toggleGlobalSettings() {
+            showSettingsGlobal = document.getElementById('showSettingsGlobal').checked;
+            renderResources();
+        }
+
+        function toggleGlobalSettingsVisibility() {
+            globalSettingsVisible = !globalSettingsVisible;
+            const content = document.getElementById('globalSettingsContent');
+            content.style.display = globalSettingsVisible ? 'block' : 'none';
         }
 
         window.addEventListener('beforeunload', (event) => {
