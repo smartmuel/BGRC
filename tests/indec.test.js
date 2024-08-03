@@ -8,7 +8,7 @@ let document;
 
 beforeAll(() => {
   const html = fs.readFileSync(path.resolve(__dirname, '../index.html'), 'utf8');
-  dom = new JSDOM(html, { runScripts: 'dangerously' });
+  dom = new JSDOM(html, { runScripts: 'dangerously', resources: 'usable' });
   window = dom.window;
   document = window.document;
 
@@ -22,6 +22,17 @@ beforeAll(() => {
   // Mock URL.createObjectURL and URL.revokeObjectURL
   global.URL.createObjectURL = jest.fn();
   global.URL.revokeObjectURL = jest.fn();
+
+  // Mock FileReader
+  global.FileReader = class {
+    readAsText() {
+      this.onload({ target: { result: JSON.stringify([{ name: 'Test Resource', count: 5 }]) } });
+    }
+  };
+
+  // Expose window methods globally
+  global.addResource = window.addResource;
+  global.importData = window.importData;
 });
 
 test('Initial render', () => {
@@ -75,17 +86,15 @@ test('Export data', () => {
   expect(createElementSpy).toHaveBeenCalledWith('a');
 });
 
-test('Import data', () => {
+test('Import data', (done) => {
   const importFile = document.getElementById('importFile');
-  const fileContents = JSON.stringify([{ name: 'Test Resource', count: 5 }]);
-  const file = new File([fileContents], 'test.json', { type: 'application/json' });
-  const event = { target: { files: [file] } };
-
+  const event = { target: { files: [new File([], 'test.json')] } };
   window.importData(event);
-
+  
   setTimeout(() => {
     expect(document.getElementById('resources').children.length).toBe(1);
     const resourceName = document.querySelector('.resource-name-container input').value;
     expect(resourceName).toBe('Test Resource');
+    done();
   }, 0);
 });
