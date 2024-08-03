@@ -1,20 +1,7 @@
-{
-  "name": "board-game-resource-counter",
-  "version": "1.0.0",
-  "description": "Board Game Resource Counter",
-  "main": "index.html",
-  "scripts": {
-    "test": "jest"
-  },
-  "devDependencies": {
-    "jest": "^27.0.6",
-    "jest-environment-jsdom": "^27.0.6",
-    "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/dom": "^8.1.0",
-    "jsdom": "^16.6.0"
-  },
-  "jest": {
-    "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["@testing-library/jest-dom/extend-expect"]
+"jest": {
+  "testEnvironment": "jsdom",
+  "setupFilesAfterEnv": ["@testing-library/jest-dom/extend-expect"],
+  "transform": {
+    "^.+\\.js$": "babel-jest"
   }
 }
