@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="mean">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -174,7 +174,7 @@
         .remove-button:hover {
             background-color: #c0392b;
         }
-        .hide-image-checkbox {
+        .hide-image-checkbox, .keep-one-modifier-checkbox {
             margin: 10px 0;
         }
         #globalSettings {
@@ -255,7 +255,8 @@
                 customIncrement3: 5,
                 minCount: 0,
                 maxCount: Infinity,
-                hideImage: true
+                hideImage: true,
+                keepOneModifier: false
             };
             resources.push(resource);
             hasUnsavedChanges = true;
@@ -278,35 +279,44 @@
                         <input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
                     </div>
                     <div class="counter">
+                        ${!resource.keepOneModifier ? `
                         <div class="counter-buttons">
                             <button onclick="updateCount(${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
                             <button onclick="updateCount(${index}, ${resource.customIncrement3})">+${resource.customIncrement3}</button>
                         </div>
+                        ` : ''}
                         <div class="counter-buttons">
                             <button onclick="updateCount(${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
                             <span>${resource.count}</span>
                             <button onclick="updateCount(${index}, ${resource.customIncrement1})">+${resource.customIncrement1}</button>
                         </div>
+                        ${!resource.keepOneModifier ? `
                         <div class="counter-buttons">
                             <button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
                             <button onclick="updateCount(${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
                         </div>
+                        ` : ''}
                     </div>
                     ${showSettingsGlobal ? `
                     <div class="settings">
                         <div class="hide-image-checkbox">
                             Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
                         </div>
+                        <div class="keep-one-modifier-checkbox">
+                            Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} onchange="updateKeepOneModifier(${index}, this.checked)">
+                        </div>
                         ${resource.hideImage ? '' : `<button onclick="changeImage(${index})">Change Image</button>`}
                         <div>
                             Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
                         </div>
+                        ${!resource.keepOneModifier ? `
                         <div>
                             Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
                         </div>
                         <div>
                             Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
                         </div>
+                        ` : ''}
                         <div>
                             Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
                         </div>
@@ -358,6 +368,12 @@
             renderResources();
         }
 
+        function updateKeepOneModifier(index, keep) {
+            resources[index].keepOneModifier = keep;
+            hasUnsavedChanges = true;
+            renderResources();
+        }
+
         function changeImage(index) {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
@@ -397,7 +413,7 @@
             document.getElementById('importFile').click();
         }
 
-        function importData(event) {
+function importData(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -408,9 +424,11 @@
                             count: typeof resource.count === 'number' ? resource.count : 0,
                             customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
                             customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
-customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
+                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
+                            hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
                         }));
                         hasUnsavedChanges = false;
                         renderResources();
@@ -452,7 +470,9 @@ customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.custo
                             customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
                             customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity
+                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
+                            hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
                         }));
                         hasUnsavedChanges = false;
                         renderResources();
