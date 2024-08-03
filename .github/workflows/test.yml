@@ -18,9 +18,6 @@ jobs:
         node-version: '14'
     - name: Install dependencies
       run: |
-        if [ -f package-lock.json ]; then
-          npm ci
-        else
-          npm install
-        fi
-    - run: npm test
+        npm install
+    - name: Run tests
+      run: npm test
