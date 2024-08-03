@@ -216,20 +216,26 @@
                 <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
                 Show All Settings
             </label>
+            <label>
+                <input type="checkbox" id="hideAllExceptResources" onchange="toggleHideAllExceptResources()">
+                Hide All Except Resources
+            </label>
         </div>
     </div>
-    <div class="controls">
-        <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
-        <input type="text" id="resourceName" placeholder="Resource Name">
-        <div class="button-group">
-            <button onclick="addResource()">Add Resource</button>
-            <button onclick="exportData()" id="exportButton" disabled>Export</button>
-            <button onclick="triggerImport()">Import</button>
+    <div id="controlsContainer">
+        <div class="controls">
+            <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
+            <input type="text" id="resourceName" placeholder="Resource Name">
+            <div class="button-group">
+                <button onclick="addResource()">Add Resource</button>
+                <button onclick="exportData()" id="exportButton" disabled>Export</button>
+                <button onclick="triggerImport()">Import</button>
+            </div>
+            <select id="exampleSelect">
+                <option value="">Select an example</option>
+            </select>
+            <button onclick="loadSelectedExample()">Load Example</button>
         </div>
-        <select id="exampleSelect">
-            <option value="">Select an example</option>
-        </select>
-        <button onclick="loadSelectedExample()">Load Example</button>
     </div>
     <div id="resources"></div>
 
@@ -241,6 +247,7 @@
         let hasUnsavedChanges = false;
         let showSettingsGlobal = false;
         let globalSettingsVisible = false;
+        let hideAllExceptResources = false;
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
@@ -267,6 +274,7 @@
             const container = document.getElementById('resources');
             container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
             document.getElementById('exportButton').disabled = resources.length === 0;
+            updateVisibility();
         }
 
         function createResourceHTML(resource, index) {
@@ -401,7 +409,7 @@
         function exportData() {
             const dataStr = JSON.stringify(resources, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'resources.json';
@@ -413,7 +421,7 @@
             document.getElementById('importFile').click();
         }
 
-function importData(event) {
+        function importData(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -431,6 +439,8 @@ function importData(event) {
                             keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
                         }));
                         hasUnsavedChanges = false;
+                        hideAllExceptResources = true;
+                        document.getElementById('hideAllExceptResources').checked = true;
                         renderResources();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
@@ -475,6 +485,8 @@ function importData(event) {
                             keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
                         }));
                         hasUnsavedChanges = false;
+                        hideAllExceptResources = true;
+                        document.getElementById('hideAllExceptResources').checked = true;
                         renderResources();
                     })
                     .catch(error => alert('Failed to load example'));
@@ -490,6 +502,16 @@ function importData(event) {
             globalSettingsVisible = !globalSettingsVisible;
             const content = document.getElementById('globalSettingsContent');
             content.style.display = globalSettingsVisible ? 'block' : 'none';
+        }
+
+        function toggleHideAllExceptResources() {
+            hideAllExceptResources = document.getElementById('hideAllExceptResources').checked;
+            updateVisibility();
+        }
+
+        function updateVisibility() {
+            const controlsContainer = document.getElementById('controlsContainer');
+            controlsContainer.style.display = hideAllExceptResources ? 'none' : 'block';
         }
 
         window.addEventListener('beforeunload', (event) => {
