@@ -249,6 +249,28 @@
         let globalSettingsVisible = false;
         let hideAllExceptResources = false;
 
+        function saveToLocalStorage() {
+            localStorage.setItem('boardGameResources', JSON.stringify(resources));
+            localStorage.setItem('unnamedCounter', unnamedCounter);
+            localStorage.setItem('showSettingsGlobal', showSettingsGlobal);
+            localStorage.setItem('hideAllExceptResources', hideAllExceptResources);
+        }
+
+        function loadFromLocalStorage() {
+            const savedResources = localStorage.getItem('boardGameResources');
+            if (savedResources) {
+                resources = JSON.parse(savedResources);
+                unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
+                showSettingsGlobal = localStorage.getItem('showSettingsGlobal') === 'true';
+                hideAllExceptResources = localStorage.getItem('hideAllExceptResources') === 'true';
+                
+                document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+                document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
+                
+                renderResources();
+            }
+        }
+
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
             let name = document.getElementById('resourceName').value.trim() || `Resource ${unnamedCounter++}`;
@@ -268,6 +290,7 @@
             resources.push(resource);
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function renderResources() {
@@ -341,6 +364,7 @@
         function updateName(index, newName) {
             resources[index].name = newName;
             hasUnsavedChanges = true;
+            saveToLocalStorage();
         }
 
         function updateCount(index, change) {
@@ -348,12 +372,14 @@
             resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function updateCustomIncrement(index, incrementNumber, value) {
             resources[index][`customIncrement${incrementNumber}`] = Math.max(1, parseInt(value) || 1);
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function updateMinCount(index, value) {
@@ -361,6 +387,7 @@
             resources[index].count = Math.max(resources[index].minCount, resources[index].count);
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function updateMaxCount(index, value) {
@@ -368,18 +395,21 @@
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function updateHideImage(index, hide) {
             resources[index].hideImage = hide;
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
-        function updateKeepOneModifier(index, keep) {
+function updateKeepOneModifier(index, keep) {
             resources[index].keepOneModifier = keep;
             hasUnsavedChanges = true;
             renderResources();
+            saveToLocalStorage();
         }
 
         function changeImage(index) {
@@ -392,6 +422,7 @@
                     resources[index].image = URL.createObjectURL(file);
                     hasUnsavedChanges = true;
                     renderResources();
+                    saveToLocalStorage();
                 }
             };
             fileInput.click();
@@ -403,13 +434,14 @@
                 resources.splice(index, 1);
                 hasUnsavedChanges = true;
                 renderResources();
+                saveToLocalStorage();
             }
         }
 
         function exportData() {
             const dataStr = JSON.stringify(resources, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
-const url = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'resources.json';
@@ -442,6 +474,7 @@ const url = URL.createObjectURL(blob);
                         hideAllExceptResources = true;
                         document.getElementById('hideAllExceptResources').checked = true;
                         renderResources();
+                        saveToLocalStorage();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
                         console.error('Import Error:', error);
@@ -488,6 +521,7 @@ const url = URL.createObjectURL(blob);
                         hideAllExceptResources = true;
                         document.getElementById('hideAllExceptResources').checked = true;
                         renderResources();
+                        saveToLocalStorage();
                     })
                     .catch(error => alert('Failed to load example'));
             }
@@ -496,6 +530,7 @@ const url = URL.createObjectURL(blob);
         function toggleGlobalSettings() {
             showSettingsGlobal = document.getElementById('showSettingsGlobal').checked;
             renderResources();
+            saveToLocalStorage();
         }
 
         function toggleGlobalSettingsVisibility() {
@@ -507,6 +542,7 @@ const url = URL.createObjectURL(blob);
         function toggleHideAllExceptResources() {
             hideAllExceptResources = document.getElementById('hideAllExceptResources').checked;
             updateVisibility();
+            saveToLocalStorage();
         }
 
         function updateVisibility() {
@@ -515,6 +551,7 @@ const url = URL.createObjectURL(blob);
         }
 
         window.addEventListener('beforeunload', (event) => {
+            saveToLocalStorage();
             if (hasUnsavedChanges) {
                 event.preventDefault();
                 event.returnValue = ''; // Required for some browsers
@@ -524,7 +561,7 @@ const url = URL.createObjectURL(blob);
 
         document.addEventListener('DOMContentLoaded', () => {
             populateExampleDropdown();
-            renderResources();
+            loadFromLocalStorage();
         });
     </script>
 </body>
