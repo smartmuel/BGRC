@@ -193,6 +193,53 @@
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        .roll-cube {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .roll-cube button {
+            font-size: 16px;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .roll-cube button:hover {
+            background-color: #2980b9;
+        }
+        .roll-result {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        @keyframes rollAnimation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .rolling {
+            animation: rollAnimation 0.5s linear;
+        }
+        #endTurnButton {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        #endTurnButton:hover {
+            background-color: #c0392b;
+        }
+        #limitMessage {
+            display: none;
+            background-color: #f39c12;
+            color: white;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
         @media (max-width: 600px) {
             .button-group {
                 flex-direction: row;
@@ -220,6 +267,20 @@
                 <input type="checkbox" id="hideAllExceptResources" onchange="toggleHideAllExceptResources()">
                 Hide All Except Resources
             </label>
+            <label>
+                <input type="checkbox" id="disableAllAnimations" onchange="toggleAllAnimations()">
+                Disable All Animations
+            </label>
+            <label>
+                <input type="checkbox" id="showEndTurnButton" onchange="toggleEndTurnButton()">
+                Show End Turn Button
+            </label>
+            <div id="endTurnSettings" style="display: none;">
+                <label>
+                    Global Counter Limit:
+                    <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
+                </label>
+            </div>
         </div>
     </div>
     <div id="controlsContainer">
@@ -238,6 +299,8 @@
         </div>
     </div>
     <div id="resources"></div>
+    <button id="endTurnButton" onclick="endTurn()" style="display: none;">End Turn</button>
+    <div id="limitMessage"></div>
 
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
@@ -248,12 +311,19 @@
         let showSettingsGlobal = false;
         let globalSettingsVisible = false;
         let hideAllExceptResources = false;
+        let inactivityTimer;
+        let disableAllAnimations = false;
+        let showEndTurnButton = false;
+        let globalCounterLimit = 100;
 
         function saveToLocalStorage() {
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
             localStorage.setItem('showSettingsGlobal', showSettingsGlobal);
             localStorage.setItem('hideAllExceptResources', hideAllExceptResources);
+            localStorage.setItem('disableAllAnimations', disableAllAnimations);
+            localStorage.setItem('showEndTurnButton', showEndTurnButton);
+            localStorage.setItem('globalCounterLimit', globalCounterLimit);
         }
 
         function loadFromLocalStorage() {
@@ -262,12 +332,19 @@
                 resources = JSON.parse(savedResources);
                 unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
                 showSettingsGlobal = localStorage.getItem('showSettingsGlobal') === 'true';
-                hideAllExceptResources = localStorage.getItem('hideAllExceptResources') === 'true';
+                hideAllExceptResources = false; // Always start with this unchecked
+                disableAllAnimations = localStorage.getItem('disableAllAnimations') === 'true';
+                showEndTurnButton = localStorage.getItem('showEndTurnButton') === 'true';
+                globalCounterLimit = parseInt(localStorage.getItem('globalCounterLimit')) || 100;
                 
                 document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
                 document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
+                document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+                document.getElementById('showEndTurnButton').checked = showEndTurnButton;
+                document.getElementById('globalCounterLimit').value = globalCounterLimit;
                 
                 renderResources();
+                updateEndTurnButtonVisibility();
             }
         }
 
@@ -285,7 +362,15 @@
                 minCount: 0,
                 maxCount: Infinity,
                 hideImage: true,
-                keepOneModifier: false
+                keepOneModifier: false,
+                showRollDice: false,
+                rollDiceMin: 1,
+                rollDiceMax: 6,
+                rollDiceIncrement: 1,
+                rollDiceCustomValues: [],
+                useCustomDiceValues: false,
+                hideCounter: false,
+                enableDiceAnimation: true
             };
             resources.push(resource);
             hasUnsavedChanges = true;
@@ -309,6 +394,7 @@
                     <div class="resource-name-container">
                         <input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
                     </div>
+                    ${!resource.hideCounter ? `
                     <div class="counter">
                         ${!resource.keepOneModifier ? `
                         <div class="counter-buttons">
@@ -328,15 +414,26 @@
                         </div>
                         ` : ''}
                     </div>
+                    ` : ''}
+                    ${resource.showRollDice ? `
+                    <div class="roll-dice">
+                        <button onclick="rollDice(${index})">Roll Dice</button>
+                        <div class="roll-result" id="rollResult${index}"></div>
+                    </div>
+                    ` : ''}
                     ${showSettingsGlobal ? `
                     <div class="settings">
                         <div class="hide-image-checkbox">
                             Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
                         </div>
+                        ${!resource.hideImage ? `<button onclick="changeImage(${index})">Change Image</button>` : ''}
+                        <div class="hide-counter-checkbox">
+                            Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
+                        </div>
+                        ${!resource.hideCounter ? `
                         <div class="keep-one-modifier-checkbox">
                             Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} onchange="updateKeepOneModifier(${index}, this.checked)">
                         </div>
-                        ${resource.hideImage ? '' : `<button onclick="changeImage(${index})">Change Image</button>`}
                         <div>
                             Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
                         </div>
@@ -354,11 +451,38 @@
                         <div>
                             Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
                         </div>
+                        ` : ''}
+                        <div class="roll-dice-settings">
+                            Show Roll Dice: <input type="checkbox" ${resource.showRollDice ? 'checked' : ''} onchange="updateShowRollDice(${index}, this.checked)">
+                        </div>
+                        ${resource.showRollDice ? `
+                        <div>
+                            Use Custom Dice Values: <input type="checkbox" ${resource.useCustomDiceValues ? 'checked' : ''} onchange="updateUseCustomDiceValues(${index}, this.checked)">
+                        </div>
+                        ${!resource.useCustomDiceValues ? `
+                        <div>
+                            Roll Dice Min: <input type="number" value="${resource.rollDiceMin}" onchange="updateRollDiceMin(${index}, this.value)">
+                        </div>
+                        <div>
+                            Roll Dice Max: <input type="number" value="${resource.rollDiceMax}" onchange="updateRollDiceMax(${index}, this.value)">
+                        </div>
+                        <div>
+                            Roll Dice Increment: <input type="number" value="${resource.rollDiceIncrement}" onchange="updateRollDiceIncrement(${index}, this.value)">
+                        </div>
+                        ` : `
+                        <div>
+                            Custom Dice Values: <input type="text" value="${resource.rollDiceCustomValues.join(', ')}" onchange="updateRollDiceCustomValues(${index}, this.value)">
+                        </div>
+                        `}
+                        <div>
+                            Enable Dice Animation: <input type="checkbox" ${resource.enableDiceAnimation ? 'checked' : ''} onchange="updateEnableDiceAnimation(${index}, this.checked)">
+                        </div>
+                        ` : ''}
                         <button onclick="removeResource(${index})" class="remove-button">Remove</button>
                     </div>
-                    ` : ''}
-                </div>
-            `;
+                ` : ''}
+            </div>
+        `;
         }
 
         function updateName(index, newName) {
@@ -373,6 +497,9 @@
             hasUnsavedChanges = true;
             renderResources();
             saveToLocalStorage();
+            setHideAllExceptResources(true);
+            resetInactivityTimer();
+            checkGlobalCounterLimit();
         }
 
         function updateCustomIncrement(index, incrementNumber, value) {
@@ -391,7 +518,7 @@
         }
 
         function updateMaxCount(index, value) {
-            resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
+			resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
             hasUnsavedChanges = true;
             renderResources();
@@ -405,11 +532,91 @@
             saveToLocalStorage();
         }
 
-function updateKeepOneModifier(index, keep) {
+        function updateKeepOneModifier(index, keep) {
             resources[index].keepOneModifier = keep;
             hasUnsavedChanges = true;
             renderResources();
             saveToLocalStorage();
+        }
+
+        function updateShowRollDice(index, show) {
+            resources[index].showRollDice = show;
+            hasUnsavedChanges = true;
+            renderResources();
+            saveToLocalStorage();
+        }
+
+        function updateUseCustomDiceValues(index, use) {
+            resources[index].useCustomDiceValues = use;
+            hasUnsavedChanges = true;
+            renderResources();
+            saveToLocalStorage();
+        }
+
+        function updateRollDiceMin(index, value) {
+            resources[index].rollDiceMin = Math.max(1, parseInt(value) || 1);
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+        }
+
+        function updateRollDiceMax(index, value) {
+            resources[index].rollDiceMax = Math.max(resources[index].rollDiceMin, parseInt(value) || resources[index].rollDiceMin);
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+        }
+
+        function updateRollDiceIncrement(index, value) {
+            resources[index].rollDiceIncrement = Math.max(1, parseInt(value) || 1);
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+        }
+
+        function updateRollDiceCustomValues(index, value) {
+            resources[index].rollDiceCustomValues = value.split(',').map(v => v.trim()).filter(v => v !== '');
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+        }
+
+        function updateHideCounter(index, hide) {
+            resources[index].hideCounter = hide;
+            hasUnsavedChanges = true;
+            renderResources();
+            saveToLocalStorage();
+        }
+
+        function updateEnableDiceAnimation(index, enable) {
+            resources[index].enableDiceAnimation = enable;
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+        }
+
+        function rollDice(index) {
+            const resource = resources[index];
+            let result;
+            if (resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0) {
+                result = resource.rollDiceCustomValues[Math.floor(Math.random() * resource.rollDiceCustomValues.length)];
+            } else {
+                const min = resource.rollDiceMin;
+                const max = resource.rollDiceMax;
+                const increment = resource.rollDiceIncrement;
+                const possibleValues = [];
+                for (let i = min; i <= max; i += increment) {
+                    possibleValues.push(i);
+                }
+                result = possibleValues[Math.floor(Math.random() * possibleValues.length)];
+            }
+            const resultElement = document.getElementById(`rollResult${index}`);
+            if (resource.enableDiceAnimation && !disableAllAnimations) {
+                resultElement.classList.add('rolling');
+                setTimeout(() => {
+                    resultElement.classList.remove('rolling');
+                    resultElement.textContent = result;
+                }, 500);
+            } else {
+                resultElement.textContent = result;
+            }
+            setHideAllExceptResources(true);
+            resetInactivityTimer();
         }
 
         function changeImage(index) {
@@ -468,11 +675,18 @@ function updateKeepOneModifier(index, keep) {
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
                             maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
                             hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
-                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
+                            showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
+                            rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
+                            rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
+                            rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
+                            rollDiceCustomValues: Array.isArray(resource.rollDiceCustomValues) ? resource.rollDiceCustomValues : [],
+                            useCustomDiceValues: typeof resource.useCustomDiceValues === 'boolean' ? resource.useCustomDiceValues : false,
+                            hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
+                            enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true
                         }));
                         hasUnsavedChanges = false;
-                        hideAllExceptResources = true;
-                        document.getElementById('hideAllExceptResources').checked = true;
+                        setHideAllExceptResources(true);
                         renderResources();
                         saveToLocalStorage();
                     } catch (error) {
@@ -485,10 +699,17 @@ function updateKeepOneModifier(index, keep) {
         }
 
         function populateExampleDropdown() {
+            const select = document.getElementById('exampleSelect');
+            
+            // Add the "Clear" option at the beginning
+            const clearOption = document.createElement('option');
+            clearOption.value = 'clear';
+            clearOption.textContent = 'Clear';
+            select.appendChild(clearOption);
+
             fetch('examples/example_list.json')
                 .then(response => response.json())
                 .then(exampleNames => {
-                    const select = document.getElementById('exampleSelect');
                     exampleNames.forEach(name => {
                         const option = document.createElement('option');
                         option.value = `${name}.json`;
@@ -502,7 +723,12 @@ function updateKeepOneModifier(index, keep) {
         function loadSelectedExample() {
             const exampleSelect = document.getElementById('exampleSelect');
             const exampleName = exampleSelect.value;
-            if (exampleName) {
+            if (exampleName === 'clear') {
+                resources = [];
+                hasUnsavedChanges = false;
+                renderResources();
+                saveToLocalStorage();
+            } else if (exampleName) {
                 fetch(`examples/${exampleName}`)
                     .then(response => response.json())
                     .then(data => {
@@ -515,11 +741,18 @@ function updateKeepOneModifier(index, keep) {
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
                             maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
                             hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
-                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
+                            showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
+                            rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
+                            rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
+                            rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
+                            rollDiceCustomValues: Array.isArray(resource.rollDiceCustomValues) ? resource.rollDiceCustomValues : [],
+                            useCustomDiceValues: typeof resource.useCustomDiceValues === 'boolean' ? resource.useCustomDiceValues : false,
+                            hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
+                            enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true
                         }));
                         hasUnsavedChanges = false;
-                        hideAllExceptResources = true;
-                        document.getElementById('hideAllExceptResources').checked = true;
+                        setHideAllExceptResources(true);
                         renderResources();
                         saveToLocalStorage();
                     })
@@ -545,9 +778,69 @@ function updateKeepOneModifier(index, keep) {
             saveToLocalStorage();
         }
 
+        function setHideAllExceptResources(value) {
+            hideAllExceptResources = value;
+            document.getElementById('hideAllExceptResources').checked = value;
+            updateVisibility();
+            saveToLocalStorage();
+        }
+
         function updateVisibility() {
             const controlsContainer = document.getElementById('controlsContainer');
             controlsContainer.style.display = hideAllExceptResources ? 'none' : 'block';
+            updateEndTurnButtonVisibility();
+        }
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                setHideAllExceptResources(false);
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        function toggleAllAnimations() {
+            disableAllAnimations = document.getElementById('disableAllAnimations').checked;
+            saveToLocalStorage();
+        }
+
+        function toggleEndTurnButton() {
+            showEndTurnButton = document.getElementById('showEndTurnButton').checked;
+            updateEndTurnButtonVisibility();
+            saveToLocalStorage();
+        }
+
+        function updateEndTurnButtonVisibility() {
+            const endTurnButton = document.getElementById('endTurnButton');
+            const endTurnSettings = document.getElementById('endTurnSettings');
+            if (showEndTurnButton && !hideAllExceptResources) {
+                endTurnButton.style.display = 'block';
+                endTurnSettings.style.display = 'block';
+            } else {
+                endTurnButton.style.display = 'none';
+                endTurnSettings.style.display = 'none';
+            }
+        }
+
+        function updateGlobalCounterLimit() {
+            globalCounterLimit = parseInt(document.getElementById('globalCounterLimit').value) || 100;
+            saveToLocalStorage();
+        }
+
+        function checkGlobalCounterLimit() {
+            const totalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
+            const limitMessage = document.getElementById('limitMessage');
+            if (totalCount > globalCounterLimit) {
+                limitMessage.textContent = `Global counter limit (${globalCounterLimit}) exceeded!`;
+                limitMessage.style.display = 'block';
+            } else {
+                limitMessage.style.display = 'none';
+            }
+        }
+
+        function endTurn() {
+            // Add any end-of-turn logic here
+            alert('Turn ended!');
+            checkGlobalCounterLimit();
         }
 
         window.addEventListener('beforeunload', (event) => {
@@ -562,7 +855,12 @@ function updateKeepOneModifier(index, keep) {
         document.addEventListener('DOMContentLoaded', () => {
             populateExampleDropdown();
             loadFromLocalStorage();
+            resetInactivityTimer();
         });
+
+        // Reset inactivity timer on user interaction
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
     </script>
 </body>
 </html>
