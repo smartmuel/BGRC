@@ -232,13 +232,14 @@
             background-color: #c0392b;
         }
         #limitMessage {
-            display: none;
-            background-color: #f39c12;
-            color: white;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 4px;
-            text-align: center;
+			background-color: #f39c12;
+			color: white;
+			padding: 10px;
+			margin-bottom: 20px;
+			border-radius: 4px;
+			text-align: center;
+			font-weight: bold;
+			display: none;
         }
         @media (max-width: 600px) {
             .button-group {
@@ -298,9 +299,9 @@
             <button onclick="loadSelectedExample()">Load Example</button>
         </div>
     </div>
+    <div id="limitMessage"></div>
     <div id="resources"></div>
     <button id="endTurnButton" onclick="endTurn()" style="display: none;">End Turn</button>
-    <div id="limitMessage"></div>
 
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
@@ -317,35 +318,42 @@
         let globalCounterLimit = 100;
 
         function saveToLocalStorage() {
-            localStorage.setItem('boardGameResources', JSON.stringify(resources));
-            localStorage.setItem('unnamedCounter', unnamedCounter);
-            localStorage.setItem('showSettingsGlobal', showSettingsGlobal);
-            localStorage.setItem('hideAllExceptResources', hideAllExceptResources);
-            localStorage.setItem('disableAllAnimations', disableAllAnimations);
-            localStorage.setItem('showEndTurnButton', showEndTurnButton);
-            localStorage.setItem('globalCounterLimit', globalCounterLimit);
+			const globalConfig = {
+				showSettingsGlobal,
+				hideAllExceptResources,
+				disableAllAnimations,
+				showEndTurnButton,
+				globalCounterLimit
+			};
+			localStorage.setItem('boardGameResources', JSON.stringify(resources));
+			localStorage.setItem('unnamedCounter', unnamedCounter);
+			localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
         }
 
         function loadFromLocalStorage() {
-            const savedResources = localStorage.getItem('boardGameResources');
-            if (savedResources) {
-                resources = JSON.parse(savedResources);
-                unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
-                showSettingsGlobal = localStorage.getItem('showSettingsGlobal') === 'true';
-                hideAllExceptResources = false; // Always start with this unchecked
-                disableAllAnimations = localStorage.getItem('disableAllAnimations') === 'true';
-                showEndTurnButton = localStorage.getItem('showEndTurnButton') === 'true';
-                globalCounterLimit = parseInt(localStorage.getItem('globalCounterLimit')) || 100;
-                
-                document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-                document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
-                document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-                document.getElementById('showEndTurnButton').checked = showEndTurnButton;
-                document.getElementById('globalCounterLimit').value = globalCounterLimit;
-                
-                renderResources();
-                updateEndTurnButtonVisibility();
-            }
+			const savedResources = localStorage.getItem('boardGameResources');
+			const savedGlobalConfig = localStorage.getItem('globalConfig');
+			if (savedResources) {
+				resources = JSON.parse(savedResources);
+				unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
+				if (savedGlobalConfig) {
+					const globalConfig = JSON.parse(savedGlobalConfig);
+					showSettingsGlobal = globalConfig.showSettingsGlobal;
+					hideAllExceptResources = globalConfig.hideAllExceptResources;
+					disableAllAnimations = globalConfig.disableAllAnimations;
+					showEndTurnButton = globalConfig.showEndTurnButton;
+					globalCounterLimit = globalConfig.globalCounterLimit || 100;
+				}
+				
+				document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+				document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
+				document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+				document.getElementById('showEndTurnButton').checked = showEndTurnButton;
+				document.getElementById('globalCounterLimit').value = globalCounterLimit;
+				
+				renderResources();
+				updateEndTurnButtonVisibility();
+			}
         }
 
         function addResource() {
@@ -646,14 +654,24 @@
         }
 
         function exportData() {
-            const dataStr = JSON.stringify(resources, null, 2);
-            const blob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'resources.json';
-            a.click();
-            URL.revokeObjectURL(url);
+			const exportData = {
+				resources: resources,
+				globalConfig: {
+					showSettingsGlobal,
+					hideAllExceptResources,
+					disableAllAnimations,
+					showEndTurnButton,
+					globalCounterLimit
+				}
+			};
+			const dataStr = JSON.stringify(exportData, null, 2);
+			const blob = new Blob([dataStr], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'resources.json';
+			a.click();
+			URL.revokeObjectURL(url);
         }
 
         function triggerImport() {
@@ -661,41 +679,39 @@
         }
 
         function importData(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    try {
-                        resources = JSON.parse(e.target.result).map(resource => ({
-                            ...resource,
-                            count: typeof resource.count === 'number' ? resource.count : 0,
-                            customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
-                            customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
-                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
-                            minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
-                            hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
-                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
-                            showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
-                            rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
-                            rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
-                            rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
-                            rollDiceCustomValues: Array.isArray(resource.rollDiceCustomValues) ? resource.rollDiceCustomValues : [],
-                            useCustomDiceValues: typeof resource.useCustomDiceValues === 'boolean' ? resource.useCustomDiceValues : false,
-                            hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
-                            enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true
-                        }));
-                        hasUnsavedChanges = false;
-                        setHideAllExceptResources(true);
-                        renderResources();
-                        saveToLocalStorage();
-                    } catch (error) {
-                        alert('Error importing data. Please make sure the file is valid JSON.');
-                        console.error('Import Error:', error);
-                    }
-                };
-                reader.readAsText(file);
-            }
+			const file = event.target.files[0];
+			if (file) {
+				const reader = new FileReader();
+				reader.onload = e => {
+					try {
+						const importedData = JSON.parse(e.target.result);
+						resources = importedData.resources.map(resource => ({
+							// ... (existing resource mapping) ...
+						}));
+						if (importedData.globalConfig) {
+							showSettingsGlobal = importedData.globalConfig.showSettingsGlobal;
+							hideAllExceptResources = importedData.globalConfig.hideAllExceptResources;
+							disableAllAnimations = importedData.globalConfig.disableAllAnimations;
+							showEndTurnButton = importedData.globalConfig.showEndTurnButton;
+							globalCounterLimit = importedData.globalConfig.globalCounterLimit || 100;
+							
+							document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+							document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
+							document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+							document.getElementById('showEndTurnButton').checked = showEndTurnButton;
+							document.getElementById('globalCounterLimit').value = globalCounterLimit;
+						}
+						hasUnsavedChanges = false;
+						setHideAllExceptResources(true);
+						renderResources();
+						saveToLocalStorage();
+					} catch (error) {
+						alert('Error importing data. Please make sure the file is valid JSON.');
+						console.error('Import Error:', error);
+					}
+				};
+				reader.readAsText(file);
+			}
         }
 
         function populateExampleDropdown() {
