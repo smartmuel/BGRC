@@ -178,9 +178,10 @@
             margin: 10px 0;
         }
         #globalSettings {
-            position: absolute;
+            position: fixed;
             top: 10px;
             right: 10px;
+            z-index: 1000;
         }
         #globalSettingsContent {
             display: none;
@@ -192,6 +193,8 @@
             padding: 10px;
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            max-width: 300px;
+            width: 90vw;
         }
         .roll-cube {
             margin-top: 10px;
@@ -232,14 +235,34 @@
             background-color: #c0392b;
         }
         #limitMessage {
-			background-color: #f39c12;
-			color: white;
-			padding: 10px;
-			margin-bottom: 20px;
-			border-radius: 4px;
-			text-align: center;
-			font-weight: bold;
-			display: none;
+            background-color: #f39c12;
+            color: white;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        #hideAllContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        #hideAllLine {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: #ddd;
+        }
+        #hideAllArrow {
+            background-color: #f4f4f9;
+            padding: 0 10px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
         }
         @media (max-width: 600px) {
             .button-group {
@@ -252,21 +275,25 @@
             .resource {
                 flex: 0 0 calc(50% - 5px);
             }
+            #globalSettingsContent {
+                right: -10px;
+                width: calc(100vw - 40px);
+            }
         }
     </style>
 </head>
 <body>
     <h1>Board Game Resource Counter</h1>
+    <div id="hideAllContainer">
+        <div id="hideAllLine"></div>
+        <span id="hideAllArrow">▼</span>
+    </div>
     <div id="globalSettings">
         <button onclick="toggleGlobalSettingsVisibility()">⚙️</button>
         <div id="globalSettingsContent">
             <label>
                 <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
                 Show All Settings
-            </label>
-            <label>
-                <input type="checkbox" id="hideAllExceptResources" onchange="toggleHideAllExceptResources()">
-                Hide All Except Resources
             </label>
             <label>
                 <input type="checkbox" id="disableAllAnimations" onchange="toggleAllAnimations()">
@@ -276,12 +303,10 @@
                 <input type="checkbox" id="showEndTurnButton" onchange="toggleEndTurnButton()">
                 Show End Turn Button
             </label>
-            <div id="endTurnSettings" style="display: none;">
-                <label>
-                    Global Counter Limit:
-                    <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
-                </label>
-            </div>
+            <label>
+                Global Counter Limit:
+                <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
+            </label>
         </div>
     </div>
     <div id="controlsContainer">
@@ -301,7 +326,7 @@
     </div>
     <div id="limitMessage"></div>
     <div id="resources"></div>
-    <button id="endTurnButton" onclick="endTurn()" style="display: none;">End Turn</button>
+    <button id="endTurnButton" onclick="endTurn()">End Turn</button>
 
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
@@ -318,19 +343,19 @@
         let globalCounterLimit = 100;
 
         function saveToLocalStorage() {
-			const globalConfig = {
-				showSettingsGlobal,
-				hideAllExceptResources,
-				disableAllAnimations,
-				showEndTurnButton,
-				globalCounterLimit
-			};
-			localStorage.setItem('boardGameResources', JSON.stringify(resources));
-			localStorage.setItem('unnamedCounter', unnamedCounter);
-			localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
+            const globalConfig = {
+                showSettingsGlobal,
+                hideAllExceptResources,
+                disableAllAnimations,
+                showEndTurnButton,
+                globalCounterLimit
+            };
+            localStorage.setItem('boardGameResources', JSON.stringify(resources));
+            localStorage.setItem('unnamedCounter', unnamedCounter);
+            localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
         }
 
-        function loadFromLocalStorage() {
+		function loadFromLocalStorage() {
 			const savedResources = localStorage.getItem('boardGameResources');
 			const savedGlobalConfig = localStorage.getItem('globalConfig');
 			if (savedResources) {
@@ -346,15 +371,18 @@
 				}
 				
 				document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-				document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
 				document.getElementById('disableAllAnimations').checked = disableAllAnimations;
 				document.getElementById('showEndTurnButton').checked = showEndTurnButton;
 				document.getElementById('globalCounterLimit').value = globalCounterLimit;
 				
 				renderResources();
+				attachEventListeners();
 				updateEndTurnButtonVisibility();
+				updateVisibility(); // Add this line to ensure proper visibility on load
 			}
-        }
+			// Add this line to hide the limit message on initial load
+			document.getElementById('limitMessage').style.display = 'none';
+		}
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
@@ -386,12 +414,13 @@
             saveToLocalStorage();
         }
 
-        function renderResources() {
-            const container = document.getElementById('resources');
-            container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
-            document.getElementById('exportButton').disabled = resources.length === 0;
-            updateVisibility();
-        }
+		function renderResources() {
+			const container = document.getElementById('resources');
+			container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
+			document.getElementById('exportButton').disabled = resources.length === 0;
+			updateVisibility();
+			attachEventListeners(); // Add this line
+		}
 
         function createResourceHTML(resource, index) {
             return `
@@ -493,6 +522,84 @@
         `;
         }
 
+        function attachEventListeners() {
+			resources.forEach((resource, index) => {
+				const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
+				if (resourceElement) {
+					const buttons = resourceElement.querySelectorAll('.counter button');
+					buttons.forEach(button => {
+						button.onclick = (event) => {
+							event.preventDefault();
+							const change = parseInt(button.textContent);
+							updateCount(index, change);
+						};
+					});
+
+                    const inputs = resourceElement.querySelectorAll('input');
+                    inputs.forEach(input => {
+                        input.oninput = null; // Remove any existing event listeners
+                        input.onchange = null;
+                        if (input.type === 'text' && input.parentElement.classList.contains('resource-name-container')) {
+                            input.oninput = () => updateName(index, input.value);
+                        } else if (input.type === 'number' || input.type === 'checkbox') {
+                            input.onchange = () => {
+                                const setting = input.parentElement.textContent.trim().split(':')[0].toLowerCase().replace(/\s/g, '');
+                                const value = input.type === 'checkbox' ? input.checked : input.value;
+                                updateResourceSetting(index, setting, value);
+                            };
+                        }
+                    });
+                }
+            });
+        }
+
+        function updateResourceSetting(index, setting, value) {
+            const resource = resources[index];
+            switch (setting) {
+                case 'hideimage':
+                    updateHideImage(index, value);
+                    break;
+                case 'hidecounter':
+                    updateHideCounter(index, value);
+                    break;
+                case 'keeponemodifier':
+                    updateKeepOneModifier(index, value);
+                    break;
+                case 'increment1':
+                case 'increment2':
+                case 'increment3':
+                    updateCustomIncrement(index, parseInt(setting.slice(-1)), value);
+                    break;
+                case 'minimumcount':
+                    updateMinCount(index, value);
+                    break;
+                case 'maximumcount':
+                    updateMaxCount(index, value);
+                    break;
+                case 'showrolldice':
+                    updateShowRollDice(index, value);
+                    break;
+                case 'usecustomdicevalues':
+                    updateUseCustomDiceValues(index, value);
+                    break;
+                case 'rolldicemin':
+                    updateRollDiceMin(index, value);
+                    break;
+                case 'rolldicemax':
+                    updateRollDiceMax(index, value);
+                    break;
+                case 'rolldiceincrement':
+                    updateRollDiceIncrement(index, value);
+                    break;
+                case 'customdicevalues':
+                    updateRollDiceCustomValues(index, value);
+                    break;
+                case 'enablediceanimation':
+                    updateEnableDiceAnimation(index, value);
+                    break;
+            }
+        }
+
         function updateName(index, newName) {
             resources[index].name = newName;
             hasUnsavedChanges = true;
@@ -500,14 +607,20 @@
         }
 
         function updateCount(index, change) {
-            const resource = resources[index];
-            resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
-            hasUnsavedChanges = true;
-            renderResources();
-            saveToLocalStorage();
-            setHideAllExceptResources(true);
-            resetInactivityTimer();
-            checkGlobalCounterLimit();
+			const resource = resources[index];
+			resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
+			hasUnsavedChanges = true;
+			const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
+			if (resourceElement) {
+				const countSpan = resourceElement.querySelector('.counter span');
+				if (countSpan) {
+					countSpan.textContent = resource.count;
+				}
+			}
+			saveToLocalStorage();
+			setHideAllExceptResources(true);
+			resetInactivityTimer();
+			checkGlobalCounterLimit();
         }
 
         function updateCustomIncrement(index, incrementNumber, value) {
@@ -526,7 +639,7 @@
         }
 
         function updateMaxCount(index, value) {
-			resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
+            resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
             hasUnsavedChanges = true;
             renderResources();
@@ -654,24 +767,24 @@
         }
 
         function exportData() {
-			const exportData = {
-				resources: resources,
-				globalConfig: {
-					showSettingsGlobal,
-					hideAllExceptResources,
-					disableAllAnimations,
-					showEndTurnButton,
-					globalCounterLimit
-				}
-			};
-			const dataStr = JSON.stringify(exportData, null, 2);
-			const blob = new Blob([dataStr], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'resources.json';
-			a.click();
-			URL.revokeObjectURL(url);
+            const exportData = {
+                resources: resources,
+                globalConfig: {
+                    showSettingsGlobal,
+                    hideAllExceptResources,
+                    disableAllAnimations,
+                    showEndTurnButton,
+                    globalCounterLimit
+                }
+            };
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resources.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function triggerImport() {
@@ -679,39 +792,54 @@
         }
 
         function importData(event) {
-			const file = event.target.files[0];
-			if (file) {
-				const reader = new FileReader();
-				reader.onload = e => {
-					try {
-						const importedData = JSON.parse(e.target.result);
-						resources = importedData.resources.map(resource => ({
-							// ... (existing resource mapping) ...
-						}));
-						if (importedData.globalConfig) {
-							showSettingsGlobal = importedData.globalConfig.showSettingsGlobal;
-							hideAllExceptResources = importedData.globalConfig.hideAllExceptResources;
-							disableAllAnimations = importedData.globalConfig.disableAllAnimations;
-							showEndTurnButton = importedData.globalConfig.showEndTurnButton;
-							globalCounterLimit = importedData.globalConfig.globalCounterLimit || 100;
-							
-							document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-							document.getElementById('hideAllExceptResources').checked = hideAllExceptResources;
-							document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-							document.getElementById('showEndTurnButton').checked = showEndTurnButton;
-							document.getElementById('globalCounterLimit').value = globalCounterLimit;
-						}
-						hasUnsavedChanges = false;
-						setHideAllExceptResources(true);
-						renderResources();
-						saveToLocalStorage();
-					} catch (error) {
-						alert('Error importing data. Please make sure the file is valid JSON.');
-						console.error('Import Error:', error);
-					}
-				};
-				reader.readAsText(file);
-			}
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        resources = importedData.resources.map(resource => ({
+                            ...resource,
+                            count: typeof resource.count === 'number' ? resource.count : 0,
+                            customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
+                            customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
+                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+                            minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
+                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
+                            hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
+                            showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
+                            rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
+                            rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
+                            rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
+                            rollDiceCustomValues: Array.isArray(resource.rollDiceCustomValues) ? resource.rollDiceCustomValues : [],
+                            useCustomDiceValues: typeof resource.useCustomDiceValues === 'boolean' ? resource.useCustomDiceValues : false,
+                            hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
+                            enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true
+                        }));
+                        if (importedData.globalConfig) {
+                            showSettingsGlobal = importedData.globalConfig.showSettingsGlobal;
+                            hideAllExceptResources = importedData.globalConfig.hideAllExceptResources;
+                            disableAllAnimations = importedData.globalConfig.disableAllAnimations;
+                            showEndTurnButton = importedData.globalConfig.showEndTurnButton;
+                            globalCounterLimit = importedData.globalConfig.globalCounterLimit || 100;
+                            
+                            document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+                            document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+                            document.getElementById('showEndTurnButton').checked = showEndTurnButton;
+                            document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                        }
+                        hasUnsavedChanges = false;
+                        setHideAllExceptResources(true);
+                        renderResources();
+                        saveToLocalStorage();
+                    } catch (error) {
+                        alert('Error importing data. Please make sure the file is valid JSON.');
+                        console.error('Import Error:', error);
+                    }
+                };
+                reader.readAsText(file);
+            }
         }
 
         function populateExampleDropdown() {
@@ -787,18 +915,23 @@
             const content = document.getElementById('globalSettingsContent');
             content.style.display = globalSettingsVisible ? 'block' : 'none';
         }
+        
+        document.getElementById('hideAllArrow').addEventListener('click', function() {
+            toggleHideAllExceptResources();
+        });
 
         function toggleHideAllExceptResources() {
-            hideAllExceptResources = document.getElementById('hideAllExceptResources').checked;
+            hideAllExceptResources = !hideAllExceptResources;
             updateVisibility();
             saveToLocalStorage();
+            document.getElementById('hideAllArrow').textContent = hideAllExceptResources ? '▼' : '▲';
         }
 
         function setHideAllExceptResources(value) {
             hideAllExceptResources = value;
-            document.getElementById('hideAllExceptResources').checked = value;
             updateVisibility();
             saveToLocalStorage();
+            document.getElementById('hideAllArrow').textContent = value ? '▼' : '▲';
         }
 
         function updateVisibility() {
@@ -827,31 +960,25 @@
 
         function updateEndTurnButtonVisibility() {
             const endTurnButton = document.getElementById('endTurnButton');
-            const endTurnSettings = document.getElementById('endTurnSettings');
-            if (showEndTurnButton && !hideAllExceptResources) {
-                endTurnButton.style.display = 'block';
-                endTurnSettings.style.display = 'block';
-            } else {
-                endTurnButton.style.display = 'none';
-                endTurnSettings.style.display = 'none';
-            }
+            endTurnButton.style.display = showEndTurnButton ? 'block' : 'none';
         }
 
         function updateGlobalCounterLimit() {
             globalCounterLimit = parseInt(document.getElementById('globalCounterLimit').value) || 100;
             saveToLocalStorage();
+            checkGlobalCounterLimit();
         }
 
-        function checkGlobalCounterLimit() {
-            const totalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
-            const limitMessage = document.getElementById('limitMessage');
-            if (totalCount > globalCounterLimit) {
-                limitMessage.textContent = `Global counter limit (${globalCounterLimit}) exceeded!`;
-                limitMessage.style.display = 'block';
-            } else {
-                limitMessage.style.display = 'none';
-            }
-        }
+		function checkGlobalCounterLimit() {
+			const totalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
+			const limitMessage = document.getElementById('limitMessage');
+			if (totalCount > globalCounterLimit) {
+				limitMessage.textContent = `Global counter limit (${globalCounterLimit}) exceeded!`;
+				limitMessage.style.display = 'block';
+			} else {
+				limitMessage.style.display = 'none';
+			}
+		}
 
         function endTurn() {
             // Add any end-of-turn logic here
