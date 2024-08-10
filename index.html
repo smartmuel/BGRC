@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Board Game Resource Counter</title>
+    <title>Game Resource Counter</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -183,19 +183,37 @@
             right: 10px;
             z-index: 1000;
         }
-        #globalSettingsContent {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            background-color: white;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            max-width: 300px;
-            width: 90vw;
-        }
+		#globalSettingsContent {
+			display: none;
+			position: absolute;
+			right: 0;
+			top: 100%;
+			background-color: white;
+			border: 1px solid #ddd;
+			padding: 10px;
+			border-radius: 4px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			max-width: 300px;
+			width: 90vw;
+		}
+
+		.setting-item {
+			margin-bottom: 10px;
+		}
+
+		.setting-item label {
+			display: flex;
+			align-items: center;
+		}
+
+		.setting-item input[type="checkbox"] {
+			margin-right: 5px;
+		}
+
+		.setting-item input[type="number"] {
+			width: 60px;
+			margin-left: 5px;
+		}
         .roll-cube {
             margin-top: 10px;
             text-align: center;
@@ -283,31 +301,45 @@
     </style>
 </head>
 <body>
-    <h1>Board Game Resource Counter</h1>
+    <h1>Game Resource Counter</h1>
     <div id="hideAllContainer">
         <div id="hideAllLine"></div>
         <span id="hideAllArrow">▼</span>
     </div>
     <div id="globalSettings">
         <button onclick="toggleGlobalSettingsVisibility()">⚙️</button>
-        <div id="globalSettingsContent">
-            <label>
-                <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
-                Show All Settings
-            </label>
-            <label>
-                <input type="checkbox" id="disableAllAnimations" onchange="toggleAllAnimations()">
-                Disable All Animations
-            </label>
-            <label>
-                <input type="checkbox" id="showEndTurnButton" onchange="toggleEndTurnButton()">
-                Show End Turn Button
-            </label>
-            <label>
-                Global Counter Limit:
-                <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
-            </label>
-        </div>
+		<div id="globalSettingsContent">
+			<div class="setting-item">
+				<label>
+					<input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
+					Show All Settings
+				</label>
+			</div>
+			<div class="setting-item">
+				<label>
+					<input type="checkbox" id="disableAllAnimations" onchange="toggleAllAnimations()">
+					Disable All Animations
+				</label>
+			</div>
+			<div class="setting-item">
+				<label>
+					<input type="checkbox" id="showEndTurnButton" onchange="toggleEndTurnButton()">
+					Show End Turn Button
+				</label>
+			</div>
+			<div class="setting-item">
+				<label>
+					<input type="checkbox" id="enableGlobalCounterLimit" onchange="toggleGlobalCounterLimit()">
+					Enable Global Counter Limit
+				</label>
+			</div>
+			<div class="setting-item" id="globalCounterLimitContainer" style="display: none;">
+				<label>
+					Global Counter Limit:
+					<input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
+				</label>
+			</div>
+		</div>
     </div>
     <div id="controlsContainer">
         <div class="controls">
@@ -341,6 +373,7 @@
         let disableAllAnimations = false;
         let showEndTurnButton = false;
         let globalCounterLimit = 100;
+        let enableGlobalCounterLimit = false;
 
         function saveToLocalStorage() {
             const globalConfig = {
@@ -348,7 +381,8 @@
                 hideAllExceptResources,
                 disableAllAnimations,
                 showEndTurnButton,
-                globalCounterLimit
+                globalCounterLimit,
+                enableGlobalCounterLimit
             };
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -358,6 +392,7 @@
         function loadFromLocalStorage() {
             const savedResources = localStorage.getItem('boardGameResources');
             const savedGlobalConfig = localStorage.getItem('globalConfig');
+			const globalConfig = JSON.parse(savedGlobalConfig);
             if (savedResources) {
                 resources = JSON.parse(savedResources).map(resource => ({
                     ...resource,
@@ -371,15 +406,22 @@
                     disableAllAnimations = globalConfig.disableAllAnimations;
                     showEndTurnButton = globalConfig.showEndTurnButton;
                     globalCounterLimit = globalConfig.globalCounterLimit || 100;
+                    enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
                 }
                 
                 document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
                 document.getElementById('disableAllAnimations').checked = disableAllAnimations;
                 document.getElementById('showEndTurnButton').checked = showEndTurnButton;
                 document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
                 
                 renderResources();
                 updateVisibility();
+                toggleGlobalCounterLimit();
+	            enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
+            
+				document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+				toggleGlobalCounterLimit();
             }
             document.getElementById('limitMessage').style.display = 'none';
         }
@@ -775,7 +817,8 @@
                     hideAllExceptResources,
                     disableAllAnimations,
                     showEndTurnButton,
-                    globalCounterLimit
+                    globalCounterLimit,
+                    enableGlobalCounterLimit
                 }
             };
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -970,7 +1013,20 @@
             checkGlobalCounterLimit();
         }
 
+		function toggleGlobalCounterLimit() {
+			enableGlobalCounterLimit = document.getElementById('enableGlobalCounterLimit').checked;
+			const globalCounterLimitContainer = document.getElementById('globalCounterLimitContainer');
+			globalCounterLimitContainer.style.display = enableGlobalCounterLimit ? 'block' : 'none';
+			saveToLocalStorage();
+			checkGlobalCounterLimit();
+		}
+
 		function checkGlobalCounterLimit() {
+			if (!enableGlobalCounterLimit) {
+				document.getElementById('limitMessage').style.display = 'none';
+				return;
+			}
+
 			const totalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
 			const limitMessage = document.getElementById('limitMessage');
 			if (totalCount > globalCounterLimit) {
@@ -1000,6 +1056,8 @@
             populateExampleDropdown();
             loadFromLocalStorage();
             resetInactivityTimer();
+	        document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+			toggleGlobalCounterLimit();
         });
 
         document.addEventListener('mousemove', resetInactivityTimer);
