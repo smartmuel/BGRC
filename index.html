@@ -355,34 +355,34 @@
             localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
         }
 
-		function loadFromLocalStorage() {
-			const savedResources = localStorage.getItem('boardGameResources');
-			const savedGlobalConfig = localStorage.getItem('globalConfig');
-			if (savedResources) {
-				resources = JSON.parse(savedResources);
-				unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
-				if (savedGlobalConfig) {
-					const globalConfig = JSON.parse(savedGlobalConfig);
-					showSettingsGlobal = globalConfig.showSettingsGlobal;
-					hideAllExceptResources = globalConfig.hideAllExceptResources;
-					disableAllAnimations = globalConfig.disableAllAnimations;
-					showEndTurnButton = globalConfig.showEndTurnButton;
-					globalCounterLimit = globalConfig.globalCounterLimit || 100;
-				}
-				
-				document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-				document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-				document.getElementById('showEndTurnButton').checked = showEndTurnButton;
-				document.getElementById('globalCounterLimit').value = globalCounterLimit;
-				
-				renderResources();
-				attachEventListeners();
-				updateEndTurnButtonVisibility();
-				updateVisibility(); // Add this line to ensure proper visibility on load
-			}
-			// Add this line to hide the limit message on initial load
-			document.getElementById('limitMessage').style.display = 'none';
-		}
+        function loadFromLocalStorage() {
+            const savedResources = localStorage.getItem('boardGameResources');
+            const savedGlobalConfig = localStorage.getItem('globalConfig');
+            if (savedResources) {
+                resources = JSON.parse(savedResources).map(resource => ({
+                    ...resource,
+                    maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount
+                }));
+                unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
+                if (savedGlobalConfig) {
+                    const globalConfig = JSON.parse(savedGlobalConfig);
+                    showSettingsGlobal = globalConfig.showSettingsGlobal;
+                    hideAllExceptResources = globalConfig.hideAllExceptResources;
+                    disableAllAnimations = globalConfig.disableAllAnimations;
+                    showEndTurnButton = globalConfig.showEndTurnButton;
+                    globalCounterLimit = globalConfig.globalCounterLimit || 100;
+                }
+                
+                document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+                document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+                document.getElementById('showEndTurnButton').checked = showEndTurnButton;
+                document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                
+                renderResources();
+                updateVisibility();
+            }
+            document.getElementById('limitMessage').style.display = 'none';
+        }
 
         function addResource() {
             const file = document.getElementById('imageUpload').files[0];
@@ -414,13 +414,14 @@
             saveToLocalStorage();
         }
 
-		function renderResources() {
-			const container = document.getElementById('resources');
-			container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
-			document.getElementById('exportButton').disabled = resources.length === 0;
-			updateVisibility();
-			attachEventListeners(); // Add this line
-		}
+        function renderResources() {
+            const container = document.getElementById('resources');
+            container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
+            document.getElementById('exportButton').disabled = resources.length === 0;
+            updateVisibility();
+            attachEventListeners();
+        }
+
 
         function createResourceHTML(resource, index) {
             return `
@@ -523,21 +524,21 @@
         }
 
         function attachEventListeners() {
-			resources.forEach((resource, index) => {
-				const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
-				if (resourceElement) {
-					const buttons = resourceElement.querySelectorAll('.counter button');
-					buttons.forEach(button => {
-						button.onclick = (event) => {
-							event.preventDefault();
-							const change = parseInt(button.textContent);
-							updateCount(index, change);
-						};
-					});
+            resources.forEach((resource, index) => {
+                const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
+                if (resourceElement) {
+                    const buttons = resourceElement.querySelectorAll('.counter button');
+                    buttons.forEach(button => {
+                        button.onclick = (event) => {
+                            event.preventDefault();
+                            const change = parseInt(button.textContent);
+                            updateCount(index, change);
+                        };
+                    });
 
                     const inputs = resourceElement.querySelectorAll('input');
                     inputs.forEach(input => {
-                        input.oninput = null; // Remove any existing event listeners
+                        input.oninput = null;
                         input.onchange = null;
                         if (input.type === 'text' && input.parentElement.classList.contains('resource-name-container')) {
                             input.oninput = () => updateName(index, input.value);
@@ -607,20 +608,20 @@
         }
 
         function updateCount(index, change) {
-			const resource = resources[index];
-			resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
-			hasUnsavedChanges = true;
-			const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
-			if (resourceElement) {
-				const countSpan = resourceElement.querySelector('.counter span');
-				if (countSpan) {
-					countSpan.textContent = resource.count;
-				}
-			}
-			saveToLocalStorage();
-			setHideAllExceptResources(true);
-			resetInactivityTimer();
-			checkGlobalCounterLimit();
+            const resource = resources[index];
+            resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
+            hasUnsavedChanges = true;
+            const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
+            if (resourceElement) {
+                const countSpan = resourceElement.querySelector('.counter span');
+                if (countSpan) {
+                    countSpan.textContent = resource.count;
+                }
+            }
+            saveToLocalStorage();
+            setHideAllExceptResources(true);
+            resetInactivityTimer();
+            checkGlobalCounterLimit();
         }
 
         function updateCustomIncrement(index, incrementNumber, value) {
@@ -805,7 +806,7 @@
                             customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
                             customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-                            maxCount: typeof resource.maxCount === 'number' ? resource.maxCount : Infinity,
+                            maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount,
                             hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
                             keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
                             showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
@@ -990,8 +991,8 @@
             saveToLocalStorage();
             if (hasUnsavedChanges) {
                 event.preventDefault();
-                event.returnValue = ''; // Required for some browsers
-                return ''; // Required for some browsers
+                event.returnValue = '';
+                return '';
             }
         });
 
@@ -1001,7 +1002,6 @@
             resetInactivityTimer();
         });
 
-        // Reset inactivity timer on user interaction
         document.addEventListener('mousemove', resetInactivityTimer);
         document.addEventListener('keypress', resetInactivityTimer);
     </script>
