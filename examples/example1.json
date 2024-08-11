@@ -10,7 +10,14 @@
       "minCount": 0,
       "maxCount": null,
       "hideImage": true,
-      "keepOneModifier": false
+      "keepOneModifier": false,
+      "showRollDice": false,
+      "rollDiceMin": 1,
+      "rollDiceMax": 6,
+      "rollDiceIncrement": 1,
+      "hideCounter": false,
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "With Image",
@@ -22,7 +29,14 @@
       "minCount": 0,
       "maxCount": null,
       "hideImage": false,
-      "keepOneModifier": false
+      "keepOneModifier": false,
+      "showRollDice": false,
+      "rollDiceMin": 1,
+      "rollDiceMax": 6,
+      "rollDiceIncrement": 1,
+      "hideCounter": false,
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "with Dice",
@@ -39,7 +53,9 @@
       "rollDiceMin": 1,
       "rollDiceMax": 6,
       "rollDiceIncrement": 1,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "hideCounter": false,
+      "numberOfDice": 1
     },
     {
       "name": "One modifier",
@@ -51,7 +67,14 @@
       "minCount": 0,
       "maxCount": null,
       "hideImage": true,
-      "keepOneModifier": true
+      "keepOneModifier": true,
+      "showRollDice": false,
+      "rollDiceMin": 1,
+      "rollDiceMax": 6,
+      "rollDiceIncrement": 1,
+      "hideCounter": false,
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "Different Numbers",
@@ -71,7 +94,8 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false,
       "hideCounter": false,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "Limit Of 10",
@@ -91,7 +115,8 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false,
       "hideCounter": false,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "minimum of 1",
@@ -111,7 +136,8 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false,
       "hideCounter": false,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "Just Dice",
@@ -131,7 +157,8 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false,
       "hideCounter": true,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
       "name": "D20",
@@ -151,10 +178,11 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false,
       "hideCounter": true,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     },
     {
-      "name": "Custom Dice",
+      "name": "3 Dice",
       "image": "default-image.png",
       "count": 0,
       "customIncrement1": 1,
@@ -171,14 +199,33 @@
       "rollDiceCustomValues": [],
       "useCustomDiceValues": true,
       "hideCounter": true,
-      "enableDiceAnimation": true
+      "enableDiceAnimation": true,
+      "numberOfDice": 3
+    },
+    {
+      "name": "Inc 10 Dice",
+      "image": "default-image.png",
+      "count": 0,
+      "customIncrement1": 1,
+      "customIncrement2": 3,
+      "customIncrement3": 5,
+      "minCount": 0,
+      "maxCount": null,
+      "hideImage": true,
+      "keepOneModifier": false,
+      "showRollDice": true,
+      "rollDiceMin": 10,
+      "rollDiceMax": 100,
+      "rollDiceIncrement": 10,
+      "hideCounter": false,
+      "enableDiceAnimation": true,
+      "numberOfDice": 1
     }
   ],
   "globalConfig": {
     "showSettingsGlobal": false,
     "hideAllExceptResources": false,
     "disableAllAnimations": false,
-    "showEndTurnButton": false,
     "globalCounterLimit": 10,
     "enableGlobalCounterLimit": true
   }
