@@ -181,20 +181,37 @@
             position: fixed;
             top: 10px;
             right: 10px;
-            z-index: 1000;
+            z-index: 1002;
         }
+		
+		#globalSettingsButton {
+			background-color: #f4f4f9;
+			border: 1px solid #ddd;
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			font-size: 24px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			padding: 0;
+			line-height: 1;
+		}
+		
         #globalSettingsContent {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            background-color: white;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            max-width: 300px;
-            width: 90vw;
+			display: none;
+			position: absolute;
+			right: 0;
+			top: 100%;
+			background-color: white;
+			border: 1px solid #ddd;
+			padding: 10px;
+			border-radius: 4px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			max-width: 300px;
+			width: 90vw;
         }
         .setting-item {
             margin-bottom: 10px;
@@ -231,6 +248,24 @@
             font-weight: bold;
             margin-top: 5px;
         }
+		.dice-button {
+			font-size: 24px;
+			width: 40px;
+			height: 40px;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: #3498db;
+			color: white;
+			border: none;
+			border-radius: 50%;
+			cursor: pointer;
+		}
+
+		.dice-button:hover {
+			background-color: #2980b9;
+		}
         @keyframes rollAnimation {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -238,24 +273,17 @@
         .rolling {
             animation: rollAnimation 0.5s linear;
         }
-        #endTurnButton {
-            background-color: #e74c3c;
-            color: white;
-            padding: 10px 20px;
-            font-size: 18px;
-            margin-top: 20px;
-        }
-        #endTurnButton:hover {
-            background-color: #c0392b;
-        }
         #limitMessage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
             background-color: #f39c12;
             color: white;
             padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 4px;
             text-align: center;
             font-weight: bold;
+            z-index: 1001;
         }
         #hideAllContainer {
             display: flex;
@@ -297,13 +325,14 @@
     </style>
 </head>
 <body>
+    <div id="limitMessage" style="display: none;"></div>
     <h1>Game Resource Counter</h1>
     <div id="hideAllContainer">
         <div id="hideAllLine"></div>
         <span id="hideAllArrow">▼</span>
     </div>
     <div id="globalSettings">
-        <button onclick="toggleGlobalSettingsVisibility()">⚙️</button>
+        <button id="globalSettingsButton" onclick="toggleGlobalSettingsVisibility()">⚙️</button>
         <div id="globalSettingsContent">
             <div class="setting-item">
                 <label>
@@ -346,7 +375,6 @@
             <button onclick="loadSelectedExample()">Load Example</button>
         </div>
     </div>
-    <div id="limitMessage"></div>
     <div id="resources"></div>
 
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -379,7 +407,6 @@
         function loadFromLocalStorage() {
             const savedResources = localStorage.getItem('boardGameResources');
             const savedGlobalConfig = localStorage.getItem('globalConfig');
-            const globalConfig = JSON.parse(savedGlobalConfig);
             if (savedResources) {
                 resources = JSON.parse(savedResources).map(resource => ({
                     ...resource,
@@ -403,12 +430,8 @@
                 renderResources();
                 updateVisibility();
                 toggleGlobalCounterLimit();
-                enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
-            
-                document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
-                toggleGlobalCounterLimit();
             }
-            document.getElementById('limitMessage').style.display = 'none';
+            checkGlobalCounterLimit();
         }
 
         function addResource() {
@@ -438,6 +461,7 @@
             hasUnsavedChanges = true;
             renderResources();
             saveToLocalStorage();
+            checkGlobalCounterLimit();
         }
 
         function renderResources() {
@@ -453,8 +477,8 @@
                 <div class="resource">
                     ${resource.hideImage ? '' : `<div class="resource-image-container">
                         <img src="${resource.image}" alt="${resource.name}" class="resource-image">
-						</div>`}
-                    <div class="resource-name-container">
+                        </div>`}
+					<div class="resource-name-container">
                         <input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
                     </div>
                     ${!resource.hideCounter ? `
@@ -480,7 +504,7 @@
                     ` : ''}
                     ${resource.showRollDice ? `
                     <div class="roll-dice">
-                        <button onclick="rollDice(${index})">Roll Dice</button>
+                        <button onclick="rollDice(${index})">🎲</button>
                         <div class="roll-result" id="rollResult${index}"></div>
                     </div>
                     ` : ''}
@@ -653,6 +677,7 @@
             hasUnsavedChanges = true;
             renderResources();
             saveToLocalStorage();
+            checkGlobalCounterLimit();
         }
 
         function updateMaxCount(index, value) {
@@ -661,6 +686,7 @@
             hasUnsavedChanges = true;
             renderResources();
             saveToLocalStorage();
+            checkGlobalCounterLimit();
         }
 
         function updateHideImage(index, hide) {
@@ -772,6 +798,7 @@
                 hasUnsavedChanges = true;
                 renderResources();
                 saveToLocalStorage();
+                checkGlobalCounterLimit();
             }
         }
 
@@ -841,6 +868,7 @@
                         setHideAllExceptResources(true);
                         renderResources();
                         saveToLocalStorage();
+                        checkGlobalCounterLimit();
                     } catch (error) {
                         alert('Error importing data. Please make sure the file is valid JSON.');
                         console.error('Import Error:', error);
@@ -872,60 +900,62 @@
                 .catch(error => console.error('Error loading example list:', error));
         }
 
-		function loadSelectedExample() {
-			const exampleSelect = document.getElementById('exampleSelect');
-			const exampleName = exampleSelect.value;
-			if (exampleName === 'clear') {
-				resources = [];
-				hasUnsavedChanges = false;
-				renderResources();
-				saveToLocalStorage();
-			} else if (exampleName) {
-				fetch(`examples/${exampleName}`)
-					.then(response => response.json())
-					.then(data => {
-						let resourcesData = Array.isArray(data) ? data : data.resources;
-						resources = resourcesData.map(resource => ({
-							...resource,
-							count: typeof resource.count === 'number' ? resource.count : 0,
-							customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
-							customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
-							customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
-							minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-							maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount,
-							hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
-							keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
-							showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
-							rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
-							rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
-							rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
-							hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
-							enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true,
-							numberOfDice: typeof resource.numberOfDice === 'number' ? resource.numberOfDice : 1
-						}));
-						if (data.globalConfig) {
-							showSettingsGlobal = data.globalConfig.showSettingsGlobal;
-							hideAllExceptResources = data.globalConfig.hideAllExceptResources;
-							disableAllAnimations = data.globalConfig.disableAllAnimations;
-							globalCounterLimit = data.globalConfig.globalCounterLimit || 100;
-							enableGlobalCounterLimit = data.globalConfig.enableGlobalCounterLimit || false;
-							
-							document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-							document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-							document.getElementById('globalCounterLimit').value = globalCounterLimit;
-							document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
-						}
-						hasUnsavedChanges = false;
-						setHideAllExceptResources(true);
-						renderResources();
-						saveToLocalStorage();
-					})
-					.catch(error => {
-						console.error('Failed to load example:', error);
-						alert('Failed to load example');
-					});
-			}
-		}
+        function loadSelectedExample() {
+            const exampleSelect = document.getElementById('exampleSelect');
+            const exampleName = exampleSelect.value;
+            if (exampleName === 'clear') {
+                resources = [];
+                hasUnsavedChanges = false;
+                renderResources();
+                saveToLocalStorage();
+                checkGlobalCounterLimit();
+            } else if (exampleName) {
+                fetch(`examples/${exampleName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        let resourcesData = Array.isArray(data) ? data : data.resources;
+                        resources = resourcesData.map(resource => ({
+                            ...resource,
+                            count: typeof resource.count === 'number' ? resource.count : 0,
+                            customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
+                            customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
+                            customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
+                            minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
+                            maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount,
+                            hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
+                            keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
+                            showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
+                            rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
+                            rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
+                            rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
+                            hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
+                            enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true,
+                            numberOfDice: typeof resource.numberOfDice === 'number' ? resource.numberOfDice : 1
+                        }));
+                        if (data.globalConfig) {
+                            showSettingsGlobal = data.globalConfig.showSettingsGlobal;
+                            hideAllExceptResources = data.globalConfig.hideAllExceptResources;
+                            disableAllAnimations = data.globalConfig.disableAllAnimations;
+                            globalCounterLimit = data.globalConfig.globalCounterLimit || 100;
+                            enableGlobalCounterLimit = data.globalConfig.enableGlobalCounterLimit || false;
+                            
+                            document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
+                            document.getElementById('disableAllAnimations').checked = disableAllAnimations;
+                            document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                            document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+                        }
+                        hasUnsavedChanges = false;
+                        setHideAllExceptResources(true);
+                        renderResources();
+                        saveToLocalStorage();
+                        checkGlobalCounterLimit();
+                    })
+                    .catch(error => {
+                        console.error('Failed to load example:', error);
+                        alert('Failed to load example');
+                    });
+            }
+        }
 
         function toggleGlobalSettings() {
             showSettingsGlobal = document.getElementById('showSettingsGlobal').checked;
@@ -1008,13 +1038,6 @@
             if (hasUnsavedChanges) {
                 event.preventDefault();
                 event.returnValue = '';
-                
-                // Clear local storage after the user accepts the warning
-                setTimeout(() => {
-                    localStorage.clear();
-                }, 0);
-                
-                return '';
             }
         });
 
