@@ -1064,12 +1064,19 @@
             }
         }
 
-        window.addEventListener('beforeunload', (event) => {
-            if (hasUnsavedChanges) {
-                event.preventDefault();
-                event.returnValue = '';
-            }
-        });
+		window.addEventListener('beforeunload', (event) => {
+			if (hasUnsavedChanges) {
+				event.preventDefault();
+				event.returnValue = '';
+				
+				// Clear local storage after the user accepts the warning
+				setTimeout(() => {
+					localStorage.clear();
+				}, 0);
+				
+				return '';
+			}
+		});
 
         document.addEventListener('DOMContentLoaded', () => {
             populateExampleDropdown();
