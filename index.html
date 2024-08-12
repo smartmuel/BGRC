@@ -244,10 +244,19 @@
             background-color: #2980b9;
         }
         .roll-result {
-            font-size: 24px;
+			font-size: 24px;
             font-weight: bold;
             margin-top: 5px;
+			cursor: pointer;
+			user-select: none;
+			transition: background-color 0.3s;
         }
+		.roll-result:hover {
+		    font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+			background-color: #f0f0f0;
+		}
 		.dice-button {
 			font-size: 24px;
 			width: 40px;
@@ -505,7 +514,7 @@
                     ${resource.showRollDice ? `
                     <div class="roll-dice">
                         <button onclick="rollDice(${index})">🎲</button>
-                        <div class="roll-result" id="rollResult${index}">${Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}</div>
+                        <div class="roll-result" id="rollResult${index}" style="cursor: pointer;" title="Click to toggle between detailed result and sum">${Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}</div>
                     </div>
                     ` : ''}
                     ${showSettingsGlobal ? `
@@ -747,34 +756,54 @@
             hasUnsavedChanges = true;
             saveToLocalStorage();
         }
+		
+		function displayRollResult(index, results, sum) {
+			const resultElement = document.getElementById(`rollResult${index}`);
+			resultElement.textContent = results.join(', ');
+			resultElement.dataset.sum = sum;
+			resultElement.dataset.detailed = results.join(', ');
+			resultElement.onclick = () => toggleRollResult(index);
+			resultElement.style.cursor = 'pointer';
+			resultElement.title = 'Click to toggle between detailed result and sum';
+		}
 
-        function rollDice(index) {
-            const resource = resources[index];
-            const min = resource.rollDiceMin;
-            const max = resource.rollDiceMax;
-            const increment = resource.rollDiceIncrement;
-            const numberOfDice = resource.numberOfDice;
-            const possibleValues = [];
-            for (let i = min; i <= max; i += increment) {
-                possibleValues.push(i);
-            }
-            const results = [];
-            for (let i = 0; i < numberOfDice; i++) {
-                results.push(possibleValues[Math.floor(Math.random() * possibleValues.length)]);
-            }
-            const resultElement = document.getElementById(`rollResult${index}`);
-            if (resource.enableDiceAnimation && !disableAllAnimations) {
-                resultElement.classList.add('rolling');
-                setTimeout(() => {
-                    resultElement.classList.remove('rolling');
-                    resultElement.textContent = results.join(', ');
-                }, 500);
-            } else {
-                resultElement.textContent = results.join(', ');
-            }
-            setHideAllExceptResources(true);
-            resetInactivityTimer();
-        }
+		function toggleRollResult(index) {
+			const resultElement = document.getElementById(`rollResult${index}`);
+			if (resultElement.textContent === resultElement.dataset.sum) {
+				resultElement.textContent = resultElement.dataset.detailed;
+			} else {
+				resultElement.textContent = resultElement.dataset.sum;
+			}
+		}
+
+		function rollDice(index) {
+			const resource = resources[index];
+			const min = resource.rollDiceMin;
+			const max = resource.rollDiceMax;
+			const increment = resource.rollDiceIncrement;
+			const numberOfDice = resource.numberOfDice;
+			const possibleValues = [];
+			for (let i = min; i <= max; i += increment) {
+				possibleValues.push(i);
+			}
+			const results = [];
+			for (let i = 0; i < numberOfDice; i++) {
+				results.push(possibleValues[Math.floor(Math.random() * possibleValues.length)]);
+			}
+			const sum = results.reduce((a, b) => a + b, 0);
+			const resultElement = document.getElementById(`rollResult${index}`);
+			if (resource.enableDiceAnimation && !disableAllAnimations) {
+				resultElement.classList.add('rolling');
+				setTimeout(() => {
+					resultElement.classList.remove('rolling');
+					displayRollResult(index, results, sum);
+				}, 500);
+			} else {
+				displayRollResult(index, results, sum);
+			}
+			setHideAllExceptResources(true);
+			resetInactivityTimer();
+		}
 
         function changeImage(index) {
             const fileInput = document.createElement('input');
