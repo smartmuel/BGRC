@@ -505,7 +505,7 @@
                     ${resource.showRollDice ? `
                     <div class="roll-dice">
                         <button onclick="rollDice(${index})">🎲</button>
-                        <div class="roll-result" id="rollResult${index}"></div>
+                        <div class="roll-result" id="rollResult${index}">${Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}</div>
                     </div>
                     ` : ''}
                     ${showSettingsGlobal ? `
@@ -732,6 +732,7 @@
             resources[index].numberOfDice = Math.max(1, parseInt(value) || 1);
             hasUnsavedChanges = true;
             saveToLocalStorage();
+			renderResources();
         }
 
         function updateHideCounter(index, hide) {
