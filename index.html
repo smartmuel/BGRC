@@ -1,2113 +1,1075 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Game Resource Counter</title>
-
     <style>
-
         body {
-
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
             background-color: #f4f4f9;
-
             max-width: 1000px;
-
             margin: 0 auto;
-
             padding: 20px;
-
             color: #333;
-
         }
-
         h1 {
-
             color: #2c3e50;
-
             font-size: 1.8em;
-
             text-align: center;
-
             margin-bottom: 20px;
-
         }
-
         .controls {
-
             display: flex;
-
             flex-direction: column;
-
             align-items: center;
-
             margin-bottom: 20px;
-
         }
-
         .controls input,
-
         .controls button,
-
         .controls select {
-
             margin: 5px;
-
             width: 100%;
-
             max-width: 300px;
-
         }
-
         .button-group {
-
             display: flex;
-
             flex-wrap: wrap;
-
             justify-content: center;
-
             gap: 5px;
-
         }
-
         .button-group button {
-
             flex: 1;
-
             max-width: 150px;
-
         }
-
         #resources {
-
             display: flex;
-
             flex-wrap: wrap;
-
             justify-content: space-between;
-
         }
-
         .resource {
-
             flex: 0 0 calc(50% - 10px);
-
             margin-bottom: 20px;
-
             display: flex;
-
             flex-direction: column;
-
             align-items: center;
-
             border: 1px solid #ddd;
-
             border-radius: 8px;
-
             padding: 15px;
-
             background-color: #ffffff;
-
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
             text-align: center;
-
             box-sizing: border-box;
-
         }
-
         .resource-image-container {
-
             width: 100%;
-
             max-width: 120px;
-
             height: auto;
-
             aspect-ratio: 1;
-
             overflow: hidden;
-
             margin-bottom: 10px;
-
             display: flex;
-
             align-items: center;
-
             justify-content: center;
-
             background-color: #f9f9f9;
-
             border: 1px solid #ddd;
-
             border-radius: 8px;
-
         }
-
         .resource-image {
-
             max-width: 100%;
-
             max-height: 100%;
-
             object-fit: contain;
-
         }
-
         .counter {
-
             display: flex;
-
             flex-direction: column;
-
             align-items: center;
-
             margin-bottom: 10px;
-
         }
-
         .counter div {
-
             display: flex;
-
             align-items: center;
-
             flex-wrap: wrap;
-
             justify-content: center;
-
         }
-
         .counter .counter-buttons {
-
             display: flex;
-
             gap: 5px;
-
             margin-bottom: 5px;
-
         }
-
         .counter button {
-
             font-size: 14px;
-
             width: 36px;
-
             height: 36px;
-
             margin: 2px;
-
             border: none;
-
             background-color: #3498db;
-
             color: #fff;
-
             border-radius: 4px;
-
             cursor: pointer;
-
         }
-
         .counter button:hover {
-
             background-color: #2980b9;
-
+        }
+        .counter span {
+            font-size: 20px;
+            min-width: 40px;
+            text-align: center;
+            margin: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        .resource-name-container input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+            width: 80%;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .resource-name-container input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        button {
+            padding: 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #2ecc71;
+            color: #fff;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-increment {
+            width: 50px;
+            text-align: center;
+            margin: 0 5px;
+        }
+        .settings {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        .settings label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .settings input {
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+        }
+        .remove-button {
+            background-color: #e74c3c;
+            color: #fff;
+        }
+        .remove-button:hover {
+            background-color: #c0392b;
+        }
+        .hide-image-checkbox, .keep-one-modifier-checkbox {
+            margin: 10px 0;
+        }
+        #globalSettings {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1002;
         }
 
-        .counter span {
+		#globalSettingsButton {
+			background-color: #f4f4f9;
+			border: 1px solid #ddd;
+			border-radius: 50%;
+			width: 40px;
+			height: 40px;
+			font-size: 24px;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			padding: 0;
+			line-height: 1;
+		}
 
-            font-size: 20px;
-
-            min-width: 40px;
-
+        #globalSettingsContent {
+			display: none;
+			position: absolute;
+			right: 0;
+			top: 100%;
+			background-color: white;
+			border: 1px solid #ddd;
+			padding: 10px;
+			border-radius: 4px;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+			max-width: 300px;
+			width: 90vw;
+        }
+        .setting-item {
+            margin-bottom: 10px;
+        }
+        .setting-item label {
+            display: flex;
+            align-items: center;
+        }
+        .setting-item input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        .setting-item input[type="number"] {
+            width: 60px;
+            margin-left: 5px;
+        }
+        .roll-cube {
+            margin-top: 10px;
             text-align: center;
-
-            margin: 5px;
-
+        }
+        .roll-cube button {
+            font-size: 16px;
+            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .roll-cube button:hover {
+            background-color: #2980b9;
+        }
+        .roll-result {
+			font-size: 24px;
             font-weight: bold;
+            margin-top: 5px;
+			cursor: pointer;
+			user-select: none;
+			transition: background-color 0.3s;
+        }
+		.roll-result:hover {
+		    background-color: #f0f0f0;
+		}
+		.dice-button {
+			font-size: 24px;
+			width: 40px;
+			height: 40px;
+			padding: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: #3498db;
+			color: white;
+			border: none;
+			border-radius: 50%;
+			cursor: pointer;
+		}
 
-            color: #34495e;
+		.dice-button:hover {
+			background-color: #2980b9;
+		}
+        @keyframes rollAnimation {
+            0% { transform: rotate(0deg) translateY(0); }
+            25% { transform: rotate(90deg) translateY(-20px); }
+            50% { transform: rotate(180deg) translateY(0); }
+            75% { transform: rotate(270deg) translateY(-20px); }
+            100% { transform: rotate(360deg) translateY(0); }
+        }
+        .rolling {
+            animation: rollAnimation 0.5s linear;
+        }
+        #limitMessage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #f39c12;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            z-index: 1001;
+        }
+        #hideAllContainer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 0;
+            position: relative;
+            margin-bottom: 10px;
+        }
+        #hideAllLine {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: #ddd;
+        }
+        #hideAllArrow {
+            background-color: #f4f4f9;
+            padding: 0 10px;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+        }
+        @media (max-width: 600px) {
+            .button-group {
+                flex-direction: row;
+                width: 100%;
+            }
+            .button-group button {
+                max-width: calc(33.33% - 10px);
+            }
+            .resource {
+                flex: 0 0 calc(50% - 5px);
+            }
+            #globalSettingsContent {
+                right: -10px;
+                width: calc(100vw - 40px);
+            }
+        }
 
+        .resource-name-container {
+            text-align: center; /* Center the text */
+            margin-bottom: 10px; /* Add some spacing below */
         }
 
         .resource-name-container input {
-
+            text-align: center; /* Center text inside the input */
             padding: 10px;
-
             border: 2px solid #ddd;
-
             border-radius: 4px;
-
             margin: 5px;
-
             width: 80%;
-
             font-size: 16px;
-
             box-sizing: border-box;
-
         }
 
         .resource-name-container input:focus {
-
             border-color: #3498db;
-
             outline: none;
-
         }
 
-        button {
-
-            padding: 10px;
-
-            font-size: 14px;
-
-            border: none;
-
-            border-radius: 4px;
-
-            cursor: pointer;
-
-            background-color: #2ecc71;
-
-            color: #fff;
-
-            margin: 5px;
-
-        }
-
-        button:hover {
-
-            background-color: #27ae60;
-
-        }
-
-        input[type="file"] {
-
-            display: none;
-
-        }
-
-        .custom-increment {
-
-            width: 50px;
-
-            text-align: center;
-
-            margin: 0 5px;
-
-        }
-
-        .settings {
-
-            margin-top: 10px;
-
-            padding: 10px;
-
-            background-color: #f0f0f0;
-
-            border-radius: 4px;
-
-        }
-
-        .settings label {
-
-            display: block;
-
-            margin-bottom: 5px;
-
-        }
-
-        .settings input {
-
-            width: calc(100% - 22px);
-
-            margin-bottom: 10px;
-
-        }
-
-        .remove-button {
-
-            background-color: #e74c3c;
-
-            color: #fff;
-
-        }
-
-        .remove-button:hover {
-
-            background-color: #c0392b;
-
-        }
-
-        .hide-image-checkbox, .keep-one-modifier-checkbox {
-
-            margin: 10px 0;
-
-        }
-
-        #globalSettings {
-
-            position: fixed;
-
-            top: 10px;
-
-            right: 10px;
-
-            z-index: 1002;
-
-        }
-
-		
-
-		#globalSettingsButton {
-
-			background-color: #f4f4f9;
-
-			border: 1px solid #ddd;
-
-			border-radius: 50%;
-
-			width: 40px;
-
-			height: 40px;
-
-			font-size: 24px;
-
-			cursor: pointer;
-
-			display: flex;
-
-			align-items: center;
-
-			justify-content: center;
-
-			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-
-			padding: 0;
-
-			line-height: 1;
-
-		}
-
-		
-
-        #globalSettingsContent {
-
-			display: none;
-
-			position: absolute;
-
-			right: 0;
-
-			top: 100%;
-
-			background-color: white;
-
-			border: 1px solid #ddd;
-
-			padding: 10px;
-
-			border-radius: 4px;
-
-			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-
-			max-width: 300px;
-
-			width: 90vw;
-
-        }
-
-        .setting-item {
-
-            margin-bottom: 10px;
-
-        }
-
-        .setting-item label {
-
-            display: flex;
-
-            align-items: center;
-
-        }
-
-        .setting-item input[type="checkbox"] {
-
-            margin-right: 5px;
-
-        }
-
-        .setting-item input[type="number"] {
-
-            width: 60px;
-
-            margin-left: 5px;
-
-        }
-
-        .roll-cube {
-
-            margin-top: 10px;
-
-            text-align: center;
-
-        }
-
-        .roll-cube button {
-
+        .resource-name {
             font-size: 16px;
-
-            padding: 5px 10px;
-
-            background-color: #3498db;
-
-            color: white;
-
-            border: none;
-
-            border-radius: 4px;
-
-            cursor: pointer;
-
-        }
-
-        .roll-cube button:hover {
-
-            background-color: #2980b9;
-
-        }
-
-        .roll-result {
-
-			font-size: 24px;
-
             font-weight: bold;
-
-            margin-top: 5px;
-
-			cursor: pointer;
-
-			user-select: none;
-
-			transition: background-color 0.3s;
-
-        }
-
-		.roll-result:hover {
-
-		    font-size: 24px;
-
-            font-weight: bold;
-
-            margin-top: 5px;
-
-			background-color: #f0f0f0;
-
-		}
-
-		.dice-button {
-
-			font-size: 24px;
-
-			width: 40px;
-
-			height: 40px;
-
-			padding: 0;
-
-			display: flex;
-
-			align-items: center;
-
-			justify-content: center;
-
-			background-color: #3498db;
-
-			color: white;
-
-			border: none;
-
-			border-radius: 50%;
-
-			cursor: pointer;
-
-		}
-
-
-
-		.dice-button:hover {
-
-			background-color: #2980b9;
-
-		}
-
-        @keyframes rollAnimation {
-
-            0% { transform: rotate(0deg) translateY(0); }
-
-            25% { transform: rotate(90deg) translateY(-20px); }
-
-            50% { transform: rotate(180deg) translateY(0); }
-
-            75% { transform: rotate(270deg) translateY(-20px); }
-
-            100% { transform: rotate(360deg) translateY(0); }
-
-        }
-
-        .rolling {
-
-            animation: rollAnimation 0.5s linear;
-
-        }
-
-        .dice-button {
-
-            font-size: 24px;
-
-            width: 40px;
-
-            height: 40px;
-
-            padding: 0;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            background-color: #3498db;
-
-            color: white;
-
-            border: none;
-
-            border-radius: 50%;
-
-            cursor: pointer;
-
-        }
-
-        .dice-button:hover {
-
-            background-color: #2980b9;
-
-        }
-
-        #limitMessage {
-
-            position: fixed;
-
-            top: 0;
-
-            left: 0;
-
-            right: 0;
-
-            background-color: #f39c12;
-
-            color: white;
-
-            padding: 10px;
-
-            text-align: center;
-
-            font-weight: bold;
-
-            z-index: 1001;
-
-        }
-
-        #hideAllContainer {
-
-            display: flex;
-
-            justify-content: center;
-
-            align-items: center;
-
-            padding: 10px 0;
-
-            position: relative;
-
-            margin-bottom: 10px;
-
-        }
-
-        #hideAllLine {
-
-            position: absolute;
-
-            width: 100%;
-
-            height: 1px;
-
-            background-color: #ddd;
-
-        }
-
-        #hideAllArrow {
-
-            background-color: #f4f4f9;
-
-            padding: 0 10px;
-
-            cursor: pointer;
-
-            position: relative;
-
-            z-index: 1;
-
-        }
-
-        @media (max-width: 600px) {
-
-            .button-group {
-
-                flex-direction: row;
-
-                width: 100%;
-
-            }
-
-            .button-group button {
-
-                max-width: calc(33.33% - 10px);
-
-            }
-
-            .resource {
-
-                flex: 0 0 calc(50% - 5px);
-
-            }
-
-            #globalSettingsContent {
-
-                right: -10px;
-
-                width: calc(100vw - 40px);
-
-            }
-
+            display: block; /* Ensure the text takes up the full width */
+            margin-bottom: 5px;
         }
 
     </style>
-
 </head>
-
 <body>
-
     <div id="limitMessage" style="display: none;"></div>
-
     <h1>Game Resource Counter</h1>
-
     <div id="hideAllContainer">
-
         <div id="hideAllLine"></div>
-
         <span id="hideAllArrow">▼</span>
-
     </div>
-
     <div id="globalSettings">
-
         <button id="globalSettingsButton" onclick="toggleGlobalSettingsVisibility()">⚙️</button>
-
         <div id="globalSettingsContent">
-
             <div class="setting-item">
-
                 <label>
-
                     <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
-
                     Show All Settings
-
                 </label>
-
             </div>
-
             <div class="setting-item">
-
                 <label>
-
                     <input type="checkbox" id="disableAllAnimations" onchange="toggleAllAnimations()">
-
                     Disable All Animations
-
                 </label>
-
             </div>
-
             <div class="setting-item">
-
                 <label>
-
                     <input type="checkbox" id="enableGlobalCounterLimit" onchange="toggleGlobalCounterLimit()">
-
                     Enable Global Counter Limit
-
                 </label>
-
             </div>
-
             <div class="setting-item" id="globalCounterLimitContainer" style="display: none;">
-
                 <label>
-
                     Global Counter Limit:
-
                     <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
-
                 </label>
-
             </div>
-
         </div>
-
     </div>
-
     <div id="controlsContainer">
-
         <div class="controls">
-
             <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
-
             <input type="text" id="resourceName" placeholder="Resource Name">
-
             <div class="button-group">
-
                 <button onclick="addResource()">Add Resource</button>
-
                 <button onclick="exportData()" id="exportButton" disabled>Export</button>
-
                 <button onclick="triggerImport()">Import</button>
-
             </div>
-
             <select id="exampleSelect">
-
                 <option value="">Select an example</option>
-
             </select>
-
             <button onclick="loadSelectedExample()">Load Example</button>
-
         </div>
-
     </div>
-
     <div id="resources"></div>
-
-
 
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
-
-
     <script>
-
         let resources = [];
-
         let unnamedCounter = 1;
-
         let hasUnsavedChanges = false;
-
         let showSettingsGlobal = false;
-
         let globalSettingsVisible = false;
-
         let hideAllExceptResources = false;
-
         let inactivityTimer;
-
         let disableAllAnimations = false;
-
         let globalCounterLimit = 100;
-
         let enableGlobalCounterLimit = false;
 
-		
-
 		function createDiceRollSound() {
-
 			const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
 			let buffer;
 
-
-
 			fetch('sound/rolling_dice.mp3')
-
 				.then(response => response.arrayBuffer())
-
 				.then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-
 				.then(decodedBuffer => {
-
 					buffer = decodedBuffer;
-
 				})
-
 				.catch(error => console.error('Error loading dice roll sound:', error));
 
-
-
 			return {
-
 				play: () => {
-
 					if (buffer) {
-
 						const source = audioContext.createBufferSource();
-
 						source.buffer = buffer;
-
 						source.connect(audioContext.destination);
-
 						source.start(0);
-
 					}
-
 				}
-
 			};
-
 		}
-
-		
 
 		const diceSound = createDiceRollSound();
 
-
-
         function saveToLocalStorage() {
-
             const globalConfig = {
-
                 showSettingsGlobal,
-
                 hideAllExceptResources,
-
                 disableAllAnimations,
-
                 globalCounterLimit,
-
                 enableGlobalCounterLimit
-
             };
-
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
-
             localStorage.setItem('unnamedCounter', unnamedCounter);
-
             localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
-
         }
-
-
 
         function loadFromLocalStorage() {
-
             const savedResources = localStorage.getItem('boardGameResources');
-
             const savedGlobalConfig = localStorage.getItem('globalConfig');
-
             if (savedResources) {
-
                 resources = JSON.parse(savedResources).map(resource => ({
-
                     ...resource,
-
                     maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount
-
                 }));
-
                 unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
-
                 if (savedGlobalConfig) {
-
                     const globalConfig = JSON.parse(savedGlobalConfig);
-
                     showSettingsGlobal = globalConfig.showSettingsGlobal;
-
                     hideAllExceptResources = globalConfig.hideAllExceptResources;
-
                     disableAllAnimations = globalConfig.disableAllAnimations;
-
                     globalCounterLimit = globalConfig.globalCounterLimit || 100;
-
                     enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
-
                 }
-
-                
 
                 document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-
                 document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-
                 document.getElementById('globalCounterLimit').value = globalCounterLimit;
-
                 document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
 
-                
-
                 renderResources();
-
                 updateVisibility();
-
                 toggleGlobalCounterLimit();
-
             }
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function addResource() {
-
             const file = document.getElementById('imageUpload').files[0];
-
             let name = document.getElementById('resourceName').value.trim() || `Resource ${unnamedCounter++}`;
 
-            
-
             const resource = {
-
                 name,
-
                 image: file ? URL.createObjectURL(file) : 'default-image.png',
-
                 count: 0,
-
                 customIncrement1: 1,
-
                 customIncrement2: 3,
-
                 customIncrement3: 5,
-
                 minCount: 0,
-
                 maxCount: Infinity,
-
                 hideImage: true,
-
                 keepOneModifier: false,
-
                 showRollDice: false,
-
                 rollDiceMin: 1,
-
                 rollDiceMax: 6,
-
                 rollDiceIncrement: 1,
-
                 hideCounter: false,
-
                 enableDiceAnimation: true,
-
                 numberOfDice: 1,
-
 				rollDiceCustomValues: [],
-
                 useCustomDiceValues: false
-
             };
-
             resources.push(resource);
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function renderResources() {
-
             const container = document.getElementById('resources');
-
             container.innerHTML = resources.map((resource, index) => createResourceHTML(resource, index)).join('');
-
             document.getElementById('exportButton').disabled = resources.length === 0;
-
             updateVisibility();
-
             attachEventListeners();
-
         }
 
-
-
-		function createResourceHTML(resource, index) {
-
-			return `
-
-				<div class="resource">
-
-					${resource.hideImage ? '' : `<div class="resource-image-container">
-
-						<img src="${resource.image}" alt="${resource.name}" class="resource-image">
-
-						</div>`}
-
-					<div class="resource-name-container">
-
-						<input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">
-
-					</div>
-
-					${!resource.hideCounter ? `
-
-					<div class="counter">
-
-						${!resource.keepOneModifier ? `
-
-						<div class="counter-buttons">
-
-							<button onclick="updateCount(${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
-
-							<button onclick="updateCount(${index}, ${resource.customIncrement3})">+${resource.customIncrement3}</button>
-
-						</div>
-
-						` : ''}
-
-						<div class="counter-buttons">
-
-							<button onclick="updateCount(${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
-
-							<span>${resource.count}</span>
-
-							<button onclick="updateCount(${index}, ${resource.customIncrement1})">+${resource.customIncrement1}</button>
-
-						</div>
-
-						${!resource.keepOneModifier ? `
-
-						<div class="counter-buttons">
-
-							<button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
-
-							<button onclick="updateCount(${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
-
-						</div>
-
-						` : ''}
-
-					</div>
-
-					` : ''}
-
-					${resource.showRollDice ? `
-
-					<div class="roll-dice" style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
-
-						<button class="dice-button" onclick="rollDice(${index})">🎲</button>
-
-						<div class="roll-result" id="rollResult${index}" style="cursor: pointer; margin-left: 10px;" title="Click to toggle between detailed result and sum">
-
-							${resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0 
-
-								? Array(resource.numberOfDice).fill(resource.rollDiceCustomValues[resource.rollDiceCustomValues.length - 1]).join(', ')
-
-								: Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}
-
-						</div>
-
-					</div>
-
-					` : ''}
-
-					${showSettingsGlobal ? `
-
-					<div class="settings">
-
-						<div class="hide-image-checkbox">
-
-							Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
-
-						</div>
-
-						${!resource.hideImage ? `<button onclick="changeImage(${index})">Change Image</button>` : ''}
-
-						<div class="hide-counter-checkbox">
-
-							Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
-
-						</div>
-
-						${!resource.hideCounter ? `
-
-						<div class="keep-one-modifier-checkbox">
-
-							Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} onchange="updateKeepOneModifier(${index}, this.checked)">
-
-						</div>
-
-						<div>
-
-							Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
-
-						</div>
-
-						${!resource.keepOneModifier ? `
-
-						<div>
-
-							Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
-
-						</div>
-
-						<div>
-
-							Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
-
-						</div>
-
-						` : ''}
-
-						<div>
-
-							Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
-
-						</div>
-
-						<div>
-
-							Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
-
-						</div>
-
-						` : ''}
-
-						<div class="roll-dice-settings">
-
-							Show Roll Dice: <input type="checkbox" ${resource.showRollDice ? 'checked' : ''} onchange="updateShowRollDice(${index}, this.checked)">
-
-						</div>
-
-						${resource.showRollDice ? `
-
-						<div>
-
-							Use Custom Dice Values: <input type="checkbox" ${resource.useCustomDiceValues ? 'checked' : ''} onchange="updateUseCustomDiceValues(${index}, this.checked)">
-
-						</div>
-
-						${!resource.useCustomDiceValues ? `
-
-						<div>
-
-							Roll Dice Min: <input type="number" value="${resource.rollDiceMin}" onchange="updateRollDiceMin(${index}, this.value)">
-
-						</div>
-
-						<div>
-
-							Roll Dice Max: <input type="number" value="${resource.rollDiceMax}" onchange="updateRollDiceMax(${index}, this.value)">
-
-						</div>
-
-						<div>
-
-							Roll Dice Increment: <input type="number" value="${resource.rollDiceIncrement}" onchange="updateRollDiceIncrement(${index}, this.value)">
-
-						</div>
-
-						` : `
-
-						<div>
-
-							Custom Dice Values: <input type="text" value="${resource.rollDiceCustomValues.join(', ')}" onchange="updateRollDiceCustomValues(${index}, this.value)">
-
-						</div>
-
-						`}
-
-						<div>
-
-							Number of Dice: <input type="number" value="${resource.numberOfDice}" min="1" onchange="updateNumberOfDice(${index}, this.value)">
-
-						</div>
-
-						<div>
-
-							Enable Dice Animation: <input type="checkbox" ${resource.enableDiceAnimation ? 'checked' : ''} onchange="updateEnableDiceAnimation(${index}, this.checked)">
-
-						</div>
-
-						` : ''}
-
-						<button onclick="removeResource(${index})" class="remove-button">Remove</button>
-
-					</div>
-
-				` : ''}
-
-			</div>
-
-			`;
-
-		}
-
-		
+        function createResourceHTML(resource, index) {
+            return `
+                <div class="resource">
+                    ${resource.hideImage ? '' : `<div class="resource-image-container">
+                        <img src="${resource.image}" alt="${resource.name}" class="resource-image">
+                    </div>`}
+                    <div class="resource-name-container">
+                        ${showSettingsGlobal
+                            ? `<input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">`
+                            : `<span class="resource-name">${resource.name}</span>`
+                        }
+                    </div>
+                    ${!resource.hideCounter ? `
+                    <div class="counter">
+                        ${!resource.keepOneModifier ? `
+                        <div class="counter-buttons">
+                            <button onclick="updateCount(${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
+                            <button onclick="updateCount(${index}, ${resource.customIncrement3})">+${resource.customIncrement3}</button>
+                        </div>
+                        ` : ''}
+                        <div class="counter-buttons">
+                            <button onclick="updateCount(${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
+                            <span>${resource.count}</span>
+                            <button onclick="updateCount(${index}, ${resource.customIncrement1})">+${resource.customIncrement1}</button>
+                        </div>
+                        ${!resource.keepOneModifier ? `
+                        <div class="counter-buttons">
+                            <button onclick="updateCount(${index}, -${resource.customIncrement2})">-${resource.customIncrement2}</button>
+                            <button onclick="updateCount(${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
+                        </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                    ${resource.showRollDice ? `
+                    <div class="roll-dice" style="display: flex; justify-content: center; align-items: center; margin-top: 10px;">
+                        <button class="dice-button" onclick="rollDice(${index})">🎲</button>
+                        <div class="roll-result" id="rollResult${index}" style="cursor: pointer; margin-left: 10px;" title="Click to toggle between detailed result and sum">
+                            ${resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0
+                                ? Array(resource.numberOfDice).fill(resource.rollDiceCustomValues[resource.rollDiceCustomValues.length - 1]).join(', ')
+                                : Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    ${showSettingsGlobal ? `
+                    <div class="settings">
+                        <div class="hide-image-checkbox">
+                            Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
+                        </div>
+                        ${!resource.hideImage ? `<button onclick="changeImage(${index})">Change Image</button>` : ''}
+                        <div class="hide-counter-checkbox">
+                            Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
+                        </div>
+                        ${!resource.hideCounter ? `
+                        <div class="keep-one-modifier-checkbox">
+                            Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} onchange="updateKeepOneModifier(${index}, this.checked)">
+                        </div>
+                        <div>
+                            Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)">
+                        </div>
+                        ${!resource.keepOneModifier ? `
+                        <div>
+                            Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)">
+                        </div>
+                        <div>
+                            Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)">
+                        </div>
+                        ` : ''}
+                        <div>
+                            Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
+                        </div>
+                        <div>
+                            Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
+                        </div>
+                        ` : ''}
+                        <div class="roll-dice-settings">
+                            Show Roll Dice: <input type="checkbox" ${resource.showRollDice ? 'checked' : ''} onchange="updateShowRollDice(${index}, this.checked)">
+                        </div>
+                        ${resource.showRollDice ? `
+                        <div>
+                            Use Custom Dice Values: <input type="checkbox" ${resource.useCustomDiceValues ? 'checked' : ''} onchange="updateUseCustomDiceValues(${index}, this.checked)">
+                        </div>
+                        ${!resource.useCustomDiceValues ? `
+                        <div>
+                            Roll Dice Min: <input type="number" value="${resource.rollDiceMin}" onchange="updateRollDiceMin(${index}, this.value)">
+                        </div>
+                        <div>
+                            Roll Dice Max: <input type="number" value="${resource.rollDiceMax}" onchange="updateRollDiceMax(${index}, this.value)">
+                        </div>
+                        <div>
+                            Roll Dice Increment: <input type="number" value="${resource.rollDiceIncrement}" onchange="updateRollDiceIncrement(${index}, this.value)">
+                        </div>
+                        ` : `
+                        <div>
+                            Custom Dice Values: <input type="text" value="${resource.rollDiceCustomValues.join(', ')}" onchange="updateRollDiceCustomValues(${index}, this.value)">
+                        </div>
+                        `}
+                        <div>
+                            Number of Dice: <input type="number" value="${resource.numberOfDice}" min="1" onchange="updateNumberOfDice(${index}, this.value)">
+                        </div>
+                        <div>
+                            Enable Dice Animation: <input type="checkbox" ${resource.enableDiceAnimation ? 'checked' : ''} onchange="updateEnableDiceAnimation(${index}, this.checked)">
+                        </div>
+                        ` : ''}
+                        <button onclick="removeResource(${index})" class="remove-button">Remove</button>
+                    </div>
+                ` : ''}
+            </div>
+            `;
+        }
 
 		function updateUseCustomDiceValues(index, use) {
-
 			resources[index].useCustomDiceValues = use;
-
 			hasUnsavedChanges = true;
-
 			const resultElement = document.getElementById(`rollResult${index}`);
-
 			if (resultElement) {
-
 				if (use && resources[index].rollDiceCustomValues.length > 0) {
-
 					const lastValue = resources[index].rollDiceCustomValues[resources[index].rollDiceCustomValues.length - 1];
-
-					resultElement.textContent = Array(resources[index].numberOfDice).fill(lastValue).join(', ');
-
+					resultElement.textContent = Array(resource.numberOfDice).fill(lastValue).join(', ');
 				} else {
-
-					resultElement.textContent = Array(resources[index].numberOfDice).fill(resources[index].rollDiceMax).join(', ');
-
+					resultElement.textContent = Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ');
 				}
-
 			}
-
 			renderResources();
-
 			saveToLocalStorage();
-
 		}
-
-		
 
 		function updateRollDiceCustomValues(index, value) {
-
 			resources[index].rollDiceCustomValues = value.split(',').map(v => v.trim()).filter(v => v !== '');
-
 			hasUnsavedChanges = true;
-
 			const resultElement = document.getElementById(`rollResult${index}`);
-
 			if (resultElement && resources[index].useCustomDiceValues && resources[index].rollDiceCustomValues.length > 0) {
-
 				const lastValue = resources[index].rollDiceCustomValues[resources[index].rollDiceCustomValues.length - 1];
-
-				resultElement.textContent = Array(resources[index].numberOfDice).fill(lastValue).join(', ');
-
+				resultElement.textContent = Array(resource.numberOfDice).fill(lastValue).join(', ');
 			}
-
 			saveToLocalStorage();
-
 		}
-
-
 
 		function attachEventListeners() {
-
 			resources.forEach((resource, index) => {
-
 				const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
-
 				if (resourceElement) {
-
 					const buttons = resourceElement.querySelectorAll('.counter button');
-
 					buttons.forEach(button => {
-
 						button.onclick = (event) => {
-
 							event.preventDefault();
-
 							const change = parseInt(button.textContent);
-
 							updateCount(index, change);
-
 						};
-
 					});
-
-
 
 					const inputs = resourceElement.querySelectorAll('input');
-
 					inputs.forEach(input => {
-
 						input.oninput = null;
-
 						input.onchange = null;
-
 						if (input.type === 'text' && input.parentElement.classList.contains('resource-name-container')) {
-
 							input.oninput = () => updateName(index, input.value);
-
 						} else if (input.type === 'number' || input.type === 'checkbox') {
-
 							input.onchange = () => {
-
 								const setting = input.parentElement.textContent.trim().split(':')[0].toLowerCase().replace(/\s/g, '');
-
 								const value = input.type === 'checkbox' ? input.checked : input.value;
-
 								updateResourceSetting(index, setting, value);
-
 							};
-
 						}
-
 					});
 
-
-
 					// Add specific listener for useCustomDiceValues checkbox
-
 					const useCustomDiceValuesCheckbox = resourceElement.querySelector('input[onchange^="updateUseCustomDiceValues"]');
-
 					if (useCustomDiceValuesCheckbox) {
-
 						useCustomDiceValuesCheckbox.onchange = () => updateUseCustomDiceValues(index, useCustomDiceValuesCheckbox.checked);
-
 					}
-
-
 
 					// Add specific listener for rollDiceCustomValues input
-
 					const rollDiceCustomValuesInput = resourceElement.querySelector('input[onchange^="updateRollDiceCustomValues"]');
-
 					if (rollDiceCustomValuesInput) {
-
 						rollDiceCustomValuesInput.onchange = () => updateRollDiceCustomValues(index, rollDiceCustomValuesInput.value);
-
 					}
-
 				}
-
 			});
-
 		}
-
-
 
 		function updateResourceSetting(index, setting, value) {
-
 			const resource = resources[index];
-
 			switch (setting) {
-
 				case 'hideimage':
-
 					updateHideImage(index, value);
-
 					break;
-
 				case 'hidecounter':
-
 					updateHideCounter(index, value);
-
 					break;
-
 				case 'keeponemodifier':
-
 					updateKeepOneModifier(index, value);
-
 					break;
-
 				case 'increment1':
-
 				case 'increment2':
-
 				case 'increment3':
-
 					updateCustomIncrement(index, parseInt(setting.slice(-1)), value);
-
 					break;
-
 				case 'minimumcount':
-
 					updateMinCount(index, value);
-
 					break;
-
 				case 'maximumcount':
-
 					updateMaxCount(index, value);
-
 					break;
-
 				case 'showrolldice':
-
 					updateShowRollDice(index, value);
-
 					break;
-
 				case 'rolldicemin':
-
 					updateRollDiceMin(index, value);
-
 					break;
-
 				case 'rolldicemax':
-
 					updateRollDiceMax(index, value);
-
 					break;
-
 				case 'rolldiceincrement':
-
 					updateRollDiceIncrement(index, value);
-
 					break;
-
 				case 'numberofdice':
-
 					updateNumberOfDice(index, value);
-
 					break;
-
 				case 'enablediceanimation':
-
 					updateEnableDiceAnimation(index, value);
-
 					break;
-
 				case 'usecustomdicevalues':
-
 					updateUseCustomDiceValues(index, value);
-
 					break;
-
 				case 'customdicevalues':
-
 					updateRollDiceCustomValues(index, value);
-
 					break;
-
 			}
-
 		}
-
-
 
         function updateName(index, newName) {
-
             resources[index].name = newName;
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateCount(index, change) {
-
             const resource = resources[index];
-
             resource.count = Math.max(resource.minCount, Math.min(resource.count + change, resource.maxCount));
-
             hasUnsavedChanges = true;
-
             const resourceElement = document.querySelector(`.resource:nth-child(${index + 1})`);
-
             if (resourceElement) {
-
                 const countSpan = resourceElement.querySelector('.counter span');
-
                 if (countSpan) {
-
                     countSpan.textContent = resource.count;
-
                 }
-
             }
-
             saveToLocalStorage();
-
             setHideAllExceptResources(true);
-
             resetInactivityTimer();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function updateCustomIncrement(index, incrementNumber, value) {
-
             resources[index][`customIncrement${incrementNumber}`] = Math.max(1, parseInt(value) || 1);
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateMinCount(index, value) {
-
             resources[index].minCount = parseInt(value) || 0;
-
             resources[index].count = Math.max(resources[index].minCount, resources[index].count);
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function updateMaxCount(index, value) {
-
             resources[index].maxCount = value === '' ? Infinity : Math.max(resources[index].minCount, parseInt(value) || 0);
-
             resources[index].count = Math.min(resources[index].maxCount, resources[index].count);
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function updateHideImage(index, hide) {
-
             resources[index].hideImage = hide;
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateKeepOneModifier(index, keep) {
-
             resources[index].keepOneModifier = keep;
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateShowRollDice(index, show) {
-
             resources[index].showRollDice = show;
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateRollDiceMin(index, value) {
-
             resources[index].rollDiceMin = Math.max(1, parseInt(value) || 1);
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateRollDiceMax(index, value) {
-
             resources[index].rollDiceMax = Math.max(resources[index].rollDiceMin, parseInt(value) || resources[index].rollDiceMin);
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateRollDiceIncrement(index, value) {
-
             resources[index].rollDiceIncrement = Math.max(1, parseInt(value) || 1);
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateNumberOfDice(index, value) {
-
             resources[index].numberOfDice = Math.max(1, parseInt(value) || 1);
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
 			renderResources();
-
         }
-
-
 
         function updateHideCounter(index, hide) {
-
             resources[index].hideCounter = hide;
-
             hasUnsavedChanges = true;
-
             renderResources();
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateEnableDiceAnimation(index, enable) {
-
             resources[index].enableDiceAnimation = enable;
-
             hasUnsavedChanges = true;
-
             saveToLocalStorage();
-
         }
-
-		
 
 		function displayRollResult(index, results, sum) {
-
 			const resultElement = document.getElementById(`rollResult${index}`);
-
 			const resource = resources[index];
 
-			
-
 			if (resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0) {
-
 				resultElement.textContent = results.join(', ');
-
 				resultElement.dataset.detailed = results.join(', ');
-
 				resultElement.onclick = null;
-
 				resultElement.style.cursor = 'default';
-
 				resultElement.title = 'Custom dice values';
-
 			} else {
-
 				resultElement.textContent = results.join(', ');
-
 				resultElement.dataset.sum = sum;
-
 				resultElement.dataset.detailed = results.join(', ');
-
 				resultElement.onclick = () => toggleRollResult(index);
-
 				resultElement.style.cursor = 'pointer';
-
 				resultElement.title = 'Click to toggle between detailed result and sum';
-
 			}
-
 		}
-
-
 
 		function toggleRollResult(index) {
-
 			const resultElement = document.getElementById(`rollResult${index}`);
-
 			const resource = resources[index];
 
-			
-
 			if (resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0) {
-
 				// Do nothing for custom dice values
-
 				return;
-
 			}
-
-			
 
 			if (resultElement.textContent === resultElement.dataset.sum) {
-
 				resultElement.textContent = resultElement.dataset.detailed;
-
 			} else {
-
 				resultElement.textContent = resultElement.dataset.sum;
-
 			}
-
 		}
-
-
 
 		function rollDice(index) {
-
 			const resource = resources[index];
-
 			let results = [];
-
 			let sum = 0;
 
-
-
 			if (resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0) {
-
 				for (let i = 0; i < resource.numberOfDice; i++) {
-
 					const result = resource.rollDiceCustomValues[Math.floor(Math.random() * resource.rollDiceCustomValues.length)];
-
 					results.push(result);
-
 				}
-
 			} else {
-
 				const min = resource.rollDiceMin;
-
 				const max = resource.rollDiceMax;
-
 				const increment = resource.rollDiceIncrement;
-
 				const possibleValues = [];
-
 				for (let i = min; i <= max; i += increment) {
-
 					possibleValues.push(i);
-
 				}
-
 				for (let i = 0; i < resource.numberOfDice; i++) {
-
 					const result = possibleValues[Math.floor(Math.random() * possibleValues.length)];
-
 					results.push(result);
-
 					sum += result;
-
 				}
-
 			}
-
-
 
 			const resultElement = document.getElementById(`rollResult${index}`);
-
 			const diceButton = document.querySelector(`.resource:nth-child(${index + 1}) .dice-button`);
 
-
-
 			if (resource.enableDiceAnimation && !disableAllAnimations) {
-
 				diceSound.play();
-
 				diceButton.classList.add('rolling');
-
 				resultElement.textContent = '...';
-
 				setTimeout(() => {
-
 					diceButton.classList.remove('rolling');
-
 					displayRollResult(index, results, sum);
-
 				}, 1000); // Increased to 1 second to match typical dice roll sound duration
-
 			} else {
-
 				displayRollResult(index, results, sum);
-
 			}
-
 			setHideAllExceptResources(true);
-
 			resetInactivityTimer();
-
 		}
 
-
-
         function changeImage(index) {
-
             const fileInput = document.createElement('input');
-
             fileInput.type = 'file';
-
             fileInput.accept = 'image/jpeg, image/png, image/gif';
-
             fileInput.onchange = event => {
-
                 const file = event.target.files[0];
-
                 if (file) {
-
                     resources[index].image = URL.createObjectURL(file);
-
                     hasUnsavedChanges = true;
-
                     renderResources();
-
                     saveToLocalStorage();
-
                 }
-
             };
-
             fileInput.click();
-
         }
-
-
 
         function removeResource(index) {
-
             const confirmed = confirm('Are you sure you want to remove this resource?');
-
             if (confirmed) {
-
                 resources.splice(index, 1);
-
                 hasUnsavedChanges = true;
-
                 renderResources();
-
                 saveToLocalStorage();
-
                 checkGlobalCounterLimit();
-
             }
-
         }
-
-
 
         function exportData() {
-
             const exportData = {
-
                 resources: resources,
-
                 globalConfig: {
-
                     showSettingsGlobal,
-
                     hideAllExceptResources,
-
                     disableAllAnimations,
-
                     globalCounterLimit,
-
                     enableGlobalCounterLimit
-
                 }
-
             };
-
             const dataStr = JSON.stringify(exportData, null, 2);
-
             const blob = new Blob([dataStr], { type: 'application/json' });
-
             const url = URL.createObjectURL(blob);
-
             const a = document.createElement('a');
-
             a.href = url;
-
             a.download = 'resources.json';
-
             a.click();
-
             URL.revokeObjectURL(url);
-
         }
-
-
 
         function triggerImport() {
-
             document.getElementById('importFile').click();
-
         }
-
-
 
         function importData(event) {
-
             const file = event.target.files[0];
-
             if (file) {
-
                 const reader = new FileReader();
-
                 reader.onload = e => {
-
                     try {
-
                         const importedData = JSON.parse(e.target.result);
-
                         resources = importedData.resources.map(resource => ({
-
                             ...resource,
-
                             count: typeof resource.count === 'number' ? resource.count : 0,
-
                             customIncrement1: typeof resource.customIncrement1 === 'number' ? resource.customIncrement1 : 1,
-
                             customIncrement2: typeof resource.customIncrement2 === 'number' ? resource.customIncrement2 : 3,
-
                             customIncrement3: typeof resource.customIncrement3 === 'number' ? resource.customIncrement3 : 5,
-
                             minCount: typeof resource.minCount === 'number' ? resource.minCount : 0,
-
                             maxCount: resource.maxCount === null || resource.maxCount === undefined ? Infinity : resource.maxCount,
-
                             hideImage: typeof resource.hideImage === 'boolean' ? resource.hideImage : true,
-
                             keepOneModifier: typeof resource.keepOneModifier === 'boolean' ? resource.keepOneModifier : false,
-
                             showRollDice: typeof resource.showRollDice === 'boolean' ? resource.showRollDice : false,
-
                             rollDiceMin: typeof resource.rollDiceMin === 'number' ? resource.rollDiceMin : 1,
-
                             rollDiceMax: typeof resource.rollDiceMax === 'number' ? resource.rollDiceMax : 6,
-
                             rollDiceIncrement: typeof resource.rollDiceIncrement === 'number' ? resource.rollDiceIncrement : 1,
-
                             hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false,
-
                             enableDiceAnimation: typeof resource.enableDiceAnimation === 'boolean' ? resource.enableDiceAnimation : true,
-
                             numberOfDice: typeof resource.numberOfDice === 'number' ? resource.numberOfDice : 1,
-
 							rollDiceCustomValues: Array.isArray(resource.rollDiceCustomValues) ? resource.rollDiceCustomValues : [],
-
                             useCustomDiceValues: typeof resource.useCustomDiceValues === 'boolean' ? resource.useCustomDiceValues : false,
-
                             hideCounter: typeof resource.hideCounter === 'boolean' ? resource.hideCounter : false
-
                         }));
-
                         if (importedData.globalConfig) {
-
                             showSettingsGlobal = importedData.globalConfig.showSettingsGlobal;
-
                             hideAllExceptResources = importedData.globalConfig.hideAllExceptResources;
-
                             disableAllAnimations = importedData.globalConfig.disableAllAnimations;
-
                             globalCounterLimit = importedData.globalConfig.globalCounterLimit || 100;
-
                             enableGlobalCounterLimit = importedData.globalConfig.enableGlobalCounterLimit || false;
 
-                            
-
                             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
-
                             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-
                             document.getElementById('globalCounterLimit').value = globalCounterLimit;
-
                             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
-
                         }
-
                         hasUnsavedChanges = false;
-
                         setHideAllExceptResources(true);
-
                         renderResources();
-
                         saveToLocalStorage();
-
                         checkGlobalCounterLimit();
-
                     } catch (error) {
-
                         alert('Error importing data. Please make sure the file is valid JSON.');
-
                         console.error('Import Error:', error);
-
                     }
-
                 };
-
                 reader.readAsText(file);
-
             }
-
         }
-
-
 
 		function populateExampleDropdown() {
 			const select = document.getElementById('exampleSelect');
 			select.innerHTML = ''; // Clear existing options
-			
+
 			// Add the default "Select an example" option
 			const defaultOption = document.createElement('option');
 			defaultOption.value = "";
 			defaultOption.textContent = "Select an example";
 			select.appendChild(defaultOption);
-			
+
 			// Add the "Clear" option
 			const clearOption = document.createElement('option');
 			clearOption.value = 'clear';
@@ -2126,8 +1088,6 @@
 				})
 				.catch(error => console.error('Error loading example list:', error));
 		}
-
-
 
 		function loadSelectedExample() {
 			const exampleSelect = document.getElementById('exampleSelect');
@@ -2170,7 +1130,7 @@
 							disableAllAnimations = data.globalConfig.disableAllAnimations;
 							globalCounterLimit = data.globalConfig.globalCounterLimit || 100;
 							enableGlobalCounterLimit = data.globalConfig.enableGlobalCounterLimit || false;
-							
+
 							document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
 							document.getElementById('disableAllAnimations').checked = disableAllAnimations;
 							document.getElementById('globalCounterLimit').value = globalCounterLimit;
@@ -2181,7 +1141,7 @@
 						renderResources();
 						saveToLocalStorage();
 						checkGlobalCounterLimit();
-						
+
 						// Reset the dropdown to "Select an example" after loading
 						exampleSelect.value = "";
 					})
@@ -2191,192 +1151,101 @@
 					});
 			}
 		}
-		
+
 		function refreshExamples() {
 			populateExampleDropdown();
 		}
 
         function toggleGlobalSettings() {
-
             showSettingsGlobal = document.getElementById('showSettingsGlobal').checked;
-
-            renderResources();
-
+            renderResources(); // Update only the resource name inputs
             saveToLocalStorage();
-
         }
-
-
 
         function toggleGlobalSettingsVisibility() {
-
             globalSettingsVisible = !globalSettingsVisible;
-
             const content = document.getElementById('globalSettingsContent');
-
             content.style.display = globalSettingsVisible ? 'block' : 'none';
-
         }
-
-        
 
         document.getElementById('hideAllArrow').addEventListener('click', function() {
-
             toggleHideAllExceptResources();
-
         });
 
-
-
         function toggleHideAllExceptResources() {
-
             hideAllExceptResources = !hideAllExceptResources;
-
             updateVisibility();
-
             saveToLocalStorage();
-
             document.getElementById('hideAllArrow').textContent = hideAllExceptResources ? '▼' : '▲';
-
         }
-
-
 
         function setHideAllExceptResources(value) {
-
             hideAllExceptResources = value;
-
             updateVisibility();
-
             saveToLocalStorage();
-
             document.getElementById('hideAllArrow').textContent = value ? '▼' : '▲';
-
         }
-
-
 
         function updateVisibility() {
-
             const controlsContainer = document.getElementById('controlsContainer');
-
             controlsContainer.style.display = hideAllExceptResources ? 'none' : 'block';
-
         }
-
-
 
         function resetInactivityTimer() {
-
             clearTimeout(inactivityTimer);
-
             inactivityTimer = setTimeout(() => {
-
                 setHideAllExceptResources(false);
-
             }, 5 * 60 * 1000); // 5 minutes
-
         }
-
-
 
         function toggleAllAnimations() {
-
             disableAllAnimations = document.getElementById('disableAllAnimations').checked;
-
             saveToLocalStorage();
-
         }
-
-
 
         function updateGlobalCounterLimit() {
-
             globalCounterLimit = parseInt(document.getElementById('globalCounterLimit').value) || 100;
-
             saveToLocalStorage();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function toggleGlobalCounterLimit() {
-
             enableGlobalCounterLimit = document.getElementById('enableGlobalCounterLimit').checked;
-
             const globalCounterLimitContainer = document.getElementById('globalCounterLimitContainer');
-
             globalCounterLimitContainer.style.display = enableGlobalCounterLimit ? 'block' : 'none';
-
             saveToLocalStorage();
-
             checkGlobalCounterLimit();
-
         }
-
-
 
         function checkGlobalCounterLimit() {
-
             if (!enableGlobalCounterLimit) {
-
                 document.getElementById('limitMessage').style.display = 'none';
-
                 return;
-
             }
-
-
 
             const totalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
-
             const limitMessage = document.getElementById('limitMessage');
-
             if (totalCount > globalCounterLimit) {
-
                 limitMessage.textContent = `Global counter limit (${globalCounterLimit}) exceeded!`;
-
                 limitMessage.style.display = 'block';
-
             } else {
-
                 limitMessage.style.display = 'none';
-
             }
-
         }
 
-
-
 		window.addEventListener('beforeunload', (event) => {
-
 			if (hasUnsavedChanges) {
-
 				event.preventDefault();
-
 				event.returnValue = '';
 
-				
-
 				// Clear local storage after the user accepts the warning
-
 				setTimeout(() => {
-
 					localStorage.clear();
-
 				}, 0);
 
-				
-
 				return '';
-
 			}
-
 		});
-
-
 
 		document.addEventListener('DOMContentLoaded', () => {
 			refreshExamples();
@@ -2386,14 +1255,8 @@
 			toggleGlobalCounterLimit();
 		});
 
-
-
         document.addEventListener('mousemove', resetInactivityTimer);
-
         document.addEventListener('keypress', resetInactivityTimer);
-
     </script>
-
 </body>
-
 </html>
