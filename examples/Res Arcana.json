@@ -104,27 +104,6 @@
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
       "useCustomDiceValues": false
-    },
-    {
-      "name": "Resource 1",
-      "image": "default-image.png",
-      "count": 0,
-      "customIncrement1": 1,
-      "customIncrement2": 3,
-      "customIncrement3": 5,
-      "minCount": 0,
-      "maxCount": null,
-      "hideImage": true,
-      "keepOneModifier": true,
-      "showRollDice": false,
-      "rollDiceMin": 1,
-      "rollDiceMax": 6,
-      "rollDiceIncrement": 1,
-      "hideCounter": false,
-      "enableDiceAnimation": true,
-      "numberOfDice": 1,
-      "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
     }
   ],
   "globalConfig": {
