@@ -107,7 +107,7 @@
     }
   ],
   "globalConfig": {
-    "showSettingsGlobal": true,
+    "showSettingsGlobal": false,
     "hideAllExceptResources": false,
     "disableAllAnimations": false,
     "globalCounterLimit": 10,
