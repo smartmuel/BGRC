@@ -19,7 +19,10 @@
       "enableDiceAnimation": true,
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
+      "useCustomDiceValues": false,
+      "useFunnyName": false,
+      "funnyName": "Communist",
+      "previousUseFunnyName": true
     },
     {
       "name": "Life",
@@ -40,7 +43,10 @@
       "enableDiceAnimation": true,
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
+      "useCustomDiceValues": false,
+      "useFunnyName": false,
+      "funnyName": "Weed",
+      "previousUseFunnyName": true
     },
     {
       "name": "Calm",
@@ -61,7 +67,10 @@
       "enableDiceAnimation": true,
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
+      "useCustomDiceValues": false,
+      "useFunnyName": false,
+      "funnyName": "Not Calm",
+      "previousUseFunnyName": true
     },
     {
       "name": "Death",
@@ -82,7 +91,10 @@
       "enableDiceAnimation": true,
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
+      "useCustomDiceValues": false,
+      "useFunnyName": false,
+      "funnyName": "UnLife",
+      "previousUseFunnyName": true
     },
     {
       "name": "Gold",
@@ -103,7 +115,10 @@
       "enableDiceAnimation": true,
       "numberOfDice": 1,
       "rollDiceCustomValues": [],
-      "useCustomDiceValues": false
+      "useCustomDiceValues": false,
+      "useFunnyName": false,
+      "funnyName": "Winning Stone",
+      "previousUseFunnyName": true
     }
   ],
   "globalConfig": {
@@ -111,6 +126,14 @@
     "hideAllExceptResources": false,
     "disableAllAnimations": false,
     "globalCounterLimit": 10,
-    "enableGlobalCounterLimit": false
+    "enableGlobalCounterLimit": false,
+    "globalHideFunnyNames": true,
+    "previousFunnyNameStates": {
+      "0": true,
+      "1": true,
+      "2": true,
+      "3": true,
+      "4": true
+    }
   }
 }

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Resource Counter</title>
+    <meta name="description" content="A tool to track game resources with counters, images, dice rolling, and customizable settings.">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -73,8 +74,10 @@
 
         .resource-image-container {
             width: 100%;
-            max-width: 64px; /* Updated max-width to 64px */
-            max-height: 64px; /* Updated max-height to 64px */
+            max-width: 64px;
+            /* Updated max-width to 64px */
+            max-height: 64px;
+            /* Updated max-height to 64px */
             height: auto;
             aspect-ratio: 1;
             overflow: hidden;
@@ -205,7 +208,8 @@
         }
 
         .hide-image-checkbox,
-        .keep-one-modifier-checkbox {
+        .keep-one-modifier-checkbox,
+        .use-funny-name-checkbox {
             margin: 10px 0;
         }
 
@@ -484,6 +488,13 @@
                     <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
                 </label>
             </div>
+            <!-- Global setting to hide funny names -->
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked>
+                    Globally Hide Funny Names
+                </label>
+            </div>
         </div>
     </div>
     <div id="controlsContainer">
@@ -517,6 +528,9 @@
         let globalCounterLimit = 100;
         let enableGlobalCounterLimit = false;
         let diceSound = null;
+        let globalHideFunnyNames = true;
+        let previousFunnyNameStates = {}; // Store previous funny name states
+
 
         const defaultIncrement = 1;
         const defaultIncrement2 = 3;
@@ -557,7 +571,9 @@
                 hideAllExceptResources,
                 disableAllAnimations,
                 globalCounterLimit,
-                enableGlobalCounterLimit
+                enableGlobalCounterLimit,
+                globalHideFunnyNames,
+                previousFunnyNameStates // Save previous funny name states
             };
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -571,7 +587,9 @@
                 resources = JSON.parse(savedResources).map(processResourceData);
                 unnamedCounter = parseInt(localStorage.getItem('unnamedCounter')) || 1;
                 if (savedGlobalConfig) {
-                    applyGlobalConfig(JSON.parse(savedGlobalConfig));
+                    const config = JSON.parse(savedGlobalConfig);
+                    applyGlobalConfig(config);
+                    previousFunnyNameStates = config.previousFunnyNameStates || {}; // Load previous funny name states
                 }
                 renderResources();
                 updateVisibility();
@@ -593,7 +611,7 @@
                 maxCount: resourceData.maxCount === null || resourceData.maxCount === undefined ? Infinity : resourceData.maxCount,
                 image: resourceData.image ? resourceData.image : 'default-image.png',
                 hideImage: typeof resourceData.hideImage === 'boolean' ? resourceData.hideImage : true,
-                keepOneModifier: typeof resourceData.keepOneModifier === 'boolean' ? resourceData.keepOneModifier : true, // Default to true
+                keepOneModifier: typeof resourceData.keepOneModifier === 'boolean' ? resourceData.keepOneModifier : true,
                 showRollDice: typeof resourceData.showRollDice === 'boolean' ? resourceData.showRollDice : false,
                 rollDiceMin: typeof resourceData.rollDiceMin === 'number' ? resourceData.rollDiceMin : defaultMinDiceValue,
                 rollDiceMax: typeof resourceData.rollDiceMax === 'number' ? resourceData.rollDiceMax : defaultMaxDiceValue,
@@ -602,7 +620,10 @@
                 enableDiceAnimation: typeof resourceData.enableDiceAnimation === 'boolean' ? resourceData.enableDiceAnimation : true,
                 numberOfDice: typeof resourceData.numberOfDice === 'number' ? resourceData.numberOfDice : 1,
                 rollDiceCustomValues: Array.isArray(resourceData.rollDiceCustomValues) ? resourceData.rollDiceCustomValues : [],
-                useCustomDiceValues: typeof resourceData.useCustomDiceValues === 'boolean' ? resourceData.useCustomDiceValues : false
+                useCustomDiceValues: typeof resourceData.useCustomDiceValues === 'boolean' ? resourceData.useCustomDiceValues : false,
+                useFunnyName: typeof resourceData.useFunnyName === 'boolean' ? resourceData.useFunnyName : false,
+                funnyName: resourceData.funnyName || "",
+                previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName : false // keep track of funny name state
             };
         }
 
@@ -613,11 +634,14 @@
             disableAllAnimations = globalConfig.disableAllAnimations;
             globalCounterLimit = globalConfig.globalCounterLimit || 100;
             enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
+            globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
+            previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
 
             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
             document.getElementById('globalCounterLimit').value = globalCounterLimit;
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
             toggleGlobalCounterLimit();
         }
 
@@ -635,7 +659,7 @@
                 minCount: 0,
                 maxCount: Infinity,
                 hideImage: true,
-                keepOneModifier: true, // Default to true
+                keepOneModifier: true,
                 showRollDice: false,
                 rollDiceMin: defaultMinDiceValue,
                 rollDiceMax: defaultMaxDiceValue,
@@ -644,7 +668,10 @@
                 enableDiceAnimation: true,
                 numberOfDice: 1,
                 rollDiceCustomValues: [],
-                useCustomDiceValues: false
+                useCustomDiceValues: false,
+                useFunnyName: false,
+                funnyName: "",
+                previousUseFunnyName: false // Initialize previous funny name state
             };
             resources.push(resource);
             hasUnsavedChanges = true;
@@ -665,7 +692,7 @@
         }
 
         function renderResources() {
-            document.getElementById('resources').innerHTML = ''; // ADD THIS LINE: Clear existing content
+            document.getElementById('resources').innerHTML = '';
             resources.forEach((resource, index) => renderResource(resource, index));
             document.getElementById('exportButton').disabled = resources.length === 0;
             updateVisibility();
@@ -685,10 +712,18 @@
         }
 
         function generateResourceNameContainer(resource, index) {
+            let displayName = resource.name;
+            if (!globalHideFunnyNames && resource.useFunnyName && resource.funnyName) {
+                displayName = resource.funnyName;
+            }
+
             return `<div class="resource-name-container">
                     ${showSettingsGlobal
-                        ? `<input type="text" value="${resource.name}" oninput="updateName(${index}, this.value)">`
-                        : `<span class="resource-name">${resource.name}</span>`
+                        ? (resource.useFunnyName
+                            ? `<input type="text" placeholder="Funny Resource Name" value="${resource.funnyName}" onblur="updateFunnyName(${index}, this.value)">`
+                            : `<input type="text" placeholder="Resource Name" value="${resource.name}" onblur="updateName(${index}, this.value)">`
+                          )
+                        : `<span class="resource-name">${displayName}</span>`
                     }
                 </div>`
         }
@@ -733,6 +768,9 @@
         }
 
         function generateSettings(resource, index) {
+            const funnyNameSettingStyle = globalHideFunnyNames ? 'display: none;' : '';
+            const funnyNameSettingDisabled = globalHideFunnyNames;
+
             if (!showSettingsGlobal) return '';
             return `
                 <div class="settings">
@@ -745,6 +783,10 @@
                     </div>
                     <div class="keep-one-modifier-checkbox">
                         Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} checked onchange="updateKeepOneModifier(${index}, this.checked)">
+                    </div>
+                    <!-- Use Funny Name Checkbox -->
+                    <div class="use-funny-name-checkbox" style="${funnyNameSettingStyle}">
+                        Use Funny Name: <input type="checkbox" ${resource.useFunnyName ? 'checked' : ''} onchange="updateUseFunnyName(${index}, this.checked)" ${funnyNameSettingDisabled ? 'disabled' : ''}>
                     </div>
                     <div>
                         Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)" min="1">
@@ -931,6 +973,9 @@
                 case 'customdicevalues':
                     updateRollDiceCustomValues(index, value);
                     break;
+                case 'usefunnyname':
+                    updateUseFunnyName(index, value);
+                    break;
             }
         }
 
@@ -939,6 +984,15 @@
             targetResource.name = newName;
             hasUnsavedChanges = true;
             saveToLocalStorage();
+            renderResource(targetResource, index);
+        }
+
+        function updateFunnyName(index, newFunnyName) {
+            const targetResource = resources[index];
+            targetResource.funnyName = newFunnyName;
+            hasUnsavedChanges = true;
+            saveToLocalStorage();
+            renderResource(targetResource, index);
         }
 
         function updateCount(event, index, change) {
@@ -1052,6 +1106,14 @@
             saveToLocalStorage();
         }
 
+        function updateUseFunnyName(index, use) {
+            const targetResource = resources[index];
+            targetResource.useFunnyName = use;
+            hasUnsavedChanges = true;
+            renderResource(targetResource, index);
+            saveToLocalStorage();
+        }
+
         function displayRollResult(index, results, sum) {
             const targetResource = resources[index];
             const resultElement = document.getElementById(`rollResult${index}`);
@@ -1157,19 +1219,19 @@
         }
 
         function removeResource(index) {
-            console.log("removeResource called for index:", index); // ADD THIS LINE
+            console.log("removeResource called for index:", index);
             const confirmed = confirm('Are you sure you want to remove this resource?');
             if (confirmed) {
-                console.log("Confirmed removal"); // ADD THIS LINE
-                console.log("Resources before splice:", resources); // ADD THIS LINE
+                console.log("Confirmed removal");
+                console.log("Resources before splice:", resources);
                 resources.splice(index, 1);
-                console.log("Resources after splice:", resources); // ADD THIS LINE
+                console.log("Resources after splice:", resources);
                 hasUnsavedChanges = true;
                 renderResources();
                 saveToLocalStorage();
                 checkGlobalCounterLimit();
             } else {
-                console.log("Removal cancelled"); // ADD THIS LINE
+                console.log("Removal cancelled");
             }
         }
 
@@ -1181,7 +1243,9 @@
                     hideAllExceptResources,
                     disableAllAnimations,
                     globalCounterLimit,
-                    enableGlobalCounterLimit
+                    enableGlobalCounterLimit,
+                    globalHideFunnyNames,
+                    previousFunnyNameStates
                 }
             };
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -1255,21 +1319,21 @@
         function loadSelectedExample() {
             const exampleSelect = document.getElementById('exampleSelect');
             const exampleName = exampleSelect.value;
-            console.log("loadSelectedExample called with example:", exampleName); // ADD THIS LINE
+            console.log("loadSelectedExample called with example:", exampleName);
             if (exampleName === 'clear') {
-                console.log("Clear example selected"); // ADD THIS LINE
+                console.log("Clear example selected");
                 if (confirm("Are you sure you want to clear all resources? This action cannot be undone.")) {
-                    console.log("Confirmed clear action"); // ADD THIS LINE
-                    console.log("Resources before clear:", resources); // ADD THIS LINE
+                    console.log("Confirmed clear action");
+                    console.log("Resources before clear:", resources);
                     resources = [];
-                    console.log("Resources after clear:", resources); // ADD THIS LINE
+                    console.log("Resources after clear:", resources);
                     hasUnsavedChanges = false;
                     renderResources();
                     saveToLocalStorage();
                     checkGlobalCounterLimit();
-                    console.log("Clear action completed"); // ADD THIS LINE
+                    console.log("Clear action completed");
                 } else {
-                    console.log("Clear action cancelled"); // ADD THIS LINE
+                    console.log("Clear action cancelled");
                 }
             } else if (exampleName) {
                 fetch(`examples/${exampleName}`)
@@ -1359,6 +1423,28 @@
             checkGlobalCounterLimit();
         }
 
+        function toggleGlobalHideFunnyNames() {
+            globalHideFunnyNames = document.getElementById('globalHideFunnyNames').checked;
+
+            if (globalHideFunnyNames) {
+                // Store current funny name states
+                resources.forEach((resource, index) => {
+                    previousFunnyNameStates[index] = resource.useFunnyName;
+                    resource.previousUseFunnyName = resource.useFunnyName; // Backup current state for restore
+                    resource.useFunnyName = false; // Force disable funny names
+                });
+            } else {
+                // Restore previous funny name states
+                resources.forEach((resource, index) => {
+                    resource.useFunnyName = resource.previousUseFunnyName; // Restore from backup
+                });
+            }
+
+            renderResources();
+            saveToLocalStorage();
+        }
+
+
         function checkGlobalCounterLimit() {
             if (!enableGlobalCounterLimit) {
                 document.getElementById('limitMessage').style.display = 'none';
@@ -1392,6 +1478,7 @@
             resetInactivityTimer();
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
             toggleGlobalCounterLimit();
+            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
         });
 
         document.addEventListener('mousemove', resetInactivityTimer);
