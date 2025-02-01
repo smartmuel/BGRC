@@ -25,18 +25,36 @@
 
         .controls {
             display: flex;
-            flex-direction: column;
+            flex-direction: column; /* Changed to column to stack input and button group */
             align-items: center;
             margin-bottom: 20px;
         }
 
-        .controls input,
-        .controls button,
+        .controls-row {
+            display: flex;
+            width: 100%;
+            max-width: 300px;
+            align-items: center; /* Align items vertically in the row */
+        }
+
+        .controls-row input[type="text"] {
+            flex-grow: 1; /* Input takes up available space */
+            margin-right: 5px; /* Space between input and button */
+        }
+
+        .controls input[type="file"],
         .controls select {
             margin: 5px;
             width: 100%;
             max-width: 300px;
         }
+
+        .controls button#addButton { /* Style for Add Resource button in controls */
+            width: auto; /* Adjust width to content */
+            max-width: none; /* Remove max-width */
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+
 
         .button-group {
             display: flex;
@@ -259,6 +277,13 @@
             display: flex;
             align-items: center;
         }
+
+        .setting-item button { /* Style for buttons in global settings */
+            width: 100%;
+            margin: 5px 0;
+            max-width: none;
+        }
+
 
         .setting-item input[type="checkbox"] {
             margin-right: 5px;
@@ -495,16 +520,20 @@
                     Globally Hide Funny Names
                 </label>
             </div>
+            <div class="setting-item">
+                <button onclick="exportData()" id="exportButton" disabled>Export Data</button>
+            </div>
+            <div class="setting-item">
+                <button onclick="triggerImport()">Import Data</button>
+            </div>
         </div>
     </div>
     <div id="controlsContainer">
         <div class="controls">
             <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
-            <input type="text" id="resourceName" placeholder="Resource Name">
-            <div class="button-group">
-                <button onclick="addResource()">Add Resource</button>
-                <button onclick="exportData()" id="exportButton" disabled>Export</button>
-                <button onclick="triggerImport()">Import</button>
+            <div class="controls-row">
+                <input type="text" id="resourceName" placeholder="Resource Name">
+                <button onclick="addResource()" id="addButton">Add Resource</button>
             </div>
             <select id="exampleSelect">
                 <option value="">Select a Game</option>
@@ -517,6 +546,8 @@
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
     <script>
+        // ... rest of your JavaScript code remains the same ...
+        // No changes needed in JS for this UI rearrangement
         let resources = [];
         let unnamedCounter = 1;
         let hasUnsavedChanges = false;
@@ -529,8 +560,7 @@
         let enableGlobalCounterLimit = false;
         let diceSound = null;
         let globalHideFunnyNames = true;
-        let previousFunnyNameStates = {}; // Store previous funny name states
-
+        let previousFunnyNameStates = {};
 
         const defaultIncrement = 1;
         const defaultIncrement2 = 3;
@@ -573,7 +603,7 @@
                 globalCounterLimit,
                 enableGlobalCounterLimit,
                 globalHideFunnyNames,
-                previousFunnyNameStates // Save previous funny name states
+                previousFunnyNameStates
             };
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -589,7 +619,7 @@
                 if (savedGlobalConfig) {
                     const config = JSON.parse(savedGlobalConfig);
                     applyGlobalConfig(config);
-                    previousFunnyNameStates = config.previousFunnyNameStates || {}; // Load previous funny name states
+                    previousFunnyNameStates = config.previousFunnyNameStates || {};
                 }
                 renderResources();
                 updateVisibility();
@@ -623,7 +653,7 @@
                 useCustomDiceValues: typeof resourceData.useCustomDiceValues === 'boolean' ? resourceData.useCustomDiceValues : false,
                 useFunnyName: typeof resourceData.useFunnyName === 'boolean' ? resourceData.useFunnyName : false,
                 funnyName: resourceData.funnyName || "",
-                previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName : false // keep track of funny name state
+                previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName : false
             };
         }
 
@@ -671,7 +701,7 @@
                 useCustomDiceValues: false,
                 useFunnyName: false,
                 funnyName: "",
-                previousUseFunnyName: false // Initialize previous funny name state
+                previousUseFunnyName: false
             };
             resources.push(resource);
             hasUnsavedChanges = true;
