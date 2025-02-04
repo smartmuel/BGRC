@@ -1353,7 +1353,7 @@
             console.log("loadSelectedExample called with example:", exampleName);
         
             // Check if there are resources or unsaved changes
-            if (resources.length > 0 || hasUnsavedChanges) {
+            if (exampleName !== 'clear' && (resources.length > 0 || hasUnsavedChanges)) {
                 const confirmation = confirm("Loading a new game will clear your current resources. Are you sure you want to continue?");
                 if (!confirmation) {
                     console.log("Load game cancelled by user.");
