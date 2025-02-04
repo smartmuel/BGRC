@@ -667,6 +667,15 @@
             globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
             previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
 
+            // Preserve user's globalHideFunnyNames setting if it exists
+            if (globalConfig.globalHideFunnyNames !== undefined) {
+                // Only set globalHideFunnyNames if it hasn't been explicitly set by the user yet.
+                // We can check if globalHideFunnyNames is still its initial default value (true).
+                if (globalHideFunnyNames === true || globalHideFunnyNames === undefined) { // Check for undefined as well for initial load
+                    globalHideFunnyNames = globalConfig.globalHideFunnyNames;
+                }
+            }
+            
             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
             document.getElementById('globalCounterLimit').value = globalCounterLimit;
