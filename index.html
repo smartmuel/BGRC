@@ -537,7 +537,6 @@
             </div>
             <select id="exampleSelect">
                 <option value="">Select a Game</option>
-                <option value="clear">Clear</option>
             </select>
             <button onclick="loadSelectedExample()">Load Game</button>
         </div>
@@ -547,6 +546,8 @@
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
     <script>
+        // ... rest of your JavaScript code remains the same ...
+        // No changes needed in JS for this UI rearrangement
         let resources = [];
         let unnamedCounter = 1;
         let hasUnsavedChanges = false;
@@ -558,7 +559,8 @@
         let globalCounterLimit = 100;
         let enableGlobalCounterLimit = false;
         let diceSound = null;
-        let globalHideFunnyNames = true; // Default value - kept
+        let globalHideFunnyNames = true;
+        let hasUserChangedGlobalFunnyNames = false;
         let previousFunnyNameStates = {};
 
         const defaultIncrement = 1;
@@ -601,8 +603,9 @@
                 disableAllAnimations,
                 globalCounterLimit,
                 enableGlobalCounterLimit,
-                // globalHideFunnyNames: globalHideFunnyNames, // Removed from saving
-                previousFunnyNameStates
+                globalHideFunnyNames,
+                previousFunnyNameStates,
+                hasUserChangedGlobalFunnyNames
             };
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -619,7 +622,7 @@
                     const config = JSON.parse(savedGlobalConfig);
                     applyGlobalConfig(config);
                     previousFunnyNameStates = config.previousFunnyNameStates || {};
-                    // globalHideFunnyNames = config.globalHideFunnyNames; // Removed from loading
+                    hasUserChangedGlobalFunnyNames = config.hasUserChangedGlobalFunnyNames || false;
                 }
                 renderResources();
                 updateVisibility();
@@ -664,15 +667,21 @@
             disableAllAnimations = globalConfig.disableAllAnimations;
             globalCounterLimit = globalConfig.globalCounterLimit || 100;
             enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
+            globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
             previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
 
-            // globalHideFunnyNames is NOT touched here anymore
-
+            // Preserve user's globalHideFunnyNames setting if the user has ever changed it
+            if (globalConfig.globalHideFunnyNames !== undefined) {
+                if (!hasUserChangedGlobalFunnyNames) {
+                    globalHideFunnyNames = globalConfig.globalHideFunnyNames;
+                }
+            }
+            
             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
             document.getElementById('globalCounterLimit').value = globalCounterLimit;
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
-            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames; // Make sure the checkbox reflects the *current* value
+            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
             toggleGlobalCounterLimit();
         }
 
@@ -709,8 +718,6 @@
             renderResources();
             saveToLocalStorage();
             checkGlobalCounterLimit();
-
-            // Clear the text input after adding the resource
             document.getElementById('resourceName').value = "";
         }
 
@@ -1140,14 +1147,6 @@
             saveToLocalStorage();
         }
 
-        function toggleUseFunnyName(index, use) {
-            const targetResource = resources[index];
-            targetResource.useFunnyName = use;
-            hasUnsavedChanges = true;
-            renderResource(targetResource, index);
-            saveToLocalStorage();
-        }
-
         function updateUseFunnyName(index, use) {
             const targetResource = resources[index];
             targetResource.useFunnyName = use;
@@ -1286,8 +1285,9 @@
                     disableAllAnimations,
                     globalCounterLimit,
                     enableGlobalCounterLimit,
-                    // globalHideFunnyNames: globalHideFunnyNames, // Removed from export
-                    previousFunnyNameStates
+                    globalHideFunnyNames,
+                    previousFunnyNameStates,
+                    hasUserChangedGlobalFunnyNames
                 }
             };
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -1316,7 +1316,11 @@
                         resources = importedData.resources.map(processResourceData);
                         if (importedData.globalConfig) {
                             applyGlobalConfig(importedData.globalConfig);
-                            // globalHideFunnyNames = importedData.globalConfig.globalHideFunnyNames; // Removed from import
+                            if (importedData.globalConfig.hasUserChangedGlobalFunnyNames !== undefined) { // Import the new flag
+                                hasUserChangedGlobalFunnyNames = importedData.globalConfig.hasUserChangedGlobalFunnyNames;
+                            } else {
+                                hasUserChangedGlobalFunnyNames = false; // If not in import, default to false
+                            }
                         }
                         hasUnsavedChanges = false;
                         setHideAllExceptResources(true);
@@ -1363,8 +1367,8 @@
             const exampleSelect = document.getElementById('exampleSelect');
             const exampleName = exampleSelect.value;
             console.log("loadSelectedExample called with example:", exampleName);
-
-            // Check if there are resources or unsaved changes, BUT NOT if "Clear" is selected
+        
+            // Check if there are resources or unsaved changes
             if (exampleName !== 'clear' && (resources.length > 0 || hasUnsavedChanges)) {
                 const confirmation = confirm("Loading a new game will clear your current resources. Are you sure you want to continue?");
                 if (!confirmation) {
@@ -1373,7 +1377,7 @@
                 }
                 console.log("User confirmed load game, proceeding...");
             }
-
+        
             if (exampleName === 'clear') {
                 console.log("Clear example selected");
                 if (confirm("Are you sure you want to clear all resources? This action cannot be undone.")) {
@@ -1428,27 +1432,9 @@
             content.style.display = globalSettingsVisible ? 'block' : 'none';
         }
 
-        function toggleGlobalHideFunnyNames() {
-            globalHideFunnyNames = document.getElementById('globalHideFunnyNames').checked;
-
-            if (globalHideFunnyNames) {
-                // Store current funny name states
-                resources.forEach((resource, index) => {
-                    previousFunnyNameStates[index] = resource.useFunnyName;
-                    resource.previousUseFunnyName = resource.useFunnyName; // Backup current state for restore
-                    resource.useFunnyName = false; // Force disable funny names
-                });
-            } else {
-                // Restore previous funny name states
-                resources.forEach((resource, index) => {
-                    resource.useFunnyName = resource.previousUseFunnyName; // Restore from backup
-                });
-            }
-
-            renderResources();
-            saveToLocalStorage();
-        }
-
+        document.getElementById('hideAllArrow').addEventListener('click', function() {
+            toggleHideAllExceptResources();
+        });
 
         function toggleHideAllExceptResources() {
             hideAllExceptResources = !hideAllExceptResources;
@@ -1495,6 +1481,27 @@
             checkGlobalCounterLimit();
         }
 
+        function toggleGlobalHideFunnyNames() {
+            globalHideFunnyNames = document.getElementById('globalHideFunnyNames').checked;
+            hasUserChangedGlobalFunnyNames = true;
+            if (globalHideFunnyNames) {
+                // Store current funny name states
+                resources.forEach((resource, index) => {
+                    previousFunnyNameStates[index] = resource.useFunnyName;
+                    resource.previousUseFunnyName = resource.useFunnyName; // Backup current state for restore
+                    resource.useFunnyName = false; // Force disable funny names
+                });
+            } else {
+                // Restore previous funny name states
+                resources.forEach((resource, index) => {
+                    resource.useFunnyName = resource.previousUseFunnyName; // Restore from backup
+                });
+            }
+
+            renderResources();
+            saveToLocalStorage();
+        }
+
 
         function checkGlobalCounterLimit() {
             if (!enableGlobalCounterLimit) {
@@ -1529,7 +1536,7 @@
             resetInactivityTimer();
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
             toggleGlobalCounterLimit();
-            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames; // Set initial checkbox state
+            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
         });
 
         document.addEventListener('mousemove', resetInactivityTimer);
