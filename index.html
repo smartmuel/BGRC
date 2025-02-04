@@ -538,7 +538,7 @@
             <select id="exampleSelect">
                 <option value="">Select a Game</option>
             </select>
-            <button onclick="loadSelectedExample()">Load Example</button>
+            <button onclick="loadSelectedExample()">Load Game</button>
         </div>
     </div>
     <div id="resources"></div>
@@ -1351,6 +1351,17 @@
             const exampleSelect = document.getElementById('exampleSelect');
             const exampleName = exampleSelect.value;
             console.log("loadSelectedExample called with example:", exampleName);
+        
+            // Check if there are resources or unsaved changes
+            if (resources.length > 0 || hasUnsavedChanges) {
+                const confirmation = confirm("Loading a new game will clear your current resources. Are you sure you want to continue?");
+                if (!confirmation) {
+                    console.log("Load game cancelled by user.");
+                    return; // Exit the function if the user cancels
+                }
+                console.log("User confirmed load game, proceeding...");
+            }
+        
             if (exampleName === 'clear') {
                 console.log("Clear example selected");
                 if (confirm("Are you sure you want to clear all resources? This action cannot be undone.")) {
