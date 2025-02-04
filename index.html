@@ -560,6 +560,7 @@
         let enableGlobalCounterLimit = false;
         let diceSound = null;
         let globalHideFunnyNames = true;
+        let hasUserChangedGlobalFunnyNames = false;
         let previousFunnyNameStates = {};
 
         const defaultIncrement = 1;
@@ -603,7 +604,8 @@
                 globalCounterLimit,
                 enableGlobalCounterLimit,
                 globalHideFunnyNames,
-                previousFunnyNameStates
+                previousFunnyNameStates,
+                hasUserChangedGlobalFunnyNames
             };
             localStorage.setItem('boardGameResources', JSON.stringify(resources));
             localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -620,6 +622,7 @@
                     const config = JSON.parse(savedGlobalConfig);
                     applyGlobalConfig(config);
                     previousFunnyNameStates = config.previousFunnyNameStates || {};
+                    hasUserChangedGlobalFunnyNames = config.hasUserChangedGlobalFunnyNames || false;
                 }
                 renderResources();
                 updateVisibility();
@@ -667,11 +670,9 @@
             globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
             previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
 
-            // Preserve user's globalHideFunnyNames setting if it exists
+            // Preserve user's globalHideFunnyNames setting if the user has ever changed it
             if (globalConfig.globalHideFunnyNames !== undefined) {
-                // Only set globalHideFunnyNames if it hasn't been explicitly set by the user yet.
-                // We can check if globalHideFunnyNames is still its initial default value (true).
-                if (globalHideFunnyNames === true || globalHideFunnyNames === undefined) { // Check for undefined as well for initial load
+                if (!hasUserChangedGlobalFunnyNames) {
                     globalHideFunnyNames = globalConfig.globalHideFunnyNames;
                 }
             }
@@ -1285,7 +1286,8 @@
                     globalCounterLimit,
                     enableGlobalCounterLimit,
                     globalHideFunnyNames,
-                    previousFunnyNameStates
+                    previousFunnyNameStates,
+                    hasUserChangedGlobalFunnyNames
                 }
             };
             const dataStr = JSON.stringify(exportData, null, 2);
@@ -1314,6 +1316,11 @@
                         resources = importedData.resources.map(processResourceData);
                         if (importedData.globalConfig) {
                             applyGlobalConfig(importedData.globalConfig);
+                            if (importedData.globalConfig.hasUserChangedGlobalFunnyNames !== undefined) { // Import the new flag
+                                hasUserChangedGlobalFunnyNames = importedData.globalConfig.hasUserChangedGlobalFunnyNames;
+                            } else {
+                                hasUserChangedGlobalFunnyNames = false; // If not in import, default to false
+                            }
                         }
                         hasUnsavedChanges = false;
                         setHideAllExceptResources(true);
@@ -1476,7 +1483,7 @@
 
         function toggleGlobalHideFunnyNames() {
             globalHideFunnyNames = document.getElementById('globalHideFunnyNames').checked;
-
+            hasUserChangedGlobalFunnyNames = true;
             if (globalHideFunnyNames) {
                 // Store current funny name states
                 resources.forEach((resource, index) => {
