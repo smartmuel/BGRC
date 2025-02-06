@@ -5,8 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Game Resource Counter</title>
-    <meta name="description" content="A tool to track game resources with counters, images, dice rolling, and customizable settings.">
+    <meta name="description"
+        content="A tool to track game resources with counters, images, dice rolling, and customizable settings.">
     <style>
+        :root {
+            --button-padding: 10px;
+            --button-border-radius: 4px;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f4f9;
@@ -25,7 +31,8 @@
 
         .controls {
             display: flex;
-            flex-direction: column; /* Changed to column to stack input and button group */
+            flex-direction: column;
+            /* Changed to column to stack input and button group */
             align-items: center;
             margin-bottom: 20px;
         }
@@ -34,12 +41,15 @@
             display: flex;
             width: 100%;
             max-width: 300px;
-            align-items: center; /* Align items vertically in the row */
+            align-items: center;
+            /* Align items vertically in the row */
         }
 
         .controls-row input[type="text"] {
-            flex-grow: 1; /* Input takes up available space */
-            margin-right: 5px; /* Space between input and button */
+            flex-grow: 1;
+            /* Input takes up available space */
+            margin-right: 5px;
+            /* Space between input and button */
         }
 
         .controls input[type="file"],
@@ -49,10 +59,14 @@
             max-width: 300px;
         }
 
-        .controls button#addButton { /* Style for Add Resource button in controls */
-            width: auto; /* Adjust width to content */
-            max-width: none; /* Remove max-width */
-            flex-shrink: 0; /* Prevent shrinking */
+        .controls button#addButton {
+            /* Style for Add Resource button in controls */
+            width: auto;
+            /* Adjust width to content */
+            max-width: none;
+            /* Remove max-width */
+            flex-shrink: 0;
+            /* Prevent shrinking */
         }
 
 
@@ -175,10 +189,10 @@
         }
 
         button {
-            padding: 10px;
+            padding: var(--button-padding);
             font-size: 14px;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--button-border-radius);
             cursor: pointer;
             background-color: #2ecc71;
             color: #fff;
@@ -278,7 +292,8 @@
             align-items: center;
         }
 
-        .setting-item button { /* Style for buttons in global settings */
+        .setting-item button {
+            /* Style for buttons in global settings */
             width: 100%;
             margin: 5px 0;
             max-width: none;
@@ -476,10 +491,69 @@
         .modifier-toggle:hover {
             background-color: #2980b9;
         }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #333;
+            /* Dark background */
+            color: #f0f0f0;
+            /* Light text */
+        }
+
+        body.dark-mode h1 {
+            color: #fff;
+            /* Light color for headings */
+        }
+
+        body.dark-mode .resource {
+            background-color: #444;
+            /* Darker resource background */
+            border-color: #666;
+            box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
+            /* Lighter shadow */
+        }
+
+        body.dark-mode .settings {
+            background-color: #555;
+            /* Darker settings background */
+            color: #f0f0f0;
+        }
+
+        body.dark-mode .resource-name-container input {
+            background-color: #555;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        body.dark-mode .resource-name-container input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        body.dark-mode #globalSettingsButton {
+            background-color: #444;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        body.dark-mode #globalSettingsContent {
+            background-color: #444;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        body.dark-mode #hideAllArrow {
+            background-color: #333;
+            /* Ensure it matches the body's background */
+        }
+
+        body.dark-mode .counter span {
+            color: #f0f0f0; /* Light text color for the counter */
+        }
     </style>
 </head>
 
-<body>
+<body data-new-gr-c-s-check-loaded="14.1098.0.0" data-gr-ext-installed="">
     <div id="limitMessage" style="display: none;"></div>
     <h1>Game Resource Counter</h1>
     <div id="hideAllContainer">
@@ -513,15 +587,20 @@
                     <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
                 </label>
             </div>
-            <!-- Global setting to hide funny names -->
             <div class="setting-item">
                 <label>
-                    <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked>
+                    <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked="">
                     Globally Hide Funny Names
                 </label>
             </div>
             <div class="setting-item">
-                <button onclick="exportData()" id="exportButton" disabled>Export Data</button>
+                <label>
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    Dark Mode
+                </label>
+            </div>
+            <div class="setting-item">
+                <button onclick="exportData()" id="exportButton" disabled="">Export Data</button>
             </div>
             <div class="setting-item">
                 <button onclick="triggerImport()">Import Data</button>
@@ -546,8 +625,8 @@
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 
     <script>
-        // ... rest of your JavaScript code remains the same ...
-        // No changes needed in JS for this UI rearrangement
+        const STATIC_ASSET_URL = 'https://smartmuel.github.io/BGRC_Resources'; // **Updated Static Asset URL**
+
         let resources = [];
         let unnamedCounter = 1;
         let hasUnsavedChanges = false;
@@ -574,7 +653,7 @@
             const audioContext = new(window.AudioContext || window.webkitContext)();
             let buffer;
 
-            fetch('sound/rolling_dice.mp3')
+            fetch(`${STATIC_ASSET_URL}/sound/rolling_dice.mp3`)
                 .then(response => response.arrayBuffer())
                 .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
                 .then(decodedBuffer => {
@@ -639,7 +718,7 @@
                 customIncrement3: typeof resourceData.customIncrement3 === 'number' ? resourceData.customIncrement3 : defaultIncrement3,
                 minCount: typeof resourceData.minCount === 'number' ? resourceData.minCount : 0,
                 maxCount: resourceData.maxCount === null || resourceData.maxCount === undefined ? Infinity : resourceData.maxCount,
-                image: resourceData.image ? resourceData.image : 'default-image.png',
+                image: resourceData.image ? resourceData.image : `${STATIC_ASSET_URL}/default-image.png`,
                 hideImage: typeof resourceData.hideImage === 'boolean' ? resourceData.hideImage : true,
                 keepOneModifier: typeof resourceData.keepOneModifier === 'boolean' ? resourceData.keepOneModifier : true,
                 showRollDice: typeof resourceData.showRollDice === 'boolean' ? resourceData.showRollDice : false,
@@ -681,7 +760,7 @@
 
             const resource = {
                 name,
-                image: file ? URL.createObjectURL(file) : 'default-image.png',
+                image: file ? URL.createObjectURL(file) : `${STATIC_ASSET_URL}/default-image.png`,
                 count: 0,
                 customIncrement1: defaultIncrement,
                 customIncrement2: defaultIncrement2,
@@ -813,9 +892,8 @@
                         Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
                     </div>
                     <div class="keep-one-modifier-checkbox">
-                        Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} checked onchange="updateKeepOneModifier(${index}, this.checked)">
+                        Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} checked="" onchange="updateKeepOneModifier(${index}, this.checked)">
                     </div>
-                    <!-- Use Funny Name Checkbox -->
                     <div class="use-funny-name-checkbox" style="${funnyNameSettingStyle}">
                         Use Funny Name: <input type="checkbox" ${resource.useFunnyName ? 'checked' : ''} onchange="updateUseFunnyName(${index}, this.checked)" ${funnyNameSettingDisabled ? 'disabled' : ''}>
                     </div>
@@ -831,7 +909,7 @@
                     </div>
                     ` : ''}
                     <div>
-                        Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)" >
+                        Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
                     </div>
                     <div>
                         Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
@@ -926,7 +1004,7 @@
 
 
         function attachEventListeners() {
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 const target = event.target;
 
                 if (target.matches('.counter button')) {
@@ -944,7 +1022,7 @@
             });
 
 
-            document.addEventListener('input', function(event) {
+            document.addEventListener('input', function (event) {
                 const target = event.target;
                 if (target.matches('.resource input')) {
                     const input = target;
@@ -1029,6 +1107,12 @@
         function updateCount(event, index, change) {
             event.stopPropagation();
             const targetResource = resources[index];
+
+            if (typeof change !== 'number' || isNaN(change)) {
+                console.error("Invalid change value:", change);
+                return; // Or display an error message to the user
+            }
+
             targetResource.count = Math.max(targetResource.minCount, Math.min(targetResource.count + change, targetResource.maxCount));
             hasUnsavedChanges = true;
             const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .counter span`);
@@ -1255,6 +1339,10 @@
             if (confirmed) {
                 console.log("Confirmed removal");
                 console.log("Resources before splice:", resources);
+                const resource = resources[index]; // Get the resource before splicing
+                if (resource.image && resource.image.startsWith('blob:')) {
+                    URL.revokeObjectURL(resource.image); // Revoke if it's a blob URL
+                }
                 resources.splice(index, 1);
                 console.log("Resources after splice:", resources);
                 hasUnsavedChanges = true;
@@ -1269,15 +1357,6 @@
         function exportData() {
             const exportData = {
                 resources: resources,
-                globalConfig: {
-                    showSettingsGlobal,
-                    hideAllExceptResources,
-                    disableAllAnimations,
-                    globalCounterLimit,
-                    enableGlobalCounterLimit,
-                    globalHideFunnyNames,
-                    previousFunnyNameStates
-                }
             };
             const dataStr = JSON.stringify(exportData, null, 2);
             const blob = new Blob([dataStr], {
@@ -1303,9 +1382,6 @@
                     try {
                         const importedData = JSON.parse(e.target.result);
                         resources = importedData.resources.map(processResourceData);
-                        if (importedData.globalConfig) {
-                            applyGlobalConfig(importedData.globalConfig);
-                        }
                         hasUnsavedChanges = false;
                         setHideAllExceptResources(true);
                         renderResources();
@@ -1334,7 +1410,7 @@
             clearOption.textContent = 'Clear';
             select.appendChild(clearOption);
 
-            fetch('examples/example_list.json')
+            fetch(`${STATIC_ASSET_URL}/examples/example_list.json`)
                 .then(response => response.json())
                 .then(exampleNames => {
                     exampleNames.forEach(name => {
@@ -1351,7 +1427,7 @@
             const exampleSelect = document.getElementById('exampleSelect');
             const exampleName = exampleSelect.value;
             console.log("loadSelectedExample called with example:", exampleName);
-        
+
             // Check if there are resources or unsaved changes
             if (exampleName !== 'clear' && (resources.length > 0 || hasUnsavedChanges)) {
                 const confirmation = confirm("Loading a new game will clear your current resources. Are you sure you want to continue?");
@@ -1361,7 +1437,7 @@
                 }
                 console.log("User confirmed load game, proceeding...");
             }
-        
+
             if (exampleName === 'clear') {
                 console.log("Clear example selected");
                 if (confirm("Are you sure you want to clear all resources? This action cannot be undone.")) {
@@ -1378,14 +1454,11 @@
                     console.log("Clear action cancelled");
                 }
             } else if (exampleName) {
-                fetch(`examples/${exampleName}`)
+                fetch(`${STATIC_ASSET_URL}/examples/${exampleName}`)
                     .then(response => response.json())
                     .then(data => {
                         let resourcesData = Array.isArray(data) ? data : data.resources;
                         resources = resourcesData.map(processResourceData);
-                        if (data.globalConfig) {
-                            applyGlobalConfig(data.globalConfig);
-                        }
                         hasUnsavedChanges = false;
                         setHideAllExceptResources(true);
                         renderResources();
@@ -1416,7 +1489,7 @@
             content.style.display = globalSettingsVisible ? 'block' : 'none';
         }
 
-        document.getElementById('hideAllArrow').addEventListener('click', function() {
+        document.getElementById('hideAllArrow').addEventListener('click', function () {
             toggleHideAllExceptResources();
         });
 
@@ -1521,12 +1594,38 @@
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
             toggleGlobalCounterLimit();
             document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
+
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').checked = true;
+            }
+
         });
 
         document.addEventListener('mousemove', resetInactivityTimer);
         document.addEventListener('keypress', resetInactivityTimer);
 
+
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark-mode');
+            const darkModeEnabled = body.classList.contains('dark-mode'); // Determine if dark mode is enabled
+
+            localStorage.setItem('darkMode', darkModeEnabled); // Save state to localStorage
+        }
+
+        // Check for dark mode on page load
+        window.onload = () => {
+            const darkModeEnabled = localStorage.getItem('darkMode') === 'true';
+            if (darkModeEnabled) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('darkModeToggle').checked = true;
+            }
+        };
     </script>
+
+
 </body>
 
 </html>
