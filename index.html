@@ -1241,7 +1241,7 @@
                     ` : ''}
                     <div class="counter-buttons">
                         <button onclick="updateCount(event, ${index}, -${resource.customIncrement1})">-${resource.customIncrement1}</button>
-                        <span>${resource.count}</span>
+                        <span class="count-display">${resource.count}</span>
                         <button onclick="updateCount(event, ${index}, ${resource.customIncrement1})">+${resource.customIncrement1}</button>
                     </div>
                     ${!resource.keepOneModifier ? `
@@ -1540,7 +1540,7 @@
             else {
                 console.log("Updating count locally (Local Mode).");
                 targetResource.count = newCount;
-                const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-value`);
+                const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-display`);
                 if (resourceElement) {
                     resourceElement.textContent = newCount;
                 }
