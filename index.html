@@ -276,11 +276,6 @@
             margin-bottom: 10px;
         }
 
-        .setting-item label {
-            display: flex;
-            align-items: center;
-        }
-
         .setting-item button {
             width: 100%;
             margin: 5px 0;
@@ -612,6 +607,76 @@
             display: none; /* Initially hidden */
         }
 
+        /* Status Window Styles */
+        #statusWindowContainer {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1005;
+        }
+
+        #statusWindowButton {
+            background-color: #f4f4f9;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            padding: 0;
+            line-height: 1;
+        }
+
+        #statusWindow {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 100%; /* Positioned below the button */
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            max-width: 400px; /* Adjust as needed */
+            width: 90vw;
+            z-index: 1004;
+            overflow-y: auto; /* For scrollable content if needed */
+            max-height: 300px; /* Limit height and enable scroll */
+        }
+
+        .status-item {
+            padding: 5px 0;
+            border-bottom: 1px dotted #ddd;
+            margin-bottom: 5px;
+        }
+
+        .status-item:last-child {
+            border-bottom: none; /* No border for the last item */
+            margin-bottom: 0;
+        }
+
+        body.dark-mode #statusWindowContainer #statusWindowButton {
+            background-color: #444;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        body.dark-mode #statusWindowContainer #statusWindow {
+            background-color: #444;
+            color: #f0f0f0;
+            border-color: #666;
+        }
+
+        .dark-mode .status-item {
+            border-bottom: 1px dotted #555;
+            /* Darker border in dark mode */
+        }
+
+
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -619,6 +684,12 @@
 </head>
 
 <body data-new-gr-c-s-check-loaded="14.1098.0.0" data-gr-ext-installed="">
+    <div id="statusWindowContainer">
+        <button id="statusWindowButton" onclick="toggleStatusWindowVisibility()">📊</button>
+        <div id="statusWindow">
+            <!-- Client status will be displayed here -->
+        </div>
+    </div>
     <div id="limitMessage" style="display: none;"></div>
     <h1>Game Resource Counter</h1>
     <div id="hideAllContainer">
@@ -736,6 +807,7 @@
                     <select id="serverClientMode">
                         <option value="client" selected>Client</option>
                         <option value="server">Server</option>
+                        <option value="local">Local</option>
                     </select>
                 </label>
             </div>
@@ -804,6 +876,73 @@
         let clientName = localStorage.getItem('clientName') || '';
         let configSavedToServer = false;
         let initialLoad = true;
+        let statusWindowVisible = false; // Track status window visibility
+        let clientsInSession = {}; // Store client names by ID
+        let sdkExported = false; // Flag to prevent double export
+
+        function toggleStatusWindowVisibility() {
+            statusWindowVisible = !statusWindowVisible;
+            document.getElementById('statusWindow').style.display = statusWindowVisible ? 'block' : 'none';
+            if (statusWindowVisible && serverClientMode !== 'local') {
+                fetchAndDisplayClientStatus(); // Fetch and display status when opening the window
+            }
+        }
+
+        async function fetchAndDisplayClientStatus() {
+            if (!sessionId || !['client', 'server'].includes(serverClientMode)) {
+                console.warn("Client status not available in local mode or without a session.");
+                document.getElementById('statusWindow').innerHTML = "<p>Status not available in local mode or without a session.</p>";
+                return;
+            }
+
+            const statusWindowContent = document.getElementById('statusWindow');
+            statusWindowContent.innerHTML = "<p>Loading client status...</p>"; // Initial loading message
+
+            try {
+                const clientCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts`).get();
+                const clientCountsData = clientCountsSnapshot.val();
+                const configSnapshot = await db.ref(`sessions/${sessionId}/config`).get();
+                const configData = configSnapshot.val();
+
+
+                if (!clientCountsData || !configData || !clientsInSession) {
+                    statusWindowContent.innerHTML = "<p>No client status data available.</p>";
+                    return;
+                }
+
+                let statusHTML = '';
+                for (const clientFirebaseId in clientCountsData) {
+                    if (clientFirebaseId === clientId) continue; // Skip current client
+                    const clientCounts = clientCountsData[clientFirebaseId];
+                    const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client'; // Get client name
+
+                    statusHTML += `<div class="status-item"><h4>Client: ${currentClientName}</h4><ul>`;
+
+                    for (const resourceIndex in clientCounts) {
+                        const count = clientCounts[resourceIndex];
+                        const resource = configData[resourceIndex];
+                        if (resource) {
+                            const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
+                            statusHTML += `<li>${resourceDisplayName}: ${count}</li>`; // Use funny name if enabled
+                        } else {
+                            statusHTML += `<li>Resource ${resourceIndex}: ${count} (Name not found)</li>`;
+                        }
+                    }
+                    statusHTML += `</ul></div>`;
+                }
+
+                if (statusHTML === '') {
+                    statusHTML = "<p>No other clients connected.</p>";
+                }
+
+                statusWindowContent.innerHTML = statusHTML;
+
+            } catch (error) {
+                console.error("Error fetching client status:", error);
+                statusWindowContent.innerHTML = "<p>Error loading client status.</p>";
+            }
+        }
+
 
         function toggleServerClientSettingsVisibility() {
             serverClientSettingsVisible = !serverClientSettingsVisible;
@@ -959,6 +1098,11 @@
             return 'client-' + Math.random().toString(36).substring(2, 15);
         }
 
+        function connectClientUI() { // Moved function definition to global scope
+            document.getElementById('sessionIdContainer').style.display = 'block';
+            document.getElementById('newSessionContainer').style.display = 'none';
+        }
+
 
         function saveToLocalStorage() {
             if (serverClientMode === 'local') {
@@ -995,6 +1139,51 @@
 
             saveGlobalSettingsToLocalStorage();
         }
+
+        function updateServerClientUI() {
+            const sessionIdContainer = document.getElementById('sessionIdContainer');
+            const newSessionContainer = document.getElementById('newSessionContainer');
+            const serverClientButton = document.getElementById('serverClientButton');
+            const serverIDDisplayContainer = document.getElementById('serverIDDisplayContainer');
+            const serverClientModeSelect = document.getElementById('serverClientMode');
+            const exportSdkConfigButton = document.getElementById('exportSdkConfigButton');
+            const importSdkConfigButton = document.getElementById('importSdkConfigButton');
+            const statusWindowContainer = document.getElementById('statusWindowContainer');
+
+            if (serverClientMode === 'client') {
+                sessionIdContainer.style.display = 'block';
+                newSessionContainer.style.display = 'none';
+                serverIDDisplayContainer.style.display = 'none';
+                serverClientButton.textContent = '👤';
+                serverClientModeSelect.style.display = 'inline-block';
+                statusWindowContainer.style.display = 'block'; // Explicitly show status window in client mode
+                if (importSdkConfigButton) importSdkConfigButton.style.display = 'inline-block';
+                if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
+            } else if (serverClientMode === 'server') {
+                sessionIdContainer.style.display = 'none';
+                newSessionContainer.style.display = (sessionId ? 'none' : 'block');
+                serverIDDisplayContainer.style.display = (sessionId ? 'block' : 'none');
+                serverClientButton.textContent = '🌐';
+                serverClientModeSelect.style.display = 'inline-block';
+                statusWindowContainer.style.display = 'block'; // Explicitly show status window in server mode
+                if (sessionId && exportSdkConfigButton) exportSdkConfigButton.style.display = 'inline-block';
+                else if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
+                if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';
+                if (sessionId) {
+                    document.getElementById('serverIDDisplay').value = sessionId;
+                }
+            } else { // Local Mode
+                sessionIdContainer.style.display = 'block';
+                newSessionContainer.style.display = 'none';
+                serverIDDisplayContainer.style.display = 'none';
+                serverClientButton.textContent = '👤';
+                serverClientModeSelect.style.display = 'inline-block';
+                statusWindowContainer.style.display = 'none'; // Explicitly hide status window in local mode
+                if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';
+                if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
+            }
+        }
+
 
         function loadFromLocalStorage() {
             const savedGlobalConfig = localStorage.getItem('globalConfig');
@@ -1087,12 +1276,12 @@
                 maxCount: resourceData.maxCount == null ? Infinity : resourceData.maxCount,
                 image: resourceData.image || `${STATIC_ASSET_URL}/default-image.png`,
                 hideImage: typeof resourceData.hideImage === 'boolean' ? resourceData.hideImage : true,
+                hideCounter: typeof resourceData.hideCounter === 'boolean' ? resourceData.hideCounter : false, // ADDED hideCounter to process data
                 keepOneModifier: typeof resourceData.keepOneModifier === 'boolean' ? resourceData.keepOneModifier : true,
                 showRollDice: typeof resourceData.showRollDice === 'boolean' ? resourceData.showRollDice : false,
                 rollDiceMin: typeof resourceData.rollDiceMin === 'number' ? resourceData.rollDiceMin : defaultMinDiceValue,
                 rollDiceMax: typeof resourceData.rollDiceMax === 'number' ? resourceData.rollDiceMax : defaultMaxDiceValue,
                 rollDiceIncrement: typeof resourceData.rollDiceIncrement === 'number' ? resourceData.rollDiceIncrement : 1,
-                hideCounter: typeof resourceData.hideCounter === 'boolean' ? resourceData.hideCounter : false,
                 enableDiceAnimation: typeof resourceData.enableDiceAnimation === 'boolean' ? resourceData.enableDiceAnimation : true,
                 numberOfDice: typeof resourceData.numberOfDice === 'number' ? resourceData.numberOfDice : 1,
                 rollDiceCustomValues: Array.isArray(resourceData.rollDiceCustomValues) ? resourceData.rollDiceCustomValues : [],
@@ -1142,12 +1331,12 @@
                 minCount: 0,
                 maxCount: Infinity,
                 hideImage: true,
+                hideCounter: false, // ADDED hideCounter to new resource
                 keepOneModifier: true,
                 showRollDice: false,
                 rollDiceMin: defaultMinDiceValue,
                 rollDiceMax: defaultMaxDiceValue,
                 rollDiceIncrement: 1,
-                hideCounter: false,
                 enableDiceAnimation: true,
                 numberOfDice: 1,
                 rollDiceCustomValues: [],
@@ -1270,8 +1459,13 @@
 
         function generateSettings(resource, index) {
             if (!showSettingsGlobal) return '';
+            const counterSettingsStyle = resource.hideCounter ? 'display: none;' : '';
+
             return `
                 <div class="settings">
+                    <div class="use-funny-name-checkbox" style="${globalHideFunnyNames ? 'display: none;' : ''}">
+                        Use Funny Name: <input type="checkbox" ${resource.useFunnyName ? 'checked' : ''} onchange="updateUseFunnyName(${index}, this.checked)" ${globalHideFunnyNames ? 'disabled' : ''}>
+                    </div>
                     <div class="hide-image-checkbox">
                         Hide Image: <input type="checkbox" ${resource.hideImage ? 'checked' : ''} onchange="updateHideImage(${index}, this.checked)">
                     </div>
@@ -1279,29 +1473,30 @@
                     <div class="hide-counter-checkbox">
                         Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
                     </div>
-                    <div class="keep-one-modifier-checkbox">
-                        Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} checked onchange="updateKeepOneModifier(${index}, this.checked)">
+
+                    <div class="counter-settings" style="${counterSettingsStyle}">
+                        <div class="keep-one-modifier-checkbox">
+                            Keep one Modifier: <input type="checkbox" ${resource.keepOneModifier ? 'checked' : ''} checked onchange="updateKeepOneModifier(${index}, this.checked)">
+                        </div>
+                        <div>
+                            Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)" min="1">
+                        </div>
+                        ${!resource.keepOneModifier ? `
+                        <div>
+                            Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)" min="1">
+                        </div>
+                        <div>
+                            Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)" min="1">
+                        </div>
+                        ` : ''}
+                        <div>
+                            Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
+                        </div>
+                        <div>
+                            Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
+                        </div>
                     </div>
-                    <div class="use-funny-name-checkbox" style="${globalHideFunnyNames ? 'display: none;' : ''}">
-                        Use Funny Name: <input type="checkbox" ${resource.useFunnyName ? 'checked' : ''} onchange="updateUseFunnyName(${index}, this.checked)" ${globalHideFunnyNames ? 'disabled' : ''}>
-                    </div>
-                    <div>
-                        Increment 1: <input type="number" class="custom-increment" value="${resource.customIncrement1}" onchange="updateCustomIncrement(${index}, 1, this.value)" min="1">
-                    </div>
-                    ${!resource.keepOneModifier ? `
-                    <div>
-                        Increment 2: <input type="number" class="custom-increment" value="${resource.customIncrement2}" onchange="updateCustomIncrement(${index}, 2, this.value)" min="1">
-                    </div>
-                    <div>
-                        Increment 3: <input type="number" class="custom-increment" value="${resource.customIncrement3}" onchange="updateCustomIncrement(${index}, 3, this.value)" min="1">
-                    </div>
-                    ` : ''}
-                    <div>
-                        Minimum Count: <input type="number" value="${resource.minCount}" onchange="updateMinCount(${index}, this.value)">
-                    </div>
-                    <div>
-                        Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
-                    </div>
+
                     <div class="roll-dice-settings">
                         Show Roll Dice: <input type="checkbox" ${resource.showRollDice ? 'checked' : ''} onchange="updateShowRollDice(${index}, this.checked)">
                     </div>
@@ -1399,6 +1594,98 @@
             }
         }
 
+        function startServer() {
+            if (!db) {
+                console.warn("Firebase database not initialized. Please save Firebase config first.");
+                return;
+            }
+
+            sessionId = generateSessionId();
+            clientName = document.getElementById('clientNameInput').value.trim() || clientId;
+            document.getElementById('clientNameInput').value = clientName;
+            document.getElementById('sessionId').value = sessionId;
+            configSavedToServer = false;
+
+            db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
+                clientId: clientId,
+                clientName: clientName,
+            }).then(() => {
+                saveConfigToServer();
+                setupServerClientListeners();
+                setupClientResourceListeners();
+            });
+
+            document.getElementById('serverIDDisplay').value = sessionId;
+            document.getElementById('serverIDDisplayContainer').style.display = 'block';
+            document.getElementById('newSessionContainer').style.display = 'none';
+
+            console.log(`Server started. Session ID: ${sessionId}`);
+
+            updateServerClientUI(); // <-- ENSURE THIS LINE IS HERE AND AT THE END
+        }
+
+        function connectClient() {
+            sessionId = document.getElementById('sessionId').value.trim();
+            clientName = document.getElementById('clientNameInput').value.trim() || clientId; // Use clientId if no name
+            document.getElementById('clientNameInput').value = clientName;    //put the client name in the input
+            saveToLocalStorage(); // Save clientName
+
+            if (sessionId) {
+                // Add client to the session *before* loading config
+                db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
+                    clientId: clientId,
+                    clientName: clientName,
+                }).then(() => { // Use a .then() block
+                    loadConfigFromServer(); // Load config *after* adding client
+                    setupClientResourceListeners();
+                    setupClientSideClientListeners(); // Setup client-side client listeners on connect
+                    updateServerClientUI();
+                    console.log(`Client - Connected to session: ${sessionId}`); // Log connection
+                });
+            } else {
+                console.warn("Please enter a Session ID.");
+            }
+        }
+
+        function exportSdkConfigWithSession() {
+            if (sdkExported) {
+                console.warn("SDK config already exported. Please wait or refresh to export again.");
+                return; // Prevent export if already exported once
+            }
+
+            sdkExported = true; // Set the flag to true
+
+            const firebaseConfig = {
+                apiKey: document.getElementById('apiKey').value,
+                authDomain: document.getElementById('authDomain').value,
+                databaseURL: document.getElementById('databaseURL').value,
+                projectId: document.getElementById('projectId').value,
+                storageBucket: document.getElementById('storageBucket').value,
+                messagingSenderId: document.getElementById('messagingSenderId').value,
+                appId: document.getElementById('appId').value
+            };
+            const sessionDetails = {
+                sessionId: sessionId // Use the global sessionId variable
+            };
+
+            const combinedConfig = {
+                firebaseConfig: firebaseConfig,
+                sessionDetails: sessionDetails
+            };
+
+            const configStr = JSON.stringify(combinedConfig, null, 2);
+            const blob = new Blob([configStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sdk-config-with-session.json'; // Filename for download
+            a.click();
+            URL.revokeObjectURL(url);
+
+            setTimeout(() => {
+                sdkExported = false; // Reset flag after a delay (e.g., 1 second)
+            }, 1000); // Adjust delay as needed
+        }
 
         function attachEventListeners() {
             document.addEventListener('click', function (event) {
@@ -1428,6 +1715,9 @@
                 }
                 if (serverClientSettingsVisible && !target.closest('#serverClientSettings')) {
                     toggleServerClientSettingsVisibility();
+                }
+                if (statusWindowVisible && !event.target.closest('#statusWindowContainer')) {
+                    toggleStatusWindowVisibility();
                 }
             });
 
@@ -2108,20 +2398,30 @@
             serverListeners.clientListener = clientsRef.on('child_added', (snapshot) => {
                 const newClientId = snapshot.key;
                 const clientData = snapshot.val();
-                clientName = clientData.clientName
-                console.log(`Client connected: ${clientName} (${newClientId})`);
+                clientName = clientData.clientName;
+                clientsInSession[newClientId] = clientName; // Store client name
+                console.log(`Server - Client connected: ${clientName} (${newClientId})`);
             });
 
             // Listen for clients disconnecting
             serverListeners.removeClientListener = clientsRef.on('child_removed', (snapshot) => {
                 const removedClientId = snapshot.key;
-                console.log(`Client disconnected: ${removedClientId}`);
+                delete clientsInSession[removedClientId]; // Remove client on disconnect
+                console.log(`Server - Client disconnected: ${removedClientId}`);
+            });
+
+            //Initial population of clients in session on server start
+            clientsRef.once('value', (snapshot) => {
+                snapshot.forEach(childSnapshot => {
+                    clientsInSession[childSnapshot.key] = childSnapshot.val().clientName;
+                });
             });
         }
 
 
         function handleServerClientModeChange() {
             serverClientMode = document.getElementById('serverClientMode').value;
+            console.log("handleServerClientModeChange: serverClientMode set to:", serverClientMode); // LOG 1
             updateServerClientUI();
             saveToLocalStorage();
             cleanupFirebaseListeners();
@@ -2130,17 +2430,22 @@
             configSavedToServer = false;
             document.getElementById('serverIDDisplayContainer').style.display = 'none';
             document.getElementById('newSessionContainer').style.display = 'block';
+            clientsInSession = {};
+            cleanupClientSideClientListeners();
 
             if (serverClientMode === 'client') {
                 connectClientUI();
-                setupClientResourceListeners(); // Setup listener for client mode
+                setupClientResourceListeners();
+                setupClientSideClientListeners();
             } else if (serverClientMode === 'server') {
                 // Server mode setup is done in startServer()
             } else {
-                serverClientMode = 'client';
+                serverClientMode = 'local';
                 updateServerClientUI();
                 loadFromLocalStorage();
             }
+            updateServerClientUI(); // Force UI update at the end - already present
+            console.log("handleServerClientModeChange: After updateServerClientUI, serverClientMode is:", serverClientMode); // LOG 2
         }
 
 
@@ -2168,185 +2473,62 @@
                 db.ref(`sessions/${sessionId}/client_counts`).off('value', clientListeners.countsListener);
                 clientListeners.countsListener = null;
             }
+            cleanupClientSideClientListeners();
         }
 
+        function cleanupClientSideClientListeners() {
 
-        function updateServerClientUI() {
-            const sessionIdContainer = document.getElementById('sessionIdContainer');
-            const newSessionContainer = document.getElementById('newSessionContainer');
-            const serverClientButton = document.getElementById('serverClientButton');
-            const serverIDDisplayContainer = document.getElementById('serverIDDisplayContainer');
-            const serverClientModeSelect = document.getElementById('serverClientMode');
-            const exportSdkConfigButton = document.getElementById('exportSdkConfigButton'); // Get button element
-            const importSdkConfigButton = document.getElementById('importSdkConfigButton'); // Get import button
+            if (clientListeners.clientListListener) {
 
-            if (serverClientMode === 'client') {
-                sessionIdContainer.style.display = 'block';
-                newSessionContainer.style.display = 'none';
-                serverIDDisplayContainer.style.display = 'none';
-                serverClientButton.textContent = '👤';
-                serverClientModeSelect.style.display = 'inline-block';
-                if (importSdkConfigButton) importSdkConfigButton.style.display = 'inline-block'; // Show Import button in client mode
-                if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';      // Hide Export button in client mode
-            } else if (serverClientMode === 'server') {
-                sessionIdContainer.style.display = 'none';
-                newSessionContainer.style.display = (sessionId ? 'none' : 'block');
-                serverIDDisplayContainer.style.display = (sessionId ? 'block' : 'none');
-                serverClientButton.textContent = '🌐';
-                serverClientModeSelect.style.display = 'inline-block';
-                if (sessionId && exportSdkConfigButton) exportSdkConfigButton.style.display = 'inline-block'; // Show Export button in server mode when session ID exists
-                else if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
-                if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';      // Hide Import button in server mode
-                if (sessionId) {
-                    document.getElementById('serverIDDisplay').value = sessionId;
-                }
-            } else { // Local Mode
-                sessionIdContainer.style.display = 'block'; // Keep Session ID input for clarity even in local
-                newSessionContainer.style.display = 'none';
-                serverIDDisplayContainer.style.display = 'none';
-                serverClientButton.textContent = '👤'; // Client Icon for local too
-                serverClientModeSelect.style.display = 'inline-block';
-                if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';      // Hide Import button in local mode
-                if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';      // Hide Export button in local mode
+                db.ref(`sessions/${sessionId}/clients`).off('value', clientListeners.clientListListener);
+
+                clientListeners.clientListListener = null;
+
             }
-        }
 
-        function exportSdkConfigWithSession() {
-            const firebaseConfig = {
-                apiKey: document.getElementById('apiKey').value,
-                authDomain: document.getElementById('authDomain').value,
-                databaseURL: document.getElementById('databaseURL').value,
-                projectId: document.getElementById('projectId').value,
-                storageBucket: document.getElementById('storageBucket').value,
-                messagingSenderId: document.getElementById('messagingSenderId').value,
-                appId: document.getElementById('appId').value
-            };
-            const sessionDetails = {
-                sessionId: sessionId // Use the global sessionId variable
-            };
+            }
 
-            const combinedConfig = {
-                firebaseConfig: firebaseConfig,
-                sessionDetails: sessionDetails
-            };
 
-            const configStr = JSON.stringify(combinedConfig, null, 2);
-            const blob = new Blob([configStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'sdk-config-with-session.json'; // Filename for download
-            a.click();
-            URL.revokeObjectURL(url);
-        }
 
-        function triggerImportSdkConfig() {
-            document.getElementById('importSdkConfigFile').click();
-        }
+        function setupClientSideClientListeners() {
 
-        async function importSdkConfigAndJoin(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            if (!sessionId || serverClientMode !== 'client' || clientListeners.clientListListener) return;
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const importedConfig = JSON.parse(e.target.result);
-                    if (importedConfig && importedConfig.firebaseConfig && importedConfig.sessionDetails && importedConfig.sessionDetails.sessionId) {
-                        const fbConfig = importedConfig.firebaseConfig;
-                        const sessionInfo = importedConfig.sessionDetails;
 
-                        // Populate Firebase Config fields
-                        document.getElementById('apiKey').value = fbConfig.apiKey || '';
-                        document.getElementById('authDomain').value = fbConfig.authDomain || '';
-                        document.getElementById('databaseURL').value = fbConfig.databaseURL || '';
-                        document.getElementById('projectId').value = fbConfig.projectId || '';
-                        document.getElementById('storageBucket').value = fbConfig.storageBucket || '';
-                        document.getElementById('messagingSenderId').value = fbConfig.messagingSenderId || '';
-                        document.getElementById('appId').value = fbConfig.appId || '';
 
-                        // Set Session ID
-                        document.getElementById('sessionId').value = sessionInfo.sessionId;
+            const clientsRef = db.ref(`sessions/${sessionId}/clients`);
 
-                        console.log("SDK Configuration and Session ID imported successfully!");
 
-                        if (initializeFirebaseWithUserInput()) { // Initialize Firebase and check success
-                            console.log("Firebase re-initialized after import.");
-                            connectClient(); // Automatically connect after successful import and Firebase init
-                        } else {
-                            console.warn("Firebase Initialization Failed after SDK Config import.");
-                        }
 
-                    } else {
-                        console.warn("Invalid SDK configuration file format.");
+            clientListeners.clientListListener = clientsRef.on('value', (snapshot) => {
+
+                const clientsData = snapshot.val();
+
+                clientsInSession = {}; // Reset the object to avoid duplicates
+
+                if (clientsData) {
+
+                    for (const clientIdFB in clientsData) {
+
+                        clientsInSession[clientIdFB] = clientsData[clientIdFB].clientName;
+
                     }
-                } catch (error) {
-                    console.warn("Error importing SDK configuration file.");
-                    console.error("SDK config import error:", error);
+
+                    console.log("Client-side clientsInSession updated:", clientsInSession); // Debug log
+
+                } else {
+
+                    console.log("No clients data received for client-side clientsInSession.");
+
                 }
-            };
-            reader.onerror = function(error) {
-                console.warn("Error reading the SDK configuration file.");
-                console.error("File read error:", error);
-            };
-            reader.readAsText(file);
-        }
 
-        function connectClientUI() {
-            document.getElementById('sessionIdContainer').style.display = 'block';
-            document.getElementById('newSessionContainer').style.display = 'none';
-        }
+            }, (error) => {
 
-        function startServer() {
-            if (!db) {
-                console.warn("Firebase database not initialized. Please save Firebase config first.");
-                return;
-            }
+                console.error("Error fetching client list for client-side clientsInSession:", error);
 
-            sessionId = generateSessionId();
-            clientName = document.getElementById('clientNameInput').value.trim() || clientId;
-            document.getElementById('clientNameInput').value = clientName;
-            document.getElementById('sessionId').value = sessionId;
-            configSavedToServer = false;
-
-            db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
-                clientId: clientId,
-                clientName: clientName,
-            }).then(() => {
-                saveConfigToServer();
-                setupServerClientListeners();
-                setupClientResourceListeners();
             });
-
-            document.getElementById('serverIDDisplay').value = sessionId;
-            document.getElementById('serverIDDisplayContainer').style.display = 'block';
-            document.getElementById('newSessionContainer').style.display = 'none';
-
-            console.log(`Server started. Session ID: ${sessionId}`);
-
-            updateServerClientUI(); // <-- ENSURE THIS LINE IS HERE AND AT THE END
         }
 
-        function connectClient() {
-            sessionId = document.getElementById('sessionId').value.trim();
-            clientName = document.getElementById('clientNameInput').value.trim() || clientId; // Use clientId if no name
-            document.getElementById('clientNameInput').value = clientName;    //put the client name in the input
-            saveToLocalStorage(); // Save clientName
-
-            if (sessionId) {
-                // Add client to the session *before* loading config
-                db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
-                    clientId: clientId,
-                    clientName: clientName,
-                }).then(() => { // Use a .then() block
-                    loadConfigFromServer(); // Load config *after* adding client
-                    setupClientResourceListeners(); // setup Client Resource Listeners here after initial config load
-                    console.log(`Connected to session: ${sessionId}`); // Log instead of alert
-                });
-            } else {
-                console.warn("Please enter a Session ID.");
-            }
-        }
 
         function generateSessionId() {
             return 'session-' + Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -2366,12 +2548,12 @@
                     minCount: resource.minCount,
                     maxCount: resource.maxCount === Infinity ? null : resource.maxCount,
                     hideImage: resource.hideImage,
+                    hideCounter: resource.hideCounter,
                     keepOneModifier: resource.keepOneModifier,
                     showRollDice: resource.showRollDice,
                     rollDiceMin: resource.rollDiceMin,
                     rollDiceMax: resource.rollDiceMax,
                     rollDiceIncrement: resource.rollDiceIncrement,
-                    hideCounter: resource.hideCounter,
                     enableDiceAnimation: resource.enableDiceAnimation,
                     numberOfDice: resource.numberOfDice,
                     rollDiceCustomValues: resource.rollDiceCustomValues,
@@ -2465,7 +2647,6 @@
         }
 
 
-
         function setupClientResourceListeners() {
             if (!sessionId || !['client', 'server'].includes(serverClientMode) || clientListeners.countsListener) { // Corrected condition and allow for 'server' mode
                 console.log("setupClientResourceListeners NOT needed or already setup in", serverClientMode, "mode."); // Debug log: Listener setup skipped
@@ -2494,6 +2675,51 @@
             }, (error) => {
                 console.error("Error in client counts listener:", error);
             });
+        }
+
+        function triggerImportSdkConfig() {
+            document.getElementById('importSdkConfigFile').click();
+        }
+
+        function importSdkConfigAndJoin(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const sdkConfig = JSON.parse(e.target.result);
+                    if (sdkConfig && sdkConfig.firebaseConfig && sdkConfig.sessionDetails && sdkConfig.sessionDetails.sessionId) {
+                        // Import Firebase Config
+                        document.getElementById('apiKey').value = sdkConfig.firebaseConfig.apiKey || '';
+                        document.getElementById('authDomain').value = sdkConfig.firebaseConfig.authDomain || '';
+                        document.getElementById('databaseURL').value = sdkConfig.firebaseConfig.databaseURL || '';
+                        document.getElementById('projectId').value = sdkConfig.firebaseConfig.projectId || '';
+                        document.getElementById('storageBucket').value = sdkConfig.firebaseConfig.storageBucket || '';
+                        document.getElementById('messagingSenderId').value = sdkConfig.firebaseConfig.messagingSenderId || '';
+                        document.getElementById('appId').value = sdkConfig.firebaseConfig.appId || '';
+
+                        if (initializeFirebaseWithUserInput()) {
+                            console.log("Firebase re-initialized after SDK config import.");
+                            // Join Session
+                            document.getElementById('sessionId').value = sdkConfig.sessionDetails.sessionId;
+                            connectClient();
+                        } else {
+                            console.warn("Firebase Initialization Failed, cannot join session.");
+                        }
+                    } else {
+                        console.warn("Invalid SDK configuration file.");
+                    }
+                } catch (error) {
+                    console.warn("Error importing SDK configuration.");
+                    console.error("SDK config import error:", error);
+                }
+            };
+            reader.onerror = function(error) {
+                console.warn("Error reading the SDK configuration file.");
+                console.error("File read error:", error);
+            };
+            reader.readAsText(file);
         }
     </script>
 </body>
