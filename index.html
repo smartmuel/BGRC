@@ -316,12 +316,13 @@
             margin-top: 5px;
             cursor: pointer;
             user-select: none;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s; /* Keep the transition, but remove hover bg */
         }
 
-        .roll-result:hover {
+        /* REMOVED HOVER BACKGROUND COLOR */
+        /*.roll-result:hover {
             background-color: #f0f0f0;
-        }
+        }*/
 
         .dice-button {
             font-size: 24px;
@@ -676,10 +677,16 @@
             /* Darker border in dark mode */
         }
 
+        #qrcodeCanvas {
+            margin-top: 10px;
+            text-align: center;
+        }
+
 
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
 
 </head>
 
@@ -699,6 +706,7 @@
     <div id="globalSettings">
         <button id="globalSettingsButton" onclick="toggleGlobalSettingsVisibility()">⚙️</button>
         <div id="globalSettingsContent">
+            <h3>User Preferences</h3>
             <div class="setting-item">
                 <label>
                     <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
@@ -713,6 +721,20 @@
             </div>
             <div class="setting-item">
                 <label>
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    Dark Mode
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked>
+                    Globally Hide Funny Names
+                </label>
+            </div>
+            <hr/>
+            <h3>Game Settings</h3>
+            <div class="setting-item">
+                <label>
                     <input type="checkbox" id="enableGlobalCounterLimit" onchange="toggleGlobalCounterLimit()">
                     Enable Global Counter Limit
                 </label>
@@ -723,18 +745,8 @@
                     <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
                 </label>
             </div>
-            <div class="setting-item">
-                <label>
-                    <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked>
-                    Globally Hide Funny Names
-                </label>
-            </div>
-            <div class="setting-item">
-                <label>
-                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
-                    Dark Mode
-                </label>
-            </div>
+            <hr/>
+            <h3>Data Options</h3>
             <div class="setting-item">
                 <button onclick="exportData()" id="exportButton" disabled>Export Data</button>
             </div>
@@ -828,6 +840,9 @@
                 <input type="text" id="serverIDDisplay" value="" readonly>
                 <button id="exportSdkConfigButton" onclick="exportSdkConfigWithSession()">Export SDK Config</button>
             </div>
+            <div class="setting-item" id="qrcodeCanvas" style="display: none;">
+                <!-- QR Code will be rendered here -->
+            </div>
         </div>
     </div>
 
@@ -879,6 +894,7 @@
         let statusWindowVisible = false; // Track status window visibility
         let clientsInSession = {}; // Store client names by ID
         let sdkExported = false; // Flag to prevent double export
+        let qrcode = null; // QR code instance
 
         function toggleStatusWindowVisibility() {
             statusWindowVisible = !statusWindowVisible;
@@ -919,7 +935,7 @@
                     statusHTML += `<div class="status-item"><h4>Client: ${currentClientName}</h4><ul>`;
 
                     for (const resourceIndex in clientCounts) {
-                        const count = clientCounts[resourceIndex];
+                        const count = clientCountsData[resourceIndex];
                         const resource = configData[resourceIndex];
                         if (resource) {
                             const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
@@ -1110,12 +1126,10 @@
                     showSettingsGlobal,
                     hideAllExceptResources,
                     disableAllAnimations,
-                    globalCounterLimit,
-                    enableGlobalCounterLimit,
                     globalHideFunnyNames,
                     previousFunnyNameStates,
                     serverClientMode,
-                    clientName
+                    clientName,
                 };
                 localStorage.setItem('boardGameResources', JSON.stringify(resources));
                 localStorage.setItem('unnamedCounter', unnamedCounter);
@@ -1126,12 +1140,10 @@
                     showSettingsGlobal,
                     hideAllExceptResources,
                     disableAllAnimations,
-                    globalCounterLimit,
-                    enableGlobalCounterLimit,
                     globalHideFunnyNames,
                     previousFunnyNameStates,
                     serverClientMode,
-                    clientName
+                    clientName,
                 };
                 localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
                 localStorage.setItem('clientName', clientName);
@@ -1149,11 +1161,13 @@
             const exportSdkConfigButton = document.getElementById('exportSdkConfigButton');
             const importSdkConfigButton = document.getElementById('importSdkConfigButton');
             const statusWindowContainer = document.getElementById('statusWindowContainer');
+            const qrcodeCanvasContainer = document.getElementById('qrcodeCanvas');
 
             if (serverClientMode === 'client') {
                 sessionIdContainer.style.display = 'block';
                 newSessionContainer.style.display = 'none';
                 serverIDDisplayContainer.style.display = 'none';
+                qrcodeCanvasContainer.style.display = 'none';
                 serverClientButton.textContent = '👤';
                 serverClientModeSelect.style.display = 'inline-block';
                 statusWindowContainer.style.display = 'block'; // Explicitly show status window in client mode
@@ -1163,6 +1177,7 @@
                 sessionIdContainer.style.display = 'none';
                 newSessionContainer.style.display = (sessionId ? 'none' : 'block');
                 serverIDDisplayContainer.style.display = (sessionId ? 'block' : 'none');
+                qrcodeCanvasContainer.style.display = (sessionId ? 'block' : 'none');
                 serverClientButton.textContent = '🌐';
                 serverClientModeSelect.style.display = 'inline-block';
                 statusWindowContainer.style.display = 'block'; // Explicitly show status window in server mode
@@ -1171,11 +1186,13 @@
                 if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';
                 if (sessionId) {
                     document.getElementById('serverIDDisplay').value = sessionId;
+                    generateQRCode(); // Generate QR code when session ID is available in server mode
                 }
             } else { // Local Mode
                 sessionIdContainer.style.display = 'block';
                 newSessionContainer.style.display = 'none';
                 serverIDDisplayContainer.style.display = 'none';
+                qrcodeCanvasContainer.style.display = 'none';
                 serverClientButton.textContent = '👤';
                 serverClientModeSelect.style.display = 'inline-block';
                 statusWindowContainer.style.display = 'none'; // Explicitly hide status window in local mode
@@ -1236,8 +1253,6 @@
         function saveGlobalSettingsToLocalStorage() {
             localStorage.setItem('showSettingsGlobal', document.getElementById('showSettingsGlobal').checked);
             localStorage.setItem('disableAllAnimations', document.getElementById('disableAllAnimations').checked);
-            localStorage.setItem('enableGlobalCounterLimit', document.getElementById('enableGlobalCounterLimit').checked);
-            localStorage.setItem('globalCounterLimit', document.getElementById('globalCounterLimit').value);
             localStorage.setItem('globalHideFunnyNames', document.getElementById('globalHideFunnyNames').checked);
             localStorage.setItem('showFirebaseFieldsToggle', document.getElementById('showFirebaseFieldsToggle').checked);
             localStorage.setItem('serverClientMode', serverClientMode); // Save serverClientMode to localStorage
@@ -1246,8 +1261,6 @@
         function loadGlobalSettingsFromLocalStorage() {
             document.getElementById('showSettingsGlobal').checked = localStorage.getItem('showSettingsGlobal') === 'true';
             document.getElementById('disableAllAnimations').checked = localStorage.getItem('disableAllAnimations') === 'true';
-            document.getElementById('enableGlobalCounterLimit').checked = localStorage.getItem('enableGlobalCounterLimit') === 'true';
-            document.getElementById('globalCounterLimit').value = localStorage.getItem('globalCounterLimit') || '100';
             document.getElementById('globalHideFunnyNames').checked = localStorage.getItem('globalHideFunnyNames') !== 'false';
             document.getElementById('showFirebaseFieldsToggle').checked = localStorage.getItem('showFirebaseFieldsToggle') === 'true' ? true : false;
             const savedServerClientMode = localStorage.getItem('serverClientMode');
@@ -1257,7 +1270,6 @@
             }
 
 
-            toggleGlobalCounterLimit();
             toggleGlobalSettings();
             toggleAllAnimations();
             toggleGlobalHideFunnyNames();
@@ -1298,8 +1310,6 @@
             showSettingsGlobal = globalConfig.showSettingsGlobal;
             hideAllExceptResources = globalConfig.hideAllExceptResources;
             disableAllAnimations = globalConfig.disableAllAnimations;
-            globalCounterLimit = globalConfig.globalCounterLimit || 100;
-            enableGlobalCounterLimit = globalConfig.enableGlobalCounterLimit || false;
             globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
             previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
             clientName = globalConfig.clientName || '';
@@ -1308,12 +1318,9 @@
 
             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
-            document.getElementById('globalCounterLimit').value = globalCounterLimit;
-            document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
             document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
             document.getElementById('clientNameInput').value = clientName;
             document.getElementById('serverClientMode').value = serverClientMode; // Set dropdown value
-            updateServerClientUI(); // Update UI based on loaded mode
             toggleGlobalCounterLimit();
         }
 
@@ -1346,12 +1353,15 @@
                 previousUseFunnyName: false
             };
 
+            // Convert Infinity to null for Firebase
+            const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount };
+
             // Server saves config to Firebase, clients load from server
             if (serverClientMode === 'server' && sessionId) {
                 const newResourceRef = db.ref(`sessions/${sessionId}/config`).push();
-                resource.firebaseKey = newResourceRef.key;
+                firebaseResource.firebaseKey = newResourceRef.key; // Use firebaseResource here
 
-                newResourceRef.set(resource).then(() => {
+                newResourceRef.set(firebaseResource).then(() => { // Set firebaseResource instead of resource
                     resources.push(resource);
                     hasUnsavedChanges = true;
                     renderResources();
@@ -1647,6 +1657,48 @@
             }
         }
 
+        function generateQRCode() {
+            const firebaseConfig = {
+                apiKey: document.getElementById('apiKey').value,
+                authDomain: document.getElementById('authDomain').value,
+                databaseURL: document.getElementById('databaseURL').value,
+                projectId: document.getElementById('projectId').value,
+                storageBucket: document.getElementById('storageBucket').value,
+                messagingSenderId: document.getElementById('messagingSenderId').value,
+                appId: document.getElementById('appId').value
+            };
+            const sessionDetails = {
+                sessionId: sessionId // Use the global sessionId variable
+            };
+
+            const combinedConfig = {
+                firebaseConfig: firebaseConfig,
+                sessionDetails: sessionDetails
+            };
+
+            const configString = JSON.stringify(combinedConfig);
+            const currentUrl = window.location.href.split('?')[0]; // Get base URL without query params
+            const qrCodeData = `${currentUrl}?config=${encodeURIComponent(configString)}`;
+
+
+            const qrcodeContainer = document.getElementById('qrcodeCanvas');
+            qrcodeContainer.innerHTML = ''; // Clear previous QR code
+
+            if (!qrcode) {
+                qrcode = new QRCode(qrcodeContainer, {
+                    text: qrCodeData,
+                    width: 256, // Increased width
+                    height: 256, // Increased height
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } else {
+                qrcode.makeCode(qrCodeData); // Update existing QR code
+            }
+        }
+
+
         function exportSdkConfigWithSession() {
             if (sdkExported) {
                 console.warn("SDK config already exported. Please wait or refresh to export again.");
@@ -1761,7 +1813,7 @@
                 case 'maximumcount': updateMaxCount(index, value); break;
                 case 'showrolldice': updateShowRollDice(index, value); break;
                 case 'rolldicemin': updateRollDiceMin(index, value); break;
-                case 'rolldicemax': updateRollDiceMax(index, value); break
+                case 'rolldicemax': updateRollDiceMax(index, value); break;
                 case 'rolldiceincrement': updateRollDiceIncrement(index, value); break;
                 case 'numberofdice': updateNumberOfDice(index, value); break;
                 case 'enablediceAnimation': updateEnableDiceAnimation(index, value); break;
@@ -1800,16 +1852,31 @@
             event.stopPropagation();
             const targetResource = resources[index];
 
-            console.log("updateCount called", { serverClientMode, index, change });
-
             if (typeof change !== 'number' || isNaN(change)) {
                 console.error("Invalid change value:", change);
                 return;
             }
 
-            let newCount = Math.max(targetResource.minCount, Math.min(targetResource.count + change, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+            let potentialNewResourceCount = Math.max(targetResource.minCount, Math.min(targetResource.count + change, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+            let currentTotalCount = resources.reduce((sum, res) => sum + res.count, 0);
+            let potentialNewTotalCount = currentTotalCount - targetResource.count + potentialNewResourceCount;
 
-            console.log("Calculated newCount:", newCount, "for resource index:", index); // More specific log
+
+            if (enableGlobalCounterLimit && potentialNewTotalCount > globalCounterLimit) {
+                potentialNewResourceCount = globalCounterLimit - (currentTotalCount - targetResource.count);
+                potentialNewResourceCount = Math.max(targetResource.minCount, Math.min(potentialNewResourceCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+                if (potentialNewResourceCount < targetResource.count) {
+                    document.getElementById('limitMessage').textContent = `Global counter limit (${globalCounterLimit}) reached!`;
+                    document.getElementById('limitMessage').style.display = 'block';
+                    return; // Prevent exceeding the limit
+                }
+            } else {
+                document.getElementById('limitMessage').style.display = 'none';
+            }
+
+
+            let newCount = potentialNewResourceCount;
+
 
             if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
                 if (!db) {
@@ -1817,18 +1884,15 @@
                     return;
                 }
                 const firebaseRef = db.ref(`sessions/${sessionId}/client_counts/${clientId}/${index}`); // Get the Firebase ref
-                console.log("Firebase ref for set operation:", firebaseRef.toString()); // Log the ref path
 
                 firebaseRef.set(newCount)
                     .then(() => {
-                        console.log("Firebase set SUCCESS for index:", index, "newCount:", newCount); // Log success
                     })
                     .catch(error => {
                         console.error('Error syncing client resource count to server:', error);
                     });
             }
             else {
-                console.log("Updating count locally (Local Mode).");
                 targetResource.count = newCount;
                 const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-display`);
                 if (resourceElement) {
@@ -2115,7 +2179,11 @@
         }
 
         function exportData() {
-            const exportData = { resources };
+            const exportData = {
+                resources,
+                enableGlobalCounterLimit: enableGlobalCounterLimit,
+                globalCounterLimit: globalCounterLimit
+            };
             const dataStr = JSON.stringify(exportData, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -2142,6 +2210,15 @@
                     renderResources();
                     saveToLocalStorage();
                     checkGlobalCounterLimit();
+                    if (importedData.enableGlobalCounterLimit !== undefined) {
+                        enableGlobalCounterLimit = importedData.enableGlobalCounterLimit;
+                        document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+                    }
+                    if (importedData.globalCounterLimit !== undefined) {
+                        globalCounterLimit = importedData.globalCounterLimit;
+                        document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                    }
+                    toggleGlobalCounterLimit();
                     if (serverClientMode === 'server' && sessionId) {
                         saveConfigToServer();
                     }
@@ -2287,22 +2364,13 @@
 
         function updateGlobalCounterLimit() {
             globalCounterLimit = parseInt(document.getElementById('globalCounterLimit').value) || 100;
-            saveGlobalSettingsToLocalStorage();
-            saveToLocalStorage();
             checkGlobalCounterLimit();
-            if (serverClientMode === 'server' && sessionId) {
-                saveConfigToServer();
-            }
         }
 
         function toggleGlobalCounterLimit() {
             enableGlobalCounterLimit = document.getElementById('enableGlobalCounterLimit').checked;
             document.getElementById('globalCounterLimitContainer').style.display = enableGlobalCounterLimit ? 'block' : 'none';
-            saveGlobalSettingsToLocalStorage();
-            saveToLocalStorage();
-            if (serverClientMode === 'server' && sessionId) {
-                saveConfigToServer();
-            }
+            checkGlobalCounterLimit();
         }
 
         function toggleGlobalHideFunnyNames() {
@@ -2356,7 +2424,6 @@
         }
 
 
-
         window.addEventListener('beforeunload', (event) => {
             if (hasUnsavedChanges) {
                 event.preventDefault();
@@ -2372,9 +2439,10 @@
             resetInactivityTimer();
 
             loadGlobalSettingsFromLocalStorage();
+            toggleGlobalCounterLimit(); // Ensure initial UI state for global counter limit is set
 
-            const darkModeEnabled = localStorage.getItem('darkMode');
-            if (darkModeEnabled === 'true') {
+
+            if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
                 document.getElementById('darkModeToggle').checked = true;
             } else {
@@ -2382,35 +2450,40 @@
                 document.getElementById('darkModeToggle').checked = false;
             }
 
+
             const serverClientModeSelect = document.getElementById('serverClientMode');
             serverClientModeSelect.addEventListener('change', handleServerClientModeChange);
-            handleServerClientModeChange(); // Call this *after* setting up the listener
-            updateServerClientUI();       // Call this to set initial UI state
+            handleServerClientModeChange();
+            updateServerClientUI();
             attachEventListeners();
-            toggleFirebaseConfigVisibility(); // Set initial Firebase fields visibility on load
+            toggleFirebaseConfigVisibility();
+
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const configParam = urlParams.get('config');
+            if (configParam) {
+                importSdkConfigFromURL(configParam);
+            }
         });
 
         function setupServerClientListeners() {
             if (!sessionId || serverClientMode !== 'server' || serverListeners.clientListener) return;
 
             const clientsRef = db.ref(`sessions/${sessionId}/clients`);
-            // Listen for new clients connecting
             serverListeners.clientListener = clientsRef.on('child_added', (snapshot) => {
                 const newClientId = snapshot.key;
                 const clientData = snapshot.val();
                 clientName = clientData.clientName;
-                clientsInSession[newClientId] = clientName; // Store client name
+                clientsInSession[newClientId] = clientName;
                 console.log(`Server - Client connected: ${clientName} (${newClientId})`);
             });
 
-            // Listen for clients disconnecting
             serverListeners.removeClientListener = clientsRef.on('child_removed', (snapshot) => {
                 const removedClientId = snapshot.key;
-                delete clientsInSession[removedClientId]; // Remove client on disconnect
+                delete clientsInSession[removedClientId];
                 console.log(`Server - Client disconnected: ${removedClientId}`);
             });
 
-            //Initial population of clients in session on server start
             clientsRef.once('value', (snapshot) => {
                 snapshot.forEach(childSnapshot => {
                     clientsInSession[childSnapshot.key] = childSnapshot.val().clientName;
@@ -2421,7 +2494,6 @@
 
         function handleServerClientModeChange() {
             serverClientMode = document.getElementById('serverClientMode').value;
-            console.log("handleServerClientModeChange: serverClientMode set to:", serverClientMode); // LOG 1
             updateServerClientUI();
             saveToLocalStorage();
             cleanupFirebaseListeners();
@@ -2438,19 +2510,16 @@
                 setupClientResourceListeners();
                 setupClientSideClientListeners();
             } else if (serverClientMode === 'server') {
-                // Server mode setup is done in startServer()
             } else {
                 serverClientMode = 'local';
                 updateServerClientUI();
                 loadFromLocalStorage();
             }
-            updateServerClientUI(); // Force UI update at the end - already present
-            console.log("handleServerClientModeChange: After updateServerClientUI, serverClientMode is:", serverClientMode); // LOG 2
+            updateServerClientUI();
         }
 
 
         function cleanupFirebaseListeners() {
-            // Remove server listeners
             if (serverListeners.clientListener) {
                 db.ref(`sessions/${sessionId}/clients`).off('child_added', serverListeners.clientListener);
                 serverListeners.clientListener = null;
@@ -2464,7 +2533,6 @@
                 serverListeners.resourceListener = null;
             }
 
-            // Remove client listeners
             if (clientListeners.configListener) {
                 db.ref(`sessions/${sessionId}/config`).off('value', clientListeners.configListener);
                 clientListeners.configListener = null;
@@ -2495,16 +2563,14 @@
             if (!sessionId || serverClientMode !== 'client' || clientListeners.clientListListener) return;
 
 
-
             const clientsRef = db.ref(`sessions/${sessionId}/clients`);
-
 
 
             clientListeners.clientListListener = clientsRef.on('value', (snapshot) => {
 
                 const clientsData = snapshot.val();
 
-                clientsInSession = {}; // Reset the object to avoid duplicates
+                clientsInSession = {};
 
                 if (clientsData) {
 
@@ -2514,11 +2580,9 @@
 
                     }
 
-                    console.log("Client-side clientsInSession updated:", clientsInSession); // Debug log
 
                 } else {
 
-                    console.log("No clients data received for client-side clientsInSession.");
 
                 }
 
@@ -2541,7 +2605,7 @@
                 const resourceData = {
                     name: resource.name,
                     image: resource.image,
-                    count: resource.count, // Include the initial count
+                    count: resource.count,
                     customIncrement1: resource.customIncrement1,
                     customIncrement2: resource.customIncrement2,
                     customIncrement3: resource.customIncrement3,
@@ -2568,11 +2632,13 @@
                 return resourceData;
             });
 
-            db.ref(`sessions/${sessionId}/config`).set(firebaseResources)
+            db.ref(`sessions/${sessionId}/config`).set(firebaseResources);
+            db.ref(`sessions/${sessionId}/gameSettings`).set({
+                enableGlobalCounterLimit: enableGlobalCounterLimit,
+                globalCounterLimit: globalCounterLimit
+            })
                 .then(() => {
-                    console.log('Configuration (including initial counts) saved to server.');
                     configSavedToServer = true;
-                    // Initialize server's counts in client_counts after config save
                     initializeServerCounts();
                 })
                 .catch(error => {
@@ -2586,7 +2652,7 @@
 
             const serverCounts = {};
             resources.forEach((resource, index) => {
-                serverCounts[index] = resource.count; // Use the count from the resource
+                serverCounts[index] = resource.count;
             });
 
             db.ref(`sessions/${sessionId}/client_counts/${clientId}`).set(serverCounts)
@@ -2605,22 +2671,18 @@
             clientListeners.configListener = db.ref(`sessions/${sessionId}/config`).once('value', snapshot => {
                 const serverConfig = snapshot.val();
                 if (serverConfig) {
-                    // Use Object.values to convert the object to an array
                     resources = Object.values(serverConfig).map(processResourceData);
                     renderResources();
-                    console.log('Configuration (including initial counts) loaded from server.');
 
-                    if (initialLoad && serverClientMode === 'client' || serverClientMode === 'server') {
-                        // Initialize client's counts based on the loaded config
+                    if (initialLoad && (serverClientMode === 'client' || serverClientMode === 'server')) {
                         const clientCounts = {};
                         resources.forEach((resource, index) => {
                             clientCounts[index] = resource.count;
                         });
                         db.ref(`sessions/${sessionId}/client_counts/${clientId}`).set(clientCounts)
                             .then(() => {
-                                console.log("Client's initial counts initialized from config.");
-                                setupClientResourceListeners(); // Set up listeners *after* initializing
-                                initialLoad = false; // Only do this once
+                                setupClientResourceListeners();
+                                initialLoad = false;
                             })
                             .catch(error => console.error("Error initializing client counts:", error));
                     }
@@ -2636,41 +2698,47 @@
                 console.error('Error loading configuration from server:', error);
                 console.warn('Failed to load configuration from server.');
             });
+
+             db.ref(`sessions/${sessionId}/gameSettings`).once('value', snapshot => {
+                const gameSettings = snapshot.val();
+                if (gameSettings) {
+                    enableGlobalCounterLimit = gameSettings.enableGlobalCounterLimit === undefined ? false : gameSettings.enableGlobalCounterLimit;
+                    globalCounterLimit = gameSettings.globalCounterLimit === undefined ? 100 : gameSettings.globalCounterLimit;
+                    document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+                    document.getElementById('globalCounterLimit').value = globalCounterLimit;
+                    toggleGlobalCounterLimit();
+                } else {
+                    console.log('No game settings found on server, using defaults.');
+                }
+            });
         }
 
         function setupServerResourceListeners() {
             if (!sessionId || serverClientMode !== 'server' || serverListeners.resourceListener) return;
 
-            // Listen for changes to client counts (all clients)
+
             serverListeners.resourceListener = db.ref(`sessions/${sessionId}/client_counts`).on('value', (snapshot) => {
             });
         }
 
 
         function setupClientResourceListeners() {
-            if (!sessionId || !['client', 'server'].includes(serverClientMode) || clientListeners.countsListener) { // Corrected condition and allow for 'server' mode
-                console.log("setupClientResourceListeners NOT needed or already setup in", serverClientMode, "mode."); // Debug log: Listener setup skipped
+            if (!sessionId || !['client', 'server'].includes(serverClientMode) || clientListeners.countsListener) {
                 return;
             }
 
-            console.log("Setting up client counts listener in", serverClientMode, "mode for client ID:", clientId); // Debug log: Listener setup start
 
             clientListeners.countsListener = db.ref(`sessions/${sessionId}/client_counts`).on('value', (snapshot) => {
-                console.log("Client counts listener TRIGGERED on ", serverClientMode, "mode");
                 const countsData = snapshot.val();
                 if (countsData) {
-                    console.log("Received counts data:", countsData);
                     for (const resourceIndex in resources) {
                         if (countsData[clientId] && countsData[clientId][resourceIndex] !== undefined) {
                             const countValue = countsData[clientId][resourceIndex];
                             resources[resourceIndex].count = countValue;
-                            console.log(`Updating ${serverClientMode} resource ${resourceIndex} count to:`, countValue);
                         }
                     }
                     renderResources();
-                    console.log("Resources RENDERED after client counts update.");
                 } else {
-                    console.log("No counts data received from Firebase.");
                 }
             }, (error) => {
                 console.error("Error in client counts listener:", error);
@@ -2690,7 +2758,6 @@
                 try {
                     const sdkConfig = JSON.parse(e.target.result);
                     if (sdkConfig && sdkConfig.firebaseConfig && sdkConfig.sessionDetails && sdkConfig.sessionDetails.sessionId) {
-                        // Import Firebase Config
                         document.getElementById('apiKey').value = sdkConfig.firebaseConfig.apiKey || '';
                         document.getElementById('authDomain').value = sdkConfig.firebaseConfig.authDomain || '';
                         document.getElementById('databaseURL').value = sdkConfig.firebaseConfig.databaseURL || '';
@@ -2701,7 +2768,6 @@
 
                         if (initializeFirebaseWithUserInput()) {
                             console.log("Firebase re-initialized after SDK config import.");
-                            // Join Session
                             document.getElementById('sessionId').value = sdkConfig.sessionDetails.sessionId;
                             connectClient();
                         } else {
@@ -2720,6 +2786,37 @@
                 console.error("File read error:", error);
             };
             reader.readAsText(file);
+        }
+
+        function importSdkConfigFromURL(configParam) {
+
+            try {
+                const sdkConfig = JSON.parse(decodeURIComponent(configParam));
+
+
+                if (sdkConfig && sdkConfig.firebaseConfig && sdkConfig.sessionDetails && sdkConfig.sessionDetails.sessionId) {
+                    document.getElementById('apiKey').value = sdkConfig.firebaseConfig.apiKey || '';
+                    document.getElementById('authDomain').value = sdkConfig.firebaseConfig.authDomain || '';
+                    document.getElementById('databaseURL').value = sdkConfig.firebaseConfig.databaseURL || '';
+                    document.getElementById('projectId').value = sdkConfig.firebaseConfig.projectId || '';
+                    document.getElementById('storageBucket').value = sdkConfig.firebaseConfig.storageBucket || '';
+                    document.getElementById('messagingSenderId').value = sdkConfig.firebaseConfig.messagingSenderId || '';
+                    document.getElementById('appId').value = sdkConfig.firebaseConfig.appId || '';
+
+                    if (initializeFirebaseWithUserInput()) {
+                        console.log("Firebase re-initialized from URL config.");
+                        document.getElementById('sessionId').value = sdkConfig.sessionDetails.sessionId;
+                        connectClient();
+                    } else {
+                        console.warn("Firebase Initialization Failed from URL config, cannot join session.");
+                    }
+                } else {
+                    console.warn("Invalid SDK configuration in URL.");
+                }
+            } catch (error) {
+                console.warn("Error importing SDK configuration from URL:", error);
+                console.error("SDK config URL import error:", error);
+            }
         }
     </script>
 </body>
