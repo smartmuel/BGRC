@@ -682,6 +682,22 @@
             text-align: center;
         }
 
+        .other-clients-counts {
+            font-size: 0.8em;
+            color: #777;
+            margin-top: 2px; /* Reduced margin-top for compactness */
+            text-align: left; /* Align text to the left within the container */
+            width: 100%; /* Ensure it takes full width of counter */
+            box-sizing: border-box; /* Include padding and border in element's total width and height */
+            padding: 0 5px; /* Reduced padding for compactness */
+            display: none; /* Initially hidden, shown only when counts are available */
+            line-height: 1.2; /* Slightly reduced line-height for compactness */
+        }
+
+        body.dark-mode .other-clients-counts {
+            color: #aaa; /* Lighter color in dark mode */
+        }
+
 
     </style>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
@@ -701,7 +717,7 @@
     <h1>Game Resource Counter</h1>
     <div id="hideAllContainer">
         <div id="hideAllLine"></div>
-        <span id="hideAllArrow">▼</span>
+        <span id="hideAllArrow" onclick="toggleHideAllExceptResources()">▼</span>
     </div>
     <div id="globalSettings">
         <button id="globalSettingsButton" onclick="toggleGlobalSettingsVisibility()">⚙️</button>
@@ -729,6 +745,12 @@
                 <label>
                     <input type="checkbox" id="globalHideFunnyNames" onchange="toggleGlobalHideFunnyNames()" checked>
                     Globally Hide Funny Names
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
+                    <input type="checkbox" id="globalHideAllImages" onchange="toggleGlobalHideAllImages()">
+                    Globally Hide All Images
                 </label>
             </div>
             <hr/>
@@ -895,12 +917,21 @@
         let clientsInSession = {}; // Store client names by ID
         let sdkExported = false; // Flag to prevent double export
         let qrcode = null; // QR code instance
+        let otherClientsResourceCounts = {}; // Store other clients' resource counts
+        let globalHideAllImages = false; // New global setting to hide all images
+
+        // Brainrot names list
+        const brainrotNames = ["Simp", "Gooner", "Gyatt", "Rizzler", "Sigma", "Beta", "Skibidi", "Ohio", "Fanum", "Based", "Cringe", "NPC", "Chad", "Soyjak", "Doomer", "Bloomer", "Zoomer", "Boomer"];
+
+        function getRandomBrainrotName() {
+            return brainrotNames[Math.floor(Math.random() * brainrotNames.length)];
+        }
 
         function toggleStatusWindowVisibility() {
             statusWindowVisible = !statusWindowVisible;
             document.getElementById('statusWindow').style.display = statusWindowVisible ? 'block' : 'none';
             if (statusWindowVisible && serverClientMode !== 'local') {
-                fetchAndDisplayClientStatus(); // Fetch and display status when opening the window
+                fetchAndDisplayClientStatus();
             }
         }
 
@@ -912,43 +943,39 @@
             }
 
             const statusWindowContent = document.getElementById('statusWindow');
-            statusWindowContent.innerHTML = "<p>Loading client status...</p>"; // Initial loading message
+            statusWindowContent.innerHTML = "<p>Loading client status...</p>";
 
             try {
                 const clientCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts`).get();
-                const clientCountsData = clientCountsSnapshot.val();
+                const clientCountsData = clientCountsSnapshot.val() || {};
                 const configSnapshot = await db.ref(`sessions/${sessionId}/config`).get();
-                const configData = configSnapshot.val();
+                const configData = configSnapshot.val() || {};
 
-
-                if (!clientCountsData || !configData || !clientsInSession) {
-                    statusWindowContent.innerHTML = "<p>No client status data available.</p>";
-                    return;
-                }
 
                 let statusHTML = '';
                 for (const clientFirebaseId in clientCountsData) {
-                    if (clientFirebaseId === clientId) continue; // Skip current client
+                    if (clientFirebaseId === clientId) continue;
                     const clientCounts = clientCountsData[clientFirebaseId];
-                    const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client'; // Get client name
+                    const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client';
 
                     statusHTML += `<div class="status-item"><h4>Client: ${currentClientName}</h4><ul>`;
 
-                    for (const resourceIndex in clientCounts) {
-                        const count = clientCountsData[resourceIndex];
-                        const resource = configData[resourceIndex];
-                        if (resource) {
-                            const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
-                            statusHTML += `<li>${resourceDisplayName}: ${count}</li>`; // Use funny name if enabled
-                        } else {
-                            statusHTML += `<li>Resource ${resourceIndex}: ${count} (Name not found)</li>`;
+                    for (const resourceIndex in configData) {
+                        if (configData.hasOwnProperty(resourceIndex)) {
+                            const count = clientCounts ? clientCounts[resourceIndex] : undefined;
+                            const resource = configData[resourceIndex];
+
+                            if (resource) {
+                                const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
+                                statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
+                            }
                         }
                     }
                     statusHTML += `</ul></div>`;
                 }
 
                 if (statusHTML === '') {
-                    statusHTML = "<p>No other clients connected.</p>";
+                    statusHTML = "<p>No other clients connected or no data available.</p>";
                 }
 
                 statusWindowContent.innerHTML = statusHTML;
@@ -976,25 +1003,25 @@
                 appId: document.getElementById('appId').value
             };
 
-            // Check if all fields are filled (basic validation)
             const missingFields = Object.entries(firebaseConfigFromInput)
                 .filter(([key, value]) => !value)
                 .map(([key]) => key);
 
             if (missingFields.length > 0) {
                 console.warn(`Firebase configuration missing fields: ${missingFields.join(', ')}`);
-                return false; // Indicate failure
+                return false;
             }
 
             try {
                 firebase.initializeApp(firebaseConfigFromInput);
-                db = firebase.database(); // Initialize db here as well
+                db = firebase.database();
                 console.log("Firebase Initialized Successfully with user credentials.");
-                return true; // Indicate success
+                saveFirebaseConfigToCache(firebaseConfigFromInput);
+                return true;
             } catch (error) {
                 console.error("Firebase Initialization Error:", error);
                 console.warn("Firebase Initialization Failed. Check console for details.");
-                return false; // Indicate failure
+                return false;
             }
         }
 
@@ -1014,7 +1041,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'firebase-config.json'; // Default filename
+            a.download = 'firebase-config.json';
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -1028,7 +1055,7 @@
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = async function(e) { // Make reader.onload async
+            reader.onload = async function(e) {
                 try {
                     const importedConfig = JSON.parse(e.target.result);
                     if (typeof importedConfig === 'object' &&
@@ -1044,7 +1071,7 @@
                         document.getElementById('appId').value = importedConfig.appId || '';
 
                         console.log("Firebase configuration imported successfully!");
-                        if (initializeFirebaseWithUserInput()) { // Initialize Firebase and check success
+                        if (initializeFirebaseWithUserInput()) {
                             console.log("Firebase re-initialized after import.");
                         }
                     } else {
@@ -1060,6 +1087,24 @@
                 console.error("File read error:", error);
             };
             reader.readAsText(file);
+        }
+
+        function saveFirebaseConfigToCache(config) {
+            localStorage.setItem('firebaseConfig', JSON.stringify(config));
+        }
+
+        function loadFirebaseConfigFromCache() {
+            const cachedConfig = localStorage.getItem('firebaseConfig');
+            if (cachedConfig) {
+                const config = JSON.parse(cachedConfig);
+                document.getElementById('apiKey').value = config.apiKey || '';
+                document.getElementById('authDomain').value = config.authDomain || '';
+                document.getElementById('databaseURL').value = config.databaseURL || '';
+                document.getElementById('projectId').value = config.projectId || '';
+                document.getElementById('storageBucket').value = config.storageBucket || '';
+                document.getElementById('messagingSenderId').value = config.messagingSenderId || '';
+                document.getElementById('appId').value = config.appId || '';
+            }
         }
 
 
@@ -1114,7 +1159,7 @@
             return 'client-' + Math.random().toString(36).substring(2, 15);
         }
 
-        function connectClientUI() { // Moved function definition to global scope
+        function connectClientUI() {
             document.getElementById('sessionIdContainer').style.display = 'block';
             document.getElementById('newSessionContainer').style.display = 'none';
         }
@@ -1130,12 +1175,13 @@
                     previousFunnyNameStates,
                     serverClientMode,
                     clientName,
+                    globalHideAllImages,
                 };
                 localStorage.setItem('boardGameResources', JSON.stringify(resources));
                 localStorage.setItem('unnamedCounter', unnamedCounter);
                 localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
                 localStorage.setItem('clientName', clientName);
-            } else if (serverClientMode === 'server' || serverClientMode === 'client') { // Include server and client mode in saving global config
+            } else if (serverClientMode === 'server' || serverClientMode === 'client') {
                 const globalConfig = {
                     showSettingsGlobal,
                     hideAllExceptResources,
@@ -1144,6 +1190,7 @@
                     previousFunnyNameStates,
                     serverClientMode,
                     clientName,
+                    globalHideAllImages,
                 };
                 localStorage.setItem('globalConfig', JSON.stringify(globalConfig));
                 localStorage.setItem('clientName', clientName);
@@ -1170,7 +1217,7 @@
                 qrcodeCanvasContainer.style.display = 'none';
                 serverClientButton.textContent = '👤';
                 serverClientModeSelect.style.display = 'inline-block';
-                statusWindowContainer.style.display = 'block'; // Explicitly show status window in client mode
+                statusWindowContainer.style.display = 'block';
                 if (importSdkConfigButton) importSdkConfigButton.style.display = 'inline-block';
                 if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
             } else if (serverClientMode === 'server') {
@@ -1180,22 +1227,22 @@
                 qrcodeCanvasContainer.style.display = (sessionId ? 'block' : 'none');
                 serverClientButton.textContent = '🌐';
                 serverClientModeSelect.style.display = 'inline-block';
-                statusWindowContainer.style.display = 'block'; // Explicitly show status window in server mode
+                statusWindowContainer.style.display = 'block';
                 if (sessionId && exportSdkConfigButton) exportSdkConfigButton.style.display = 'inline-block';
                 else if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
                 if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';
                 if (sessionId) {
                     document.getElementById('serverIDDisplay').value = sessionId;
-                    generateQRCode(); // Generate QR code when session ID is available in server mode
+                    generateQRCode();
                 }
-            } else { // Local Mode
+            } else {
                 sessionIdContainer.style.display = 'block';
                 newSessionContainer.style.display = 'none';
                 serverIDDisplayContainer.style.display = 'none';
                 qrcodeCanvasContainer.style.display = 'none';
                 serverClientButton.textContent = '👤';
                 serverClientModeSelect.style.display = 'inline-block';
-                statusWindowContainer.style.display = 'none'; // Explicitly hide status window in local mode
+                statusWindowContainer.style.display = 'none';
                 if (importSdkConfigButton) importSdkConfigButton.style.display = 'none';
                 if (exportSdkConfigButton) exportSdkConfigButton.style.display = 'none';
             }
@@ -1223,6 +1270,10 @@
                             clientName = config.clientName;
                             document.getElementById('clientNameInput').value = clientName;
                         }
+                        if (config.globalHideAllImages !== undefined) {
+                            globalHideAllImages = config.globalHideAllImages;
+                            document.getElementById('globalHideAllImages').checked = globalHideAllImages;
+                        }
                     }
                     renderResources();
                     updateVisibility();
@@ -1235,52 +1286,59 @@
                     applyGlobalConfig(config);
                     if (config.serverClientMode) {
                         serverClientMode = config.serverClientMode;
-                        document.getElementById('serverClientMode').value = config.serverClientMode; // Use config value
+                        document.getElementById('serverClientMode').value = config.serverClientMode;
                         updateServerClientUI();
                     }
                     if (config.clientName) {
                         clientName = config.clientName;
                         document.getElementById('clientNameInput').value = clientName;
                     }
+                    if (config.globalHideAllImages !== undefined) {
+                        globalHideAllImages = config.globalHideAllImages;
+                        document.getElementById('globalHideAllImages').checked = globalHideAllImages;
+                    }
                 }
-                updateServerClientUI(); // Ensure UI is updated for default client mode on first load
+                updateServerClientUI();
             }
 
             checkGlobalCounterLimit();
             loadGlobalSettingsFromLocalStorage();
+            loadFirebaseConfigFromCache();
         }
 
         function saveGlobalSettingsToLocalStorage() {
             localStorage.setItem('showSettingsGlobal', document.getElementById('showSettingsGlobal').checked);
             localStorage.setItem('disableAllAnimations', document.getElementById('disableAllAnimations').checked);
             localStorage.setItem('globalHideFunnyNames', document.getElementById('globalHideFunnyNames').checked);
-            localStorage.setItem('showFirebaseFieldsToggle', document.getElementById('showFirebaseFieldsToggle').checked);
-            localStorage.setItem('serverClientMode', serverClientMode); // Save serverClientMode to localStorage
+            localStorage.setItem('serverClientMode', serverClientMode);
+            localStorage.setItem('globalHideAllImages', document.getElementById('globalHideAllImages').checked);
         }
 
         function loadGlobalSettingsFromLocalStorage() {
             document.getElementById('showSettingsGlobal').checked = localStorage.getItem('showSettingsGlobal') === 'true';
             document.getElementById('disableAllAnimations').checked = localStorage.getItem('disableAllAnimations') === 'true';
             document.getElementById('globalHideFunnyNames').checked = localStorage.getItem('globalHideFunnyNames') !== 'false';
-            document.getElementById('showFirebaseFieldsToggle').checked = localStorage.getItem('showFirebaseFieldsToggle') === 'true' ? true : false;
             const savedServerClientMode = localStorage.getItem('serverClientMode');
             if (savedServerClientMode) {
                 serverClientMode = savedServerClientMode;
                 document.getElementById('serverClientMode').value = serverClientMode;
             }
+            document.getElementById('globalHideAllImages').checked = localStorage.getItem('globalHideAllImages') === 'true';
 
+            document.getElementById('showFirebaseFieldsToggle').checked = false;
 
             toggleGlobalSettings();
             toggleAllAnimations();
             toggleGlobalHideFunnyNames();
-            toggleFirebaseConfigVisibility(); // Set initial Firebase fields visibility
+            toggleGlobalHideAllImages();
+            toggleFirebaseConfigVisibility();
         }
 
 
         function processResourceData(resourceData) {
             return {
                 ...resourceData,
-                count: typeof resourceData.count === 'number' ? resourceData.count : 0, // Ensure count exists
+                count: typeof resourceData.count === 'number' ? resourceData.count : 0,
                 customIncrement1: typeof resourceData.customIncrement1 === 'number' ? resourceData.customIncrement1 : defaultIncrement,
                 customIncrement2: typeof resourceData.customIncrement2 === 'number' ? resourceData.customIncrement2 : defaultIncrement2,
                 customIncrement3: typeof resourceData.customIncrement3 === 'number' ? resourceData.customIncrement3 : defaultIncrement3,
@@ -1288,7 +1346,7 @@
                 maxCount: resourceData.maxCount == null ? Infinity : resourceData.maxCount,
                 image: resourceData.image || `${STATIC_ASSET_URL}/default-image.png`,
                 hideImage: typeof resourceData.hideImage === 'boolean' ? resourceData.hideImage : true,
-                hideCounter: typeof resourceData.hideCounter === 'boolean' ? resourceData.hideCounter : false, // ADDED hideCounter to process data
+                hideCounter: typeof resourceData.hideCounter === 'boolean' ? resourceData.hideCounter : false,
                 keepOneModifier: typeof resourceData.keepOneModifier === 'boolean' ? resourceData.keepOneModifier : true,
                 showRollDice: typeof resourceData.showRollDice === 'boolean' ? resourceData.showRollDice : false,
                 rollDiceMin: typeof resourceData.rollDiceMin === 'number' ? resourceData.rollDiceMin : defaultMinDiceValue,
@@ -1298,10 +1356,10 @@
                 numberOfDice: typeof resourceData.numberOfDice === 'number' ? resourceData.numberOfDice : 1,
                 rollDiceCustomValues: Array.isArray(resourceData.rollDiceCustomValues) ? resourceData.rollDiceCustomValues : [],
                 useCustomDiceValues: typeof resourceData.useCustomDiceValues === 'boolean' ? resourceData.useCustomDiceValues : false,
-                useFunnyName: typeof resourceData.useFunnyName === 'boolean' ? resourceData.useFunnyName : false,
+                useFunnyName: typeof resourceData.useFunnyName === 'boolean' ? resourceData.useFunnyName === 'boolean' : false,
                 funnyName: resourceData.funnyName || "",
-                previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName : false,
-                firebaseKey: resourceData.firebaseKey // Include firebaseKey
+                previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName === 'boolean' : false,
+                firebaseKey: resourceData.firebaseKey
             };
         }
 
@@ -1313,14 +1371,15 @@
             globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
             previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
             clientName = globalConfig.clientName || '';
-            serverClientMode = globalConfig.serverClientMode || 'client'; // Default to client if not in config
-
+            serverClientMode = globalConfig.serverClientMode || 'client';
+            globalHideAllImages = globalConfig.globalHideAllImages === undefined ? false : globalConfig.globalHideAllImages;
 
             document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
             document.getElementById('disableAllAnimations').checked = disableAllAnimations;
             document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
             document.getElementById('clientNameInput').value = clientName;
-            document.getElementById('serverClientMode').value = serverClientMode; // Set dropdown value
+            document.getElementById('serverClientMode').value = serverClientMode;
+            document.getElementById('globalHideAllImages').checked = globalHideAllImages;
             toggleGlobalCounterLimit();
         }
 
@@ -1338,7 +1397,7 @@
                 minCount: 0,
                 maxCount: Infinity,
                 hideImage: true,
-                hideCounter: false, // ADDED hideCounter to new resource
+                hideCounter: false,
                 keepOneModifier: true,
                 showRollDice: false,
                 rollDiceMin: defaultMinDiceValue,
@@ -1353,21 +1412,19 @@
                 previousUseFunnyName: false
             };
 
-            // Convert Infinity to null for Firebase
             const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount };
 
-            // Server saves config to Firebase, clients load from server
             if (serverClientMode === 'server' && sessionId) {
                 const newResourceRef = db.ref(`sessions/${sessionId}/config`).push();
-                firebaseResource.firebaseKey = newResourceRef.key; // Use firebaseResource here
+                firebaseResource.firebaseKey = newResourceRef.key;
 
-                newResourceRef.set(firebaseResource).then(() => { // Set firebaseResource instead of resource
+                newResourceRef.set(firebaseResource).then(() => {
                     resources.push(resource);
                     hasUnsavedChanges = true;
                     renderResources();
                     checkGlobalCounterLimit();
                     document.getElementById('resourceName').value = "";
-                    saveConfigToServer(); // Save config on resource add in server mode
+                    saveConfigToServer();
                 });
             } else {
                 resources.push(resource);
@@ -1389,6 +1446,9 @@
             } else {
                 container.insertAdjacentHTML('beforeend', newElementHTML)
             }
+
+
+            updateOtherClientsCountsDisplay(index);
         }
 
         function renderResources() {
@@ -1406,6 +1466,7 @@
         }
 
         function generateResourceImage(resource) {
+            if (globalHideAllImages) return '';
             return resource.hideImage ? '' : `<div class="resource-image-container">
             <img src="${resource.image}" alt="${resource.name}" class="resource-image">
         </div>`;
@@ -1449,6 +1510,8 @@
                         <button onclick="updateCount(event, ${index}, ${resource.customIncrement2})">+${resource.customIncrement2}</button>
                     </div>
                     ` : ''}
+                    <div class="other-clients-counts" id="otherClientsCounts${index}">
+                    </div>
                 </div>
             `;
         }
@@ -1611,8 +1674,11 @@
             }
 
             sessionId = generateSessionId();
-            clientName = document.getElementById('clientNameInput').value.trim() || clientId;
-            document.getElementById('clientNameInput').value = clientName;
+            clientName = document.getElementById('clientNameInput').value.trim();
+            if (!clientName) {
+                clientName = getRandomBrainrotName();
+                document.getElementById('clientNameInput').value = clientName; // Set the generated name back to input
+            }
             document.getElementById('sessionId').value = sessionId;
             configSavedToServer = false;
 
@@ -1623,37 +1689,56 @@
                 saveConfigToServer();
                 setupServerClientListeners();
                 setupClientResourceListeners();
+                setupServerResourceListeners();
             });
 
             document.getElementById('serverIDDisplay').value = sessionId;
             document.getElementById('serverIDDisplayContainer').style.display = 'block';
             document.getElementById('newSessionContainer').style.display = 'none';
 
-            console.log(`Server started. Session ID: ${sessionId}`);
+            console.log(`Server started. Session ID: ${sessionId}, Name: ${clientName}`);
 
-            updateServerClientUI(); // <-- ENSURE THIS LINE IS HERE AND AT THE END
+            updateServerClientUI();
         }
 
-        function connectClient() {
+        async function connectClient() {
             sessionId = document.getElementById('sessionId').value.trim();
-            clientName = document.getElementById('clientNameInput').value.trim() || clientId; // Use clientId if no name
-            document.getElementById('clientNameInput').value = clientName;    //put the client name in the input
-            saveToLocalStorage(); // Save clientName
+            clientName = document.getElementById('clientNameInput').value.trim();
+            if (!clientName) {
+                clientName = getRandomBrainrotName();
+                document.getElementById('clientNameInput').value = clientName; // Set the generated name back to input
+            }
+            saveToLocalStorage();
+
+            if (!clientName) {
+                alert("Please enter a client name.");
+                return;
+            }
 
             if (sessionId) {
-                // Add client to the session *before* loading config
+                // Check for duplicate client names
+                const clientsRef = db.ref(`sessions/${sessionId}/clients`);
+                const snapshot = await clientsRef.orderByChild('clientName').equalTo(clientName).once('value');
+                if (snapshot.exists()) {
+                    alert("This client name is already taken. Please choose a different name.");
+                    return;
+                }
+
                 db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
                     clientId: clientId,
                     clientName: clientName,
-                }).then(() => { // Use a .then() block
-                    loadConfigFromServer(); // Load config *after* adding client
+                }).then(() => {
+                    loadConfigFromServer();
                     setupClientResourceListeners();
-                    setupClientSideClientListeners(); // Setup client-side client listeners on connect
+                    setupClientSideClientListeners();
                     updateServerClientUI();
-                    console.log(`Client - Connected to session: ${sessionId}`); // Log connection
+                    console.log(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
+                }).catch(error => {
+                    console.error("Error connecting client:", error);
+                    alert("Failed to connect to session. Please check the console for details.");
                 });
             } else {
-                console.warn("Please enter a Session ID.");
+                alert("Please enter a Session ID.");
             }
         }
 
@@ -1667,8 +1752,10 @@
                 messagingSenderId: document.getElementById('messagingSenderId').value,
                 appId: document.getElementById('appId').value
             };
+
+            console.log("Firebase Config for QR Code:", firebaseConfig);
             const sessionDetails = {
-                sessionId: sessionId // Use the global sessionId variable
+                sessionId: sessionId
             };
 
             const combinedConfig = {
@@ -1677,24 +1764,32 @@
             };
 
             const configString = JSON.stringify(combinedConfig);
-            const currentUrl = window.location.href.split('?')[0]; // Get base URL without query params
+            const currentUrl = window.location.href.split('?')[0];
             const qrCodeData = `${currentUrl}?config=${encodeURIComponent(configString)}`;
 
+            console.log("QR Code Data:", qrCodeData);
 
             const qrcodeContainer = document.getElementById('qrcodeCanvas');
-            qrcodeContainer.innerHTML = ''; // Clear previous QR code
+            qrcodeContainer.innerHTML = '';
+
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            const colorDark = isDarkMode ? '#ffffff' : '#000000';
+            const colorLight = isDarkMode ? '#000000' : '#ffffff';
+
 
             if (!qrcode) {
                 qrcode = new QRCode(qrcodeContainer, {
                     text: qrCodeData,
-                    width: 256, // Increased width
-                    height: 256, // Increased height
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
+                    width: 300,
+                    height: 300,
+                    colorDark: colorDark,
+                    colorLight: colorLight,
                     correctLevel: QRCode.CorrectLevel.H
                 });
             } else {
-                qrcode.makeCode(qrCodeData); // Update existing QR code
+                qrcode.options.colorDark = colorDark;
+                qrcode.options.colorLight = colorLight;
+                qrcode.makeCode(qrCodeData);
             }
         }
 
@@ -1702,10 +1797,10 @@
         function exportSdkConfigWithSession() {
             if (sdkExported) {
                 console.warn("SDK config already exported. Please wait or refresh to export again.");
-                return; // Prevent export if already exported once
+                return;
             }
 
-            sdkExported = true; // Set the flag to true
+            sdkExported = true;
 
             const firebaseConfig = {
                 apiKey: document.getElementById('apiKey').value,
@@ -1717,7 +1812,7 @@
                 appId: document.getElementById('appId').value
             };
             const sessionDetails = {
-                sessionId: sessionId // Use the global sessionId variable
+                sessionId: sessionId
             };
 
             const combinedConfig = {
@@ -1730,13 +1825,13 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'sdk-config-with-session.json'; // Filename for download
+            a.download = 'sdk-config-with-session.json';
             a.click();
             URL.revokeObjectURL(url);
 
             setTimeout(() => {
-                sdkExported = false; // Reset flag after a delay (e.g., 1 second)
-            }, 1000); // Adjust delay as needed
+                sdkExported = false;
+            }, 1000);
         }
 
         function attachEventListeners() {
@@ -1747,7 +1842,7 @@
                     event.stopPropagation();
                     const resourceIndex = parseInt(target.closest('.resource').dataset.resourceIndex);
                     let change = 0;
-                    if (target.textContent === '+1') change = resources[resourceIndex].customIncrement1; // Use resource increments
+                    if (target.textContent === '+1') change = resources[resourceIndex].customIncrement1;
                     else if (target.textContent === '-1') change = - resources[resourceIndex].customIncrement1;
                     else if (target.textContent === '+2') change = resources[resourceIndex].customIncrement2;
                     else if (target.textContent === '-2') change = - resources[resourceIndex].customIncrement2;
@@ -1858,7 +1953,7 @@
             }
 
             let potentialNewResourceCount = Math.max(targetResource.minCount, Math.min(targetResource.count + change, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
-            let currentTotalCount = resources.reduce((sum, res) => sum + res.count, 0);
+            let currentTotalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
             let potentialNewTotalCount = currentTotalCount - targetResource.count + potentialNewResourceCount;
 
 
@@ -1868,7 +1963,7 @@
                 if (potentialNewResourceCount < targetResource.count) {
                     document.getElementById('limitMessage').textContent = `Global counter limit (${globalCounterLimit}) reached!`;
                     document.getElementById('limitMessage').style.display = 'block';
-                    return; // Prevent exceeding the limit
+                    return;
                 }
             } else {
                 document.getElementById('limitMessage').style.display = 'none';
@@ -1883,10 +1978,11 @@
                     console.warn("Firebase db is not initialized in updateCount (Server Mode).");
                     return;
                 }
-                const firebaseRef = db.ref(`sessions/${sessionId}/client_counts/${clientId}/${index}`); // Get the Firebase ref
+                const firebaseRef = db.ref(`sessions/${sessionId}/client_counts/${clientId}/${index}`);
 
                 firebaseRef.set(newCount)
                     .then(() => {
+                        updateOtherClientsCountsDisplay(index);
                     })
                     .catch(error => {
                         console.error('Error syncing client resource count to server:', error);
@@ -2324,10 +2420,6 @@
         }
 
 
-        // Removed toggleStatusWindowVisibility function as it's always shown
-
-        document.getElementById('hideAllArrow').addEventListener('click', toggleHideAllExceptResources);
-
         function toggleHideAllExceptResources() {
             hideAllExceptResources = !hideAllExceptResources;
             updateVisibility();
@@ -2396,6 +2488,16 @@
             }
         }
 
+        function toggleGlobalHideAllImages() {
+            globalHideAllImages = document.getElementById('globalHideAllImages').checked;
+            saveGlobalSettingsToLocalStorage();
+            renderResources();
+            saveToLocalStorage();
+            if (serverClientMode === 'server' && sessionId) {
+                saveConfigToServer();
+            }
+        }
+
 
         function checkGlobalCounterLimit() {
             if (!enableGlobalCounterLimit) {
@@ -2429,7 +2531,6 @@
                 event.preventDefault();
                 event.returnValue = '';
                 event.returnValue = '';
-                return '';
             }
         });
 
@@ -2439,8 +2540,8 @@
             resetInactivityTimer();
 
             loadGlobalSettingsFromLocalStorage();
-            toggleGlobalCounterLimit(); // Ensure initial UI state for global counter limit is set
-
+            toggleGlobalCounterLimit();
+            loadFirebaseConfigFromCache();
 
             if (localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
@@ -2456,6 +2557,8 @@
             handleServerClientModeChange();
             updateServerClientUI();
             attachEventListeners();
+            toggleFirebaseConfigVisibility();
+            document.getElementById('showFirebaseFieldsToggle').checked = false;
             toggleFirebaseConfigVisibility();
 
 
@@ -2473,21 +2576,26 @@
             serverListeners.clientListener = clientsRef.on('child_added', (snapshot) => {
                 const newClientId = snapshot.key;
                 const clientData = snapshot.val();
-                clientName = clientData.clientName;
-                clientsInSession[newClientId] = clientName;
-                console.log(`Server - Client connected: ${clientName} (${newClientId})`);
+                const connectedClientName = clientData.clientName;
+                clientsInSession[newClientId] = connectedClientName;
+                console.log(`Server - Client connected: ${connectedClientName} (${newClientId})`);
+                resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
             });
 
             serverListeners.removeClientListener = clientsRef.on('child_removed', (snapshot) => {
                 const removedClientId = snapshot.key;
                 delete clientsInSession[removedClientId];
                 console.log(`Server - Client disconnected: ${removedClientId}`);
+                 resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
             });
 
             clientsRef.once('value', (snapshot) => {
-                snapshot.forEach(childSnapshot => {
-                    clientsInSession[childSnapshot.key] = childSnapshot.val().clientName;
-                });
+                const initialClientsData = snapshot.val();
+                if (initialClientsData) {
+                    for (const clientId in initialClientsData) {
+                        clientsInSession[clientId] = initialClientsData[clientId].clientName;
+                    }
+                }
             });
         }
 
@@ -2504,12 +2612,15 @@
             document.getElementById('newSessionContainer').style.display = 'block';
             clientsInSession = {};
             cleanupClientSideClientListeners();
+            otherClientsResourceCounts = {};
+            resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
 
             if (serverClientMode === 'client') {
                 connectClientUI();
                 setupClientResourceListeners();
                 setupClientSideClientListeners();
             } else if (serverClientMode === 'server') {
+                setupServerResourceListeners();
             } else {
                 serverClientMode = 'local';
                 updateServerClientUI();
@@ -2567,24 +2678,14 @@
 
 
             clientListeners.clientListListener = clientsRef.on('value', (snapshot) => {
-
                 const clientsData = snapshot.val();
-
                 clientsInSession = {};
-
                 if (clientsData) {
-
                     for (const clientIdFB in clientsData) {
-
                         clientsInSession[clientIdFB] = clientsData[clientIdFB].clientName;
-
                     }
-
-
-                } else {
-
-
                 }
+                 resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
 
             }, (error) => {
 
@@ -2707,6 +2808,7 @@
                     document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
                     document.getElementById('globalCounterLimit').value = globalCounterLimit;
                     toggleGlobalCounterLimit();
+                    toggleGlobalHideAllImages();
                 } else {
                     console.log('No game settings found on server, using defaults.');
                 }
@@ -2716,8 +2818,19 @@
         function setupServerResourceListeners() {
             if (!sessionId || serverClientMode !== 'server' || serverListeners.resourceListener) return;
 
-
             serverListeners.resourceListener = db.ref(`sessions/${sessionId}/client_counts`).on('value', (snapshot) => {
+                const countsData = snapshot.val();
+                if (countsData) {
+                    otherClientsResourceCounts = {};
+                    for (const clientFirebaseId in countsData) {
+                        if (clientFirebaseId !== clientId) {
+                            otherClientsResourceCounts[clientFirebaseId] = countsData[clientFirebaseId];
+                        }
+                    }
+                    resources.forEach((resource, index) => {
+                        updateOtherClientsCountsDisplay(index);
+                    });
+                }
             });
         }
 
@@ -2731,19 +2844,56 @@
             clientListeners.countsListener = db.ref(`sessions/${sessionId}/client_counts`).on('value', (snapshot) => {
                 const countsData = snapshot.val();
                 if (countsData) {
+                    otherClientsResourceCounts = {};
+                    for (const clientFirebaseId in countsData) {
+                        if (clientFirebaseId !== clientId) {
+                            otherClientsResourceCounts[clientFirebaseId] = countsData[clientFirebaseId];
+                        }
+                    }
                     for (const resourceIndex in resources) {
                         if (countsData[clientId] && countsData[clientId][resourceIndex] !== undefined) {
                             const countValue = countsData[clientId][resourceIndex];
                             resources[resourceIndex].count = countValue;
                         }
+                        updateOtherClientsCountsDisplay(resourceIndex);
                     }
                     renderResources();
                 } else {
+                    otherClientsResourceCounts = {};
+                    resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+                    renderResources();
                 }
             }, (error) => {
                 console.error("Error in client counts listener:", error);
             });
         }
+
+
+        function updateOtherClientsCountsDisplay(resourceIndex) {
+            const displayElement = document.getElementById(`otherClientsCounts${resourceIndex}`);
+            if (!displayElement) return;
+
+            let displayHTML = '';
+            let hasCounts = false;
+
+            for (const clientFirebaseId in otherClientsResourceCounts) {
+                const clientCounts = otherClientsResourceCounts[clientFirebaseId];
+                 if (clientCounts && clientCounts[resourceIndex] !== undefined) {
+                    const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client';
+                    displayHTML += `<p>${currentClientName}: ${clientCounts[resourceIndex]}</p>`;
+                    hasCounts = true;
+                }
+            }
+
+            if (hasCounts) {
+                displayElement.innerHTML = displayHTML;
+                displayElement.style.display = 'block';
+            } else {
+                displayElement.innerHTML = '';
+                displayElement.style.display = 'none';
+            }
+        }
+
 
         function triggerImportSdkConfig() {
             document.getElementById('importSdkConfigFile').click();
@@ -2752,7 +2902,6 @@
         function importSdkConfigAndJoin(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = async function(e) {
                 try {
