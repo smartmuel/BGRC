@@ -567,12 +567,10 @@ function renderResource(resource, index) {
     const container = document.getElementById('resources');
     const existingElement = container.querySelector(`.resource[data-resource-index="${index}"]`);
     if (!existingElement) {
-
-        // If element doesn't exist (shouldn't happen in normal flow, but for robustness)
-
         container.insertAdjacentHTML('beforeend', createResourceHTML(resource, index));
+    } else {
+        existingElement.outerHTML = createResourceHTML(resource, index);
     }
-
     updateOtherClientsCountsDisplay(index);
 }
 
