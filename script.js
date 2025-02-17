@@ -466,6 +466,7 @@ function processResourceData(resourceData) {
         customIncrement3: typeof resourceData.customIncrement3 === 'number' ? resourceData.customIncrement3 : DEFAULT_INCREMENT_3,
         minCount: typeof resourceData.minCount === 'number' ? resourceData.minCount : 0,
         maxCount: resourceData.maxCount == null ? Infinity : resourceData.maxCount,
+        maxGameCounterLimit: resourceData.maxGameCounterLimit == null ? Infinity : resourceData.maxGameCounterLimit, // Added maxGameCounterLimit
         image: resourceData.image || STATIC_ASSET_DEFAULT_IMAGE,
         hideImage: typeof resourceData.hideImage === 'boolean' ? resourceData.hideImage : true,
         hideCounter: typeof resourceData.hideCounter === 'boolean' ? resourceData.hideCounter : false,
@@ -519,6 +520,7 @@ function addResource() {
         customIncrement3: DEFAULT_INCREMENT_3,
         minCount: 0,
         maxCount: Infinity,
+        maxGameCounterLimit: Infinity, // Initialize maxGameCounterLimit
         hideImage: true,
         hideCounter: false,
         keepOneModifier: true,
@@ -535,7 +537,7 @@ function addResource() {
         previousUseFunnyName: false
     };
 
-    const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount };
+    const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount, maxGameCounterLimit: resource.maxGameCounterLimit === Infinity ? null : resource.maxGameCounterLimit }; // Also handle maxGameCounterLimit for Firebase
 
     if (serverClientMode === 'server' && sessionId) {
         const newResourceRef = db.ref(`sessions/${sessionId}/config`).push();
@@ -564,12 +566,13 @@ function addResource() {
 function renderResource(resource, index) {
     const container = document.getElementById('resources');
     const existingElement = container.querySelector(`.resource[data-resource-index="${index}"]`);
-    const newElementHTML = createResourceHTML(resource, index);
-    if (existingElement) {
-        existingElement.outerHTML = newElementHTML;
-    } else {
-        container.insertAdjacentHTML('beforeend', newElementHTML)
+    if (!existingElement) {
+
+        // If element doesn't exist (shouldn't happen in normal flow, but for robustness)
+
+        container.insertAdjacentHTML('beforeend', createResourceHTML(resource, index));
     }
+
     updateOtherClientsCountsDisplay(index);
 }
 
@@ -582,16 +585,15 @@ function renderResources() {
 }
 
 function generateModifierToggle(resource, index) {
-    if (resource.hideCounter) return '';
+    if (resource.hideCounter) return `<div class="modifier-toggle-container"></div>`; // Empty container if hidden
     const modifierIcon = resource.keepOneModifier ? '➕' : '➖';
-    return `<div class="modifier-toggle" data-resource-index="${index}" onclick="toggleKeepOneModifier(event, ${index})">${modifierIcon}</div>`
-}
+    return `<div class="modifier-toggle-container"><div class="modifier-toggle" data-resource-index="${index}" onclick="toggleKeepOneModifier(event, ${index})">${modifierIcon}</div></div>`}
 
 function generateResourceImage(resource) {
-    if (globalHideAllImages) return '';
-    return resource.hideImage ? '' : `<div class="resource-image-container">
+    if (globalHideAllImages) return `<div class="resource-image-container-wrapper"></div>`; // Empty wrapper if hidden
+    return resource.hideImage ? `<div class="resource-image-container-wrapper"></div>` : `<div class="resource-image-container-wrapper"><div class="resource-image-container">
     <img src="${resource.image}" alt="${resource.name}" class="resource-image">
-</div>`;
+</div></div>`;
 }
 
 function generateResourceNameContainer(resource, index) {
@@ -600,7 +602,7 @@ function generateResourceNameContainer(resource, index) {
         displayName = resource.funnyName;
     }
 
-    return `<div class="resource-name-container">
+    return `<div class="resource-name-container-wrapper"><div class="resource-name-container">
             ${showSettingsGlobal
                 ? (resource.useFunnyName
                     ? `<input type="text" placeholder="Funny Resource Name" value="${resource.funnyName}" onblur="updateFunnyName(${index}, this.value)">`
@@ -608,13 +610,13 @@ function generateResourceNameContainer(resource, index) {
                   )
                 : `<span class="resource-name">${displayName}</span>`
             }
-        </div>`
+        </div></div>`
 }
 
 function generateCounter(resource, index) {
-    if (resource.hideCounter) return '';
+    if (resource.hideCounter) return `<div class="counter-container"></div>`; //Empty container if hidden
     return `
-        <div class="counter">
+        <div class="counter-container"><div class="counter">
             ${!resource.keepOneModifier ? `
             <div class="counter-buttons">
                 <button onclick="updateCount(event, ${index}, -${resource.customIncrement3})">-${resource.customIncrement3}</button>
@@ -634,30 +636,30 @@ function generateCounter(resource, index) {
             ` : ''}
             <div class="other-clients-counts" id="otherClientsCounts${index}">
             </div>
-        </div>
+        </div></div>
     `;
 }
 
 function generateDiceControls(resource, index) {
-    if (!resource.showRollDice) return '';
+    if (!resource.showRollDice) return `<div class="roll-dice-container"></div>`; // Empty container if hidden
     return `
-     <div class="roll-dice" style="display: flex; justify-content: center; align-items: center;">
+     <div class="roll-dice-container"><div class="roll-dice" style="display: flex; justify-content: center; align-items: center;">
          <button class="dice-button" onclick="rollDice(${index})" aria-label="Roll Dice">🎲</button>
          <div class="roll-result" id="rollResult${index}" style="cursor: pointer; margin-left: 10px;" title="Click to toggle between detailed result and sum">
             ${resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0
                 ? Array(resource.numberOfDice).fill(resource.rollDiceCustomValues[resource.rollDiceCustomValues.length - 1]).join(', ')
                 : Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}
          </div>
-    </div>
+    </div></div>
 `;
 }
 
 function generateSettings(resource, index) {
-    if (!showSettingsGlobal) return '';
+    if (!showSettingsGlobal) return `<div class="settings-container"></div>`; // Empty container if hidden
     const counterSettingsStyle = resource.hideCounter ? 'display: none;' : '';
 
     return `
-        <div class="settings">
+        <div class="settings-container"><div class="settings">
             <div class="use-funny-name-checkbox" style="${globalHideFunnyNames ? 'display: none;' : ''}">
                 Use Funny Name: <input type="checkbox" ${resource.useFunnyName ? 'checked' : ''} onchange="updateUseFunnyName(${index}, this.checked)" ${globalHideFunnyNames ? 'disabled' : ''}>
             </div>
@@ -689,6 +691,9 @@ function generateSettings(resource, index) {
                 </div>
                 <div>
                     Maximum Count: <input type="number" value="${resource.maxCount === Infinity ? '' : resource.maxCount}" onchange="updateMaxCount(${index}, this.value)">
+                </div>
+                 <div>
+                    Max Game Count: <input type="number" value="${resource.maxGameCounterLimit === Infinity ? '' : resource.maxGameCounterLimit}" onchange="updateMaxGameCounterLimit(${index}, this.value)">
                 </div>
             </div>
 
@@ -722,7 +727,7 @@ function generateSettings(resource, index) {
             </div>
             ` : ''}
             <button onclick="removeResource(${index})" class="remove-button">Remove</button>
-        </div>
+        </div></div>
     `
 }
 
@@ -801,7 +806,7 @@ function startServer() {
         clientName = getRandomBrainrotName();
         document.getElementById('clientNameInput').value = clientName;
     }
-    
+
     // Check for duplicate funny names in the current session
     if (!globalHideFunnyNames) {
         let funnyName = getRandomBrainrotName();
@@ -842,7 +847,7 @@ async function connectClient() {
         clientName = getRandomBrainrotName();
         document.getElementById('clientNameInput').value = clientName;
     }
-    
+
      if (!globalHideFunnyNames) {
         let funnyName = getRandomBrainrotName();
         while (funnyNamesInUseSession.has(funnyName)) {
@@ -1006,6 +1011,7 @@ function updateResourceSetting(index, setting, value) {
         case 'increment3': updateCustomIncrement(index, parseInt(setting.slice(-1)), value); break;
         case 'minimumcount': updateMinCount(index, value); break;
         case 'maximumcount': updateMaxCount(index, value); break;
+        case 'maxgamecount': updateMaxGameCounterLimit(index, value); break; // Added case for max game counter limit
         case 'showrolldice': updateShowRollDice(index, value); break;
         case 'rolldicemin': updateRollDiceMin(index, value); break;
         case 'rolldicemax': updateRollDiceMax(index, value); break;
@@ -1043,7 +1049,7 @@ function updateFunnyName(index, newFunnyName) {
     }
 }
 
-function updateCount(event, index, change) {
+async function updateCount(event, index, change) {
     event.stopPropagation();
     const targetResource = resources[index];
 
@@ -1056,7 +1062,6 @@ function updateCount(event, index, change) {
     let potentialNewResourceCount = Math.max(targetResource.minCount, Math.min(targetResource.count + change, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
     let currentTotalCount = resources.reduce((sum, resource) => sum + resource.count, 0);
     let potentialNewTotalCount = currentTotalCount - targetResource.count + potentialNewResourceCount;
-
 
     if (enableGlobalCounterLimit && potentialNewTotalCount > globalCounterLimit) {
         potentialNewResourceCount = globalCounterLimit - (currentTotalCount - targetResource.count);
@@ -1075,13 +1080,44 @@ function updateCount(event, index, change) {
 
     let newCount = potentialNewResourceCount;
 
-
     if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
         if (!db) {
             displayStatusMessage("Firebase db is not initialized in updateCount (Server Mode).", true);
             console.warn("Firebase db is not initialized in updateCount (Server Mode).");
             return;
         }
+
+        if (targetResource.maxGameCounterLimit !== Infinity) {
+            const resourceCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts`).get();
+            let currentGameResourceCount = 0;
+            const clientCountsData = resourceCountsSnapshot.val();
+            if (clientCountsData) {
+                for (const clientFirebaseId in clientCountsData) {
+                    const clientResourceCounts = clientCountsData[clientFirebaseId];
+                    if (clientResourceCounts && clientResourceCounts[index] !== undefined) {
+                        currentGameResourceCount += clientResourceCounts[index];
+                    }
+                }
+            }
+            let potentialNewGameResourceCount = currentGameResourceCount - targetResource.count + potentialNewResourceCount;
+
+
+            if (potentialNewGameResourceCount > targetResource.maxGameCounterLimit) {
+                potentialNewResourceCount = targetResource.maxGameCounterLimit - (currentGameResourceCount - targetResource.count);
+                newCount = Math.max(targetResource.minCount, Math.min(potentialNewResourceCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+                if (newCount < targetResource.count) {
+                    const limitMessageElement = document.getElementById('limitMessage');
+                    limitMessageElement.textContent = `Game counter limit for ${targetResource.name} (${targetResource.maxGameCounterLimit}) reached!`;
+                    limitMessageElement.classList.add('show');
+                    setTimeout(() => limitMessageElement.classList.remove('show'), 3000);
+                    return;
+                }
+            }
+            newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+
+        }
+
+
         const firebaseRef = db.ref(`sessions/${sessionId}/client_counts/${clientId}/${index}`);
 
         firebaseRef.set(newCount)
@@ -1160,6 +1196,23 @@ function updateMaxCount(index, value) {
         saveConfigToServer();
     }
 }
+
+function updateMaxGameCounterLimit(index, value) {
+    let parsedValue = value === '' ? Infinity : parseInt(value);
+    if (value !== '' && isNaN(parsedValue)) {
+        displayStatusMessage("Max Game Count must be a number or empty for no limit.", true);
+        return;
+    }
+    const targetResource = resources[index];
+    targetResource.maxGameCounterLimit = parsedValue;
+    hasUnsavedChanges = true;
+    renderResource(targetResource, index);
+    saveToLocalStorage();
+    if (serverClientMode === 'server' && sessionId) {
+        saveConfigToServer();
+    }
+}
+
 
 function updateHideImage(index, hide) {
     const targetResource = resources[index];
@@ -1786,6 +1839,7 @@ function saveConfigToServer() {
             customIncrement3: resource.customIncrement3,
             minCount: resource.minCount,
             maxCount: resource.maxCount === Infinity ? null : resource.maxCount,
+            maxGameCounterLimit: resource.maxGameCounterLimit === Infinity ? null : resource.maxGameCounterLimit, // Save maxGameCounterLimit to server
             hideImage: resource.hideImage,
             hideCounter: resource.hideCounter,
             keepOneModifier: resource.keepOneModifier,
