@@ -1,0 +1,678 @@
+/* CSS Constants (for easy modification) */
+:root {
+    --button-padding: 10px;
+    --button-border-radius: 4px;
+    --primary-color: #3498db; /* Example primary color */
+    --primary-color-darker: #2980b9; /* Darker shade for hover */
+    --secondary-color: #2ecc71; /* Example secondary color */
+    --secondary-color-darker: #27ae60; /* Darker shade for hover */
+    --remove-button-color: #e74c3c; /* Example remove button color */
+    --remove-button-color-darker: #c0392b; /* Darker shade for hover */
+    --background-light: #f4f4f9;
+    --text-color-light: #333;
+    --card-background-light: #ffffff;
+    --border-color-light: #ddd;
+    --shadow-color-light: rgba(0, 0, 0, 0.1);
+    --settings-background-light: #f0f0f0;
+    --counter-text-light: #34495e;
+
+    /* Dark Mode Variables */
+    --background-dark: #333;
+    --text-color-dark: #f0f0f0;
+    --card-background-dark: #444;
+    --border-color-dark: #666;
+    --shadow-color-dark: rgba(255, 255, 255, 0.1);
+    --settings-background-dark: #555;
+    --counter-text-dark: #f0f0f0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-light); /* Using CSS variable */
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    color: var(--text-color-light); /* Using CSS variable */
+}
+
+body.dark-mode {
+    background-color: var(--background-dark); /* Dark mode background */
+    color: var(--text-color-dark); /* Dark mode text color */
+}
+
+h1 {
+    color: #2c3e50;
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+body.dark-mode h1 {
+    color: var(--text-color-dark); /* Dark mode heading color */
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.controls-row {
+    display: flex;
+    width: 100%;
+    max-width: 300px;
+    align-items: center;
+}
+
+.controls-row input[type="text"] {
+    flex-grow: 1;
+    margin-right: 5px;
+}
+
+.controls input[type="file"],
+.controls select {
+    margin: 5px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.controls button#addButton {
+    width: auto;
+    max-width: none;
+    flex-shrink: 0;
+}
+
+.button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+}
+
+.button-group button {
+    flex: 1;
+    max-width: 150px;
+}
+
+#resources {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.resource {
+    flex: 0 0 calc(50% - 10px);
+    margin-bottom: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 8px;
+    padding: 9px;
+    background-color: var(--card-background-light); /* Using CSS variable */
+    box-shadow: 0 4px 6px var(--shadow-color-light); /* Using CSS variable */
+    text-align: center;
+    box-sizing: border-box;
+    position: relative;
+}
+
+body.dark-mode .resource {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+    box-shadow: 0 4px 6px var(--shadow-color-dark); /* Dark mode shadow */
+}
+
+.resource-image-container {
+    width: 100%;
+    max-width: 64px;
+    max-height: 64px;
+    height: auto;
+    aspect-ratio: 1;
+    overflow: hidden;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--background-light); /* Using CSS variable */
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 8px;
+}
+
+.resource-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.counter div {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.counter .counter-buttons {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+    flex-wrap: nowrap;
+}
+
+.counter button {
+    font-size: 14px;
+    width: 36px;
+    height: 36px;
+    margin: 2px;
+    border: none;
+    background-color: var(--primary-color); /* Using CSS variable */
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.counter button:hover {
+    background-color: var(--primary-color-darker); /* Using CSS variable */
+}
+
+.counter span {
+    font-size: 20px;
+    min-width: 40px;
+    text-align: center;
+    margin: 5px;
+    font-weight: bold;
+    color: var(--counter-text-light); /* Using CSS variable */
+}
+
+body.dark-mode .counter span {
+    color: var(--counter-text-dark); /* Dark mode counter text */
+}
+
+.resource-name-container input {
+    padding: 10px;
+    border: 2px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 4px;
+    margin: 5px;
+    width: 80%;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+body.dark-mode .resource-name-container input {
+    background-color: var(--settings-background-dark); /* Dark mode settings background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+
+.resource-name-container input:focus {
+    border-color: var(--primary-color); /* Using CSS variable */
+    outline: none;
+}
+
+button {
+    padding: var(--button-padding);
+    font-size: 14px;
+    border: none;
+    border-radius: var(--button-border-radius);
+    cursor: pointer;
+    background-color: var(--secondary-color); /* Using CSS variable */
+    color: #fff;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: var(--secondary-color-darker); /* Using CSS variable */
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.custom-increment {
+    width: 50px;
+    text-align: center;
+    margin: 0 5px;
+}
+
+.settings {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: var(--settings-background-light); /* Using CSS variable */
+    border-radius: 4px;
+}
+
+body.dark-mode .settings {
+    background-color: var(--settings-background-dark); /* Dark mode settings background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+.settings label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.settings input {
+    width: calc(100% - 22px);
+    margin-bottom: 10px;
+}
+
+.remove-button {
+    background-color: var(--remove-button-color); /* Using CSS variable */
+    color: #fff;
+}
+
+.remove-button:hover {
+    background-color: var(--remove-button-color-darker); /* Using CSS variable */
+}
+
+.hide-image-checkbox,
+.keep-one-modifier-checkbox,
+.use-funny-name-checkbox {
+    margin: 10px 0;
+}
+
+#globalSettings {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1005;
+}
+
+#globalSettingsButton {
+    background-color: var(--background-light); /* Using CSS variable */
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    padding: 0;
+    line-height: 1;
+}
+
+body.dark-mode #globalSettingsButton {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+
+#globalSettingsContent {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: white;
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    max-width: 300px;
+    width: 90vw;
+    z-index: 1004;
+}
+body.dark-mode #globalSettingsContent {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+
+.setting-item {
+    margin-bottom: 10px;
+}
+
+.setting-item button {
+    width: 100%;
+    margin: 5px 0;
+    max-width: none;
+}
+
+.setting-item input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.setting-item input[type="number"] {
+    width: 60px;
+    margin-left: 5px;
+}
+
+.roll-cube {
+    text-align: center;
+}
+
+.roll-cube button {
+    font-size: 16px;
+    padding: 5px 10px;
+    background-color: var(--primary-color); /* Using CSS variable */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.roll-cube button:hover {
+    background-color: var(--primary-color-darker); /* Using CSS variable */
+}
+
+.roll-result {
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 5px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.3s;
+}
+
+
+.dice-button {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color); /* Using CSS variable */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.dice-button:hover {
+    background-color: var(--primary-color-darker); /* Using CSS variable */
+}
+
+@keyframes rollAnimation {
+    0% {
+        transform: rotate(0deg) translateY(0);
+    }
+
+    25% {
+        transform: rotate(90deg) translateY(-20px);
+    }
+
+    50% {
+        transform: rotate(180deg) translateY(0);
+    }
+
+    75% {
+        transform: rotate(270deg) translateY(-20px);
+    }
+
+    100% {
+        transform: rotate(360deg) translateY(0);
+    }
+}
+
+.rolling {
+    animation: rollAnimation 0.5s linear;
+}
+
+#limitMessage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #f39c12;
+    color: white;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    z-index: 1001;
+    display: none; /* Initially hidden */
+}
+#limitMessage.show {
+    display: block; /* Show when class 'show' is added */
+}
+
+
+#hideAllContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+#hideAllLine {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-color-light); /* Using CSS variable */
+}
+
+#hideAllArrow {
+    background-color: var(--background-light); /* Using CSS variable */
+    padding: 0 10px;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+body.dark-mode #hideAllArrow {
+    background-color: var(--background-dark); /* Dark mode background */
+}
+
+
+@media (max-width: 600px) {
+    .button-group {
+        flex-direction: row;
+        width: 100%;
+    }
+
+    .button-group button {
+        max-width: calc(33.33% - 10px);
+    }
+
+    .resource {
+        flex: 0 0 calc(50% - 5px);
+    }
+
+    #globalSettingsContent {
+        right: -10px;
+        width: calc(100vw - 40px);
+    }
+}
+
+.resource-name-container {
+    text-align: center;
+}
+
+.resource-name-container input {
+    text-align: center;
+}
+
+.resource-name {
+    font-size: 16px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.modifier-toggle {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    background-color: var(--primary-color); /* Using CSS variable */
+    color: #fff;
+    border: none;
+}
+
+.modifier-toggle:hover {
+    background-color: var(--primary-color-darker); /* Using CSS variable */
+}
+
+/* Dark Mode Styles are now handled by CSS variables and body.dark-mode class */
+
+
+#serverClientSettings {
+    position: fixed;
+    top: 60px;
+    right: 10px;
+    z-index: 1005;
+}
+
+#serverClientButton {
+    background-color: var(--background-light); /* Using CSS variable */
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    padding: 0;
+    line-height: 1;
+}
+body.dark-mode #serverClientButton {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+
+#serverClientContent {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: white;
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    max-width: 300px;
+    width: 90vw;
+    z-index: 1004;
+}
+body.dark-mode #serverClientContent {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+.firebase-fields {
+    display: none; /* Initially hidden */
+}
+
+/* Status Window Styles */
+#statusWindowContainer {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 1005;
+}
+
+#statusWindowButton {
+    background-color: var(--background-light); /* Using CSS variable */
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    padding: 0;
+    line-height: 1;
+}
+body.dark-mode #statusWindowButton {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+#statusWindow {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 100%; /* Positioned below the button */
+    background-color: white;
+    border: 1px solid var(--border-color-light); /* Using CSS variable */
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
+    max-width: 400px; /* Adjust as needed */
+    width: 90vw;
+    z-index: 1004;
+    overflow-y: auto; /* For scrollable content if needed */
+    max-height: 300px; /* Limit height and enable scroll */
+}
+body.dark-mode #statusWindow {
+    background-color: var(--card-background-dark); /* Dark mode card background */
+    color: var(--text-color-dark); /* Dark mode text color */
+    border-color: var(--border-color-dark); /* Dark mode border color */
+}
+
+.status-item {
+    padding: 5px 0;
+    border-bottom: 1px dotted var(--border-color-light); /* Using CSS variable */
+    margin-bottom: 5px;
+}
+
+body.dark-mode .status-item {
+    border-bottom: 1px dotted var(--border-color-dark); /* Dark mode border color */
+}
+
+
+.status-item:last-child {
+    border-bottom: none; /* No border for the last item */
+    margin-bottom: 0;
+}
+
+
+#qrcodeCanvas {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.other-clients-counts {
+    font-size: 0.8em;
+    color: #777;
+    margin-top: 2px; /* Reduced margin-top for compactness */
+    text-align: left; /* Align text to the left within the container */
+    width: 100%; /* Ensure it takes full width of counter */
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+    padding: 0 5px; /* Reduced padding for compactness */
+    display: none; /* Initially hidden, shown only when counts are available */
+    line-height: 1.2; /* Slightly reduced line-height for compactness */
+}
+
+body.dark-mode .other-clients-counts {
+    color: #aaa; /* Lighter color in dark mode */
+}
+
+#statusMessageArea {
+    text-align: center;
+    margin-top: 10px;
+    color: red; /* Example error color */
+    font-weight: bold;
+    min-height: 20px; /* Ensure it takes up space even when empty */
+}
