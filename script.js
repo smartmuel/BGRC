@@ -161,6 +161,7 @@ function toggleFirebaseConfigVisibility() {
 
 function saveFirebaseConfigToCache(config) {
     localStorage.setItem('firebaseConfig', JSON.stringify(config));
+    displayStatusMessage("Firebase configuration saved to cache.");
 }
 
 function loadFirebaseConfigFromCache() {
@@ -222,9 +223,9 @@ function importFirebaseConfig(event) {
                 document.getElementById('messagingSenderId').value = importedConfig.messagingSenderId || '';
                 document.getElementById('appId').value = importedConfig.appId || '';
 
-                displayStatusMessage("Firebase configuration imported successfully!");
-                if (initializeFirebaseWithUserInput()) {
+                if (initializeFirebaseWithUserInput()) { // Initialize and save config after import
                     console.log("Firebase re-initialized after import.");
+                    displayStatusMessage("Firebase configuration imported and saved successfully!");
                 }
             } else {
                 displayStatusMessage("Invalid Firebase configuration file.", true);
@@ -270,7 +271,7 @@ function initializeFirebaseWithUserInput() {
         db = firebase.database();
         console.log("Firebase Initialized Successfully with user credentials.");
         saveFirebaseConfigToCache(firebaseConfigFromInput);
-        displayStatusMessage("Firebase Initialized Successfully!", false);
+        displayStatusMessage("Firebase Config Saved!", false);
         return true;
     } catch (error) {
         displayStatusMessage("Firebase Initialization Error.", true);
@@ -935,6 +936,29 @@ function generateQRCode() {
     });
 }
 
+function updateClientName() {
+    const newClientName = document.getElementById('clientNameInput').value.trim();
+    if (!newClientName || newClientName === clientName) {
+        return; // No update if name is empty or hasn't changed
+    }
+
+    if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
+        db.ref(`sessions/${sessionId}/clients/${clientId}`).update({
+            clientName: newClientName
+        }).then(() => {
+            clientName = newClientName;
+            localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
+            displayStatusMessage("Client name updated for session.");
+        }).catch(error => {
+            displayStatusMessage("Failed to update client name.", true);
+            console.error("Error updating client name:", error);
+        });
+    } else {
+        clientName = newClientName;
+        localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
+        displayStatusMessage("Client name updated locally.");
+    }
+}
 
 
 // ====== Event Listeners and Handlers ======
@@ -996,6 +1020,17 @@ function attachEventListeners() {
             console.warn("Firebase Initialization Failed.");
         }
     });
+    document.getElementById('clientNameInput').addEventListener('blur', updateClientName);
+
+
+    // Firebase Config Input Blur Event Listeners for Auto-Save
+    document.getElementById('apiKey').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('authDomain').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('databaseURL').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('projectId').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('storageBucket').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('messagingSenderId').addEventListener('blur', initializeFirebaseWithUserInput);
+    document.getElementById('appId').addEventListener('blur', initializeFirebaseWithUserInput);
 }
 
 function updateResourceSetting(index, setting, value) {
@@ -1003,13 +1038,13 @@ function updateResourceSetting(index, setting, value) {
     switch (setting) {
         case 'hideimage': updateHideImage(index, value); break;
         case 'hidecounter': updateHideCounter(index, value); break;
-        case 'keeponemodifier': updateKeepOneModifier(index, value); break;
+        case 'keeponemodifier': updateKeepOneModifier(null, index); break; // Changed to toggle function
         case 'increment1':
         case 'increment2':
         case 'increment3': updateCustomIncrement(index, parseInt(setting.slice(-1)), value); break;
         case 'minimumcount': updateMinCount(index, value); break;
         case 'maximumcount': updateMaxCount(index, value); break;
-        case 'maxgamecount': updateMaxGameCounterLimit(index, value); break; // Added case for max game counter limit
+        case 'maxgamecount': updateMaxGameCounterLimit(index, value); break;
         case 'showrolldice': updateShowRollDice(index, value); break;
         case 'rolldicemin': updateRollDiceMin(index, value); break;
         case 'rolldicemax': updateRollDiceMax(index, value); break;
@@ -1019,6 +1054,9 @@ function updateResourceSetting(index, setting, value) {
         case 'usecustomdicevalues': updateUseCustomDiceValues(index, value); break;
         case 'customdicevalues': updateRollDiceCustomValues(index, value); break;
         case 'usefunnyname': updateUseFunnyName(index, value); break;
+        case 'hidecounter': updateHideCounter(index, value); break;
+        case 'hideimage': updateHideImage(index, value); break;
+        case 'enablediceanimation': updateEnableDiceAnimation(index, value); break; // Added enableDiceAnimation
     }
      if (serverClientMode === 'server' && sessionId) {
         saveConfigToServer();
@@ -1169,7 +1207,7 @@ function updateMinCount(index, value) {
     targetResource.minCount = parsedValue;
     targetResource.count = Math.max(targetResource.minCount, targetResource.count);
     hasUnsavedChanges = true;
-    renderResource(targetResource, index);
+    // renderResource(targetResource, index); // Comment out renderResource
     saveToLocalStorage();
     checkGlobalCounterLimit();
     if (serverClientMode === 'server' && sessionId) {
@@ -1187,7 +1225,7 @@ function updateMaxCount(index, value) {
     targetResource.maxCount = parsedValue;
     targetResource.count = Math.min(targetResource.maxCount === null ? Infinity : targetResource.maxCount, targetResource.count);
     hasUnsavedChanges = true;
-    renderResource(targetResource, index);
+    // renderResource(targetResource, index); // Comment out renderResource
     saveToLocalStorage();
     checkGlobalCounterLimit();
     if (serverClientMode === 'server' && sessionId) {
@@ -1204,7 +1242,7 @@ function updateMaxGameCounterLimit(index, value) {
     const targetResource = resources[index];
     targetResource.maxGameCounterLimit = parsedValue;
     hasUnsavedChanges = true;
-    renderResource(targetResource, index);
+    // renderResource(targetResource, index); // Comment out renderResource
     saveToLocalStorage();
     if (serverClientMode === 'server' && sessionId) {
         saveConfigToServer();
@@ -1746,6 +1784,7 @@ function setupServerClientListeners() {
         }
         console.log(`Server - Client connected: ${connectedClientName} (${newClientId})`);
         resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+         fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
     serverListeners.removeClientListener = clientsRef.on('child_removed', (snapshot) => {
@@ -1758,7 +1797,17 @@ function setupServerClientListeners() {
         }
         console.log(`Server - Client disconnected: ${removedClientId}`);
         resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+         fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
+
+    serverListeners.clientChangedListener = clientsRef.on('child_changed', (snapshot) => { // Listen for name changes
+        const changedClientIdFB = snapshot.key;
+        const clientData = snapshot.val();
+        clientsInSession[changedClientIdFB] = clientData.clientName;
+        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        fetchAndDisplayClientStatus(); // Refresh status window on client name change
+    });
+
 
     clientsRef.once('value', (snapshot) => {
         const initialClientsData = snapshot.val();
@@ -1775,15 +1824,39 @@ function setupClientSideClientListeners() {
 
     const clientsRef = db.ref(`sessions/${sessionId}/clients`);
 
-    clientListeners.clientListListener = clientsRef.on('value', (snapshot) => {
+    clientListeners.clientListListener = clientsRef.on('child_added', (snapshot) => { // Listen for added clients
+        const newClientIdFB = snapshot.key;
+        const clientData = snapshot.val();
+        clientsInSession[newClientIdFB] = clientData.clientName;
+        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        fetchAndDisplayClientStatus(); // Refresh status window on client change
+    });
+
+    clientListeners.clientListChangedListener = clientsRef.on('child_changed', (snapshot) => { // Listen for name changes
+        const changedClientIdFB = snapshot.key;
+        const clientData = snapshot.val();
+        clientsInSession[changedClientIdFB] = clientData.clientName;
+        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        fetchAndDisplayClientStatus(); // Refresh status window on client name change
+    });
+
+    clientListeners.clientListRemovedListener = clientsRef.on('child_removed', (snapshot) => { // Listen for removed clients
+        const removedClientIdFB = snapshot.key;
+        delete clientsInSession[removedClientIdFB];
+        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        fetchAndDisplayClientStatus(); // Refresh status window on client change
+    });
+
+
+    clientsRef.once('value', (snapshot) => {
         const clientsData = snapshot.val();
-        clientsInSession = {};
         if (clientsData) {
             for (const clientIdFB in clientsData) {
                 clientsInSession[clientIdFB] = clientsData[clientIdFB].clientName;
             }
         }
          resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+         fetchAndDisplayClientStatus(); // Initial status window population
 
     }, (error) => {
         displayStatusMessage("Error fetching client list for client-side clientsInSession.", true);
@@ -1804,6 +1877,11 @@ function cleanupFirebaseListeners() {
         db.ref(`sessions/${sessionId}/client_counts`).off('value', serverListeners.resourceListener);
         serverListeners.resourceListener = null;
     }
+    if (serverListeners.clientChangedListener) {
+        db.ref(`sessions/${sessionId}/clients`).off('child_changed', serverListeners.clientChangedListener);
+        serverListeners.clientChangedListener = null;
+    }
+
 
     if (clientListeners.configListener) {
         db.ref(`sessions/${sessionId}/config`).off('value', clientListeners.configListener);
@@ -1819,8 +1897,16 @@ function cleanupFirebaseListeners() {
 
 function cleanupClientSideClientListeners() {
     if (clientListeners.clientListListener) {
-        db.ref(`sessions/${sessionId}/clients`).off('value', clientListeners.clientListListener);
+        db.ref(`sessions/${sessionId}/clients`).off('child_added', clientListeners.clientListListener);
         clientListeners.clientListListener = null;
+    }
+    if (clientListeners.clientListChangedListener) {
+        db.ref(`sessions/${sessionId}/clients`).off('child_changed', clientListeners.clientListChangedListener);
+        clientListeners.clientListChangedListener = null;
+    }
+    if (clientListeners.clientListRemovedListener) {
+        db.ref(`sessions/${sessionId}/clients`).off('child_removed', clientListeners.clientListRemovedListener);
+        clientListeners.clientListRemovedListener = null;
     }
 }
 
