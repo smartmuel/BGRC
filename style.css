@@ -261,6 +261,7 @@ body.dark-mode .settings {
 
 .settings input {
     width: calc(100% - 22px);
+    text-align: center;
     margin-bottom: 10px;
 }
 
@@ -275,7 +276,8 @@ body.dark-mode .settings {
 
 .hide-image-checkbox,
 .keep-one-modifier-checkbox,
-.use-funny-name-checkbox {
+.use-funny-name-checkbox,
+.hide-counter-others-checkbox {
     margin: 10px 0;
 }
 

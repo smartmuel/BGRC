@@ -123,8 +123,12 @@ async function fetchAndDisplayClientStatus() {
                     const resource = configData[resourceIndex];
 
                     if (resource) {
-                        const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
-                        statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
+                        if (resource.hideCounterForOthers) {
+                            statusHTML += `<li>${resource.name}: Counter Hidden</li>`;
+                        } else {
+                            const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
+                            statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
+                        }
                     }
                 }
             }
@@ -483,7 +487,8 @@ function processResourceData(resourceData) {
         useFunnyName: typeof resourceData.useFunnyName === 'boolean' ? resourceData.useFunnyName : false,
         funnyName: resourceData.funnyName || "",
         previousUseFunnyName: typeof resourceData.previousUseFunnyName === 'boolean' ? resourceData.previousUseFunnyName : false,
-        firebaseKey: resourceData.firebaseKey
+        firebaseKey: resourceData.firebaseKey,
+        hideCounterForOthers: typeof resourceData.hideCounterForOthers === 'boolean' ? resourceData.hideCounterForOthers : false // Added hideCounterForOthers
     };
 }
 
@@ -535,10 +540,11 @@ function addResource() {
         useCustomDiceValues: false,
         useFunnyName: false,
         funnyName: "",
-        previousUseFunnyName: false
+        previousUseFunnyName: false,
+        hideCounterForOthers: false // Initialize hideCounterForOthers
     };
 
-    const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount, maxGameCounterLimit: resource.maxGameCounterLimit === Infinity ? null : resource.maxGameCounterLimit }; // Also handle maxGameCounterLimit for Firebase
+    const firebaseResource = { ...resource, maxCount: resource.maxCount === Infinity ? null : resource.maxCount, maxGameCounterLimit: resource.maxGameCounterLimit === Infinity ? null : resource.maxGameCounterLimit, hideCounterForOthers: resource.hideCounterForOthers }; // Also handle maxGameCounterLimit and hideCounterForOthers for Firebase
 
     if (serverClientMode === 'server' && sessionId) {
         const newResourceRef = db.ref(`sessions/${sessionId}/config`).push();
@@ -668,6 +674,9 @@ function generateSettings(resource, index) {
             ${!resource.hideImage ? `<button onclick="changeImage(${index})">Change Image</button>` : ''}
             <div class="hide-counter-checkbox">
                 Hide Counter: <input type="checkbox" ${resource.hideCounter ? 'checked' : ''} onchange="updateHideCounter(${index}, this.checked)">
+            </div>
+            <div class="hide-counter-others-checkbox">
+                Hide Counter for Others: <input type="checkbox" ${resource.hideCounterForOthers ? 'checked' : ''} onchange="updateHideCounterForOthers(${index}, this.checked)">
             </div>
 
             <div class="counter-settings" style="${counterSettingsStyle}">
@@ -1057,6 +1066,7 @@ function updateResourceSetting(index, setting, value) {
         case 'hidecounter': updateHideCounter(index, value); break;
         case 'hideimage': updateHideImage(index, value); break;
         case 'enablediceanimation': updateEnableDiceAnimation(index, value); break; // Added enableDiceAnimation
+        case 'hidecounterforothers': updateHideCounterForOthers(index, value); break;
     }
      if (serverClientMode === 'server' && sessionId) {
         saveConfigToServer();
@@ -1369,6 +1379,17 @@ function updateEnableDiceAnimation(index, enable) {
 function updateUseFunnyName(index, use) {
     const targetResource = resources[index];
     targetResource.useFunnyName = use;
+    hasUnsavedChanges = true;
+    renderResource(targetResource, index);
+    saveToLocalStorage();
+    if (serverClientMode === 'server' && sessionId) {
+        saveConfigToServer();
+    }
+}
+
+function updateHideCounterForOthers(index, hide) {
+    const targetResource = resources[index];
+    targetResource.hideCounterForOthers = hide;
     hasUnsavedChanges = true;
     renderResource(targetResource, index);
     saveToLocalStorage();
@@ -1938,6 +1959,7 @@ function saveConfigToServer() {
             useFunnyName: resource.useFunnyName,
             funnyName: resource.funnyName,
             previousUseFunnyName: resource.previousUseFunnyName,
+            hideCounterForOthers: resource.hideCounterForOthers // Save hideCounterForOthers to server
         };
         if (resource.firebaseKey) {
             resourceData.firebaseKey = resource.firebaseKey;
@@ -2091,6 +2113,11 @@ function setupClientResourceListeners() {
 function updateOtherClientsCountsDisplay(resourceIndex) {
     const displayElement = document.getElementById(`otherClientsCounts${resourceIndex}`);
     if (!displayElement) return;
+
+    if (resources[resourceIndex].hideCounterForOthers) {
+        displayElement.style.display = 'none';
+        return;
+    }
 
     let displayHTML = '';
     let hasCounts = false;
