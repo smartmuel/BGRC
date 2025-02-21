@@ -1,191 +1,204 @@
 # BG Resource Counter
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Deployed-blue?style=for-the-badge&logo=github-pages)](https://smartmuel.github.io/BGRC/) <!-- Replace with your actual GitHub Pages URL -->
 
-**A versatile web application for tracking board game resources, complete with customizable counters, image support, dice rolling, and server/client synchronization.**
+A versatile web application to track resources for board games, tabletop RPGs, or any game requiring counters. Features customizable counters, image support, dice rolling, data export/import, and server/client synchronization via Firebase.
 
-[**Live Demo**](Replace with your live demo URL if you have one)
+**[✨ Live Demo](https://smartmuel.github.io/BGRC/) ✨** <!-- Replace with your actual GitHub Pages URL -->
 
-![Project Screenshot](Replace with a screenshot of your project if you have one)
+## Table of Contents
 
-## Description
+- [Features](#features)
+- [Usage](#usage)
+  - [Adding Resources](#adding-resources)
+  - [Managing Counters](#managing-counters)
+  - [Dice Rolling](#dice-rolling)
+  - [Settings](#settings)
+  - [Server/Client Mode](#serverclient-mode)
+  - [Data Options](#data-options)
+- [Server/Client Synchronization (Firebase)](#serverclient-synchronization-firebase)
+  - [Setting up Firebase](#setting-up-firebase)
+  - [Server Mode](#server-mode)
+  - [Client Mode](#client-mode)
+  - [Local Mode](#local-mode)
+- [Data Persistence](#data-persistence)
+- [Customization Options](#customization-options)
+- [Running Locally](#running-locally)
+- [GitHub Pages Deployment](#github-pages-deployment)
+- [Contributing](#contributing)
+- [License](#license)
 
-The BG Resource Counter is designed to enhance your board gaming experience by providing a digital tool to manage in-game resources.  Whether you're tracking tokens, currency, or victory points, this application offers a flexible and customizable interface. It's built to be used locally or collaboratively with server/client modes for synchronized gameplay.
+## Features
 
-**Key Features:**
-
-*   **Resource Counters:**  Easily add and manage multiple resources with individual counters.
-*   **Customizable Increments:** Set different increment values for each counter for quick adjustments.
-*   **Image Support:**  Visually represent resources by uploading custom images.
-*   **Dice Rolling:** Integrated dice roller with customizable dice types and results display.
-*   **Global Settings:**  Personalize your experience with dark mode, animation controls, and more.
-*   **Server/Client Mode:**
-    *   **Local Mode:** Use the counter offline and save data locally in your browser.
-    *   **Server Mode:** Host a session and share the counter state with connected clients using Firebase Realtime Database.
-    *   **Client Mode:** Join a server session to synchronize resource counts in real-time with other players.
-*   **Data Import/Export:** Save and load your resource configurations as JSON files for easy backup and sharing.
-*   **Firebase Configuration Import/Export:**  Manage your Firebase settings separately for easy setup and sharing of server configurations.
-*   **SDK Configuration Export/Import (Server Mode):** Export a configuration file containing Firebase credentials and session ID for easy client connection via QR code or file import.
-*   **QR Code Session Sharing (Server Mode):** Generate a QR code to quickly share session details with clients.
-*   **Status Window:** Monitor client connections and resource counts in server/client modes.
-*   **Funny Names (Optional):**  Toggleable funny names for resources and clients for a lighthearted experience (can be globally hidden).
-*   **Global Counter Limit (Optional):**  Set a game-wide limit for the total sum of all counters.
-*   **Hide Counter for Others (Resource Level):** Control visibility of individual counters for other clients in server/client mode.
-*   **Responsive Design:** Works seamlessly on various screen sizes.
-
-## Technologies Used
-
-*   **HTML5:**  For structuring the web page.
-*   **CSS3:** For styling and visual presentation (with custom CSS variables for theming).
-*   **JavaScript:** For application logic, user interactions, and Firebase integration.
-*   **Firebase Realtime Database:** For real-time data synchronization in server/client modes.
-*   **qrcodejs:** JavaScript library for generating QR codes.
-
-## Setup and Installation
-
-1.  **Clone the Repository:**
-    ```bash
-    git clone [repository-url]
-    cd BG-Resource-Counter
-    ```
-
-2.  **Open `index.html` in your web browser:**  For local mode, simply open the `index.html` file directly in your browser.
-
-3.  **(Optional) Firebase Setup for Server/Client Modes:**
-    *   **Create a Firebase Project:**
-        *   Go to the [Firebase Console](https://console.firebase.google.com/).
-        *   Click "Add project" and follow the steps to create a new project.
-    *   **Set up Realtime Database:**
-        *   In your Firebase project, navigate to "Realtime Database".
-        *   Create a Realtime Database instance.
-        *   **Security Rules:** For initial testing, you can set your database rules to public read/write access. **However, for production use, you should configure secure rules.**  For example, you can use the following (adjust as needed for your security requirements):
-            ```json
-            {
-              "rules": {
-                "sessions": {
-                  "$sessionId": {
-                    ".read": true, // Adjust read rules as needed
-                    ".write": true // Adjust write rules as needed
-                  }
-                }
-              }
-            }
-            ```
-        *   **Get Firebase Configuration:**
-            *   In your Firebase project settings, find the "Config" section (usually under "Project settings" > "General" > "Web apps").
-            *   Copy the Firebase configuration object (it looks like a JSON object with `apiKey`, `authDomain`, `databaseURL`, etc.).
-    *   **Enter Firebase Configuration in the Application:**
-        *   Open `index.html` in your browser.
-        *   Click the "🌐" (Server/Client Settings) button.
-        *   Check the "Show Firebase Config Fields" checkbox.
-        *   Paste the Firebase configuration details from your Firebase project into the corresponding input fields (`apiKey`, `authDomain`, `databaseURL`, etc.).
-        *   Click the "Save Firebase Config" button. This saves the configuration in your browser's local storage for future use.
+- **Resource Counters:** Create and manage multiple resource counters with names and images.
+- **Customizable Increments:** Set custom increment/decrement values for each counter.
+- **Counter Limits:** Define minimum and maximum values for individual counters and a global counter limit for all resources. You can also set a game-specific counter limit.
+- **Image Support:**  Upload custom images for each resource to visually represent them.
+- **Dice Rolling:** Integrated dice roller with customizable dice types (d6, d custom values), number of dice, and animation.
+- **Settings Panel:**
+    - **User Preferences:** Dark Mode, Disable Animations, Show/Hide Settings, Funny Names, Hide All Images.
+    - **Game Settings:** Global Counter Limit.
+    - **Data Options:** Export/Import game data as JSON files.
+    - **Server/Client Settings:** Firebase configuration, Server/Client mode selection, Session Management.
+- **Server/Client Synchronization (Firebase):**
+    - Real-time synchronization of resource counts across multiple clients in a session.
+    - Server and Client modes for collaborative resource tracking.
+    - Session ID management for easy connection.
+    - SDK Configuration export/import for simplified client joining.
+- **Data Export and Import:** Save and load your resource configurations as JSON files for backup or sharing.
+- **Example Games:** Load pre-configured resource sets for popular board games as a starting point.
+- **Responsive Design:** Works seamlessly on desktop and mobile browsers.
+- **Status Window:** Displays real-time client status in server/client modes.
+- **QR Code Generation:** Generates a QR code for easy session sharing in server mode.
+- **Funny Names (Optional):**  Enjoy a lighthearted touch with automatically generated funny names for clients (can be disabled).
+- **Hide Counter for Others (Resource Specific):**  Control visibility of individual counters to other clients in server/client mode.
 
 ## Usage
 
-1.  **Adding Resources:**
-    *   In the "Controls" section:
-        *   Enter a "Resource Name".
-        *   Optionally, choose an image file using the "Choose File" input.
-        *   Click "Add Resource".
-    *   The new resource will appear in the "Resources" area.
+### Adding Resources
 
-2.  **Interacting with Counters:**
-    *   Each resource card has:
-        *   **Counter Display:** Shows the current count.
-        *   **Increment Buttons:**  `+` and `-` buttons to adjust the count by the default increment (initially 1).
-        *   **(Optional) Additional Increment Buttons:** If "Keep one Modifier" is unchecked in settings, you'll see more increment buttons for different values.
+1. **Image Upload (Optional):** Click on the file input field (initially labeled "No file chosen") to upload an image for your resource. Accepted formats: JPEG, PNG, GIF.
+2. **Resource Name:** Enter a name for your resource in the "Resource Name" text field.
+3. **Add Resource Button:** Click the "Add Resource" button. Your new resource counter will be created below.
 
-3.  **Dice Rolling:**
-    *   If "Show Roll Dice" is enabled in a resource's settings:
-        *   Click the "🎲" dice button to roll the dice.
-        *   The result will be displayed next to the dice button.
-        *   Click on the result to toggle between the detailed dice roll and the sum (if applicable).
+### Managing Counters
 
-4.  **Customizing Resources (Settings Button "⚙️"):**
-    *   Click the "⚙️" (Global Settings) button to toggle the global settings panel.
-    *   Check "Show All Settings" to reveal detailed settings for each resource.
-    *   For each resource, you can customize:
-        *   **Name:**  Change the resource name.
-        *   **Image:** Change or hide the resource image.
-        *   **Counter Display:** Hide or show the counter.
-        *   **Increment Values:** Adjust the increment values for the counter buttons.
-        *   **Minimum/Maximum Count:** Set limits for the counter.
-        *   **Dice Roller:** Configure dice rolling parameters (min, max, increment, number of dice, custom dice values, animation).
-        *   **Funny Name:** Enable and set a funny name for the resource (globally hidden by default).
-        *   **Hide Counter for Others:** In server/client mode, hide this counter's value from other connected clients.
-        *   **Remove Resource:** Delete the resource.
+- **Increment/Decrement Buttons:** Use the "+/-" buttons with different increment values (default: +/-1, +/-3, +/-5) to adjust the counter value.
+- **Counter Display:** The current count is displayed prominently between the increment/decrement buttons.
+- **Custom Increments:**  You can customize the increment values in the resource settings (see [Settings](#settings)).
+- **Counter Limits:**  Counters respect defined minimum, maximum, and global counter limits.
 
-5.  **Global Settings ("⚙️" button):**
-    *   **User Preferences:**
-        *   **Show All Settings:** Toggles visibility of detailed resource settings.
-        *   **Disable All Animations:** Turns off dice roll animations.
-        *   **Dark Mode:**  Switches between light and dark themes.
-        *   **Globally Hide Funny Names:** Hides all funny resource names.
-        *   **Globally Hide All Images:** Hides all resource images.
-    *   **Game Settings:**
-        *   **Enable Global Counter Limit:** Activates a limit on the total sum of all resource counters.
-        *   **Global Counter Limit:** Set the maximum total count when the global limit is enabled.
-    *   **Data Options:**
-        *   **Export Data:** Downloads your current resource configuration as a `resources.json` file.
-        *   **Import Data:**  Allows you to upload a `resources.json` file to load a saved configuration.
+### Dice Rolling
 
-6.  **Server/Client Settings ("🌐" button):**
-    *   **Firebase Credentials:** (Visible when "Show Firebase Config Fields" is checked)
-        *   Input fields to enter your Firebase configuration details.
-        *   **Save Firebase Config:** Saves the entered Firebase configuration to local storage.
-        *   **Export Firebase Config:** Downloads the current Firebase config as `firebase-config.json`.
-        *   **Import Firebase Config:**  Allows uploading a `firebase-config.json` file to load Firebase settings.
-    *   **Client Name:** Enter a name for yourself in server/client sessions.
-    *   **Mode:** Select between "Client", "Server", and "Local" modes.
-        *   **Client Mode:**
-            *   **Session ID:** Enter the Session ID of the server you want to join.
-            *   **Connect:** Connect to the server session.
-            *   **Import SDK Config & Join:** Import an SDK configuration file (`sdk-config.json`) to automatically set Firebase config and Session ID and join the session.
-        *   **Server Mode:**
-            *   **Start New Session:** Creates a new server session and generates a Session ID.
-            *   **Session ID Display:** Shows the current Session ID.
-            *   **Export SDK Config:**  Downloads an `sdk-config.json` file containing Firebase config and Session ID for easy client connection.
-            *   **QR Code:** Displays a QR code that clients can scan to easily join the session.
-        *   **Local Mode:** Disconnects from any server session and operates locally.
+- **Dice Button (🎲):** If enabled in the resource settings, a dice button will appear. Click it to roll the dice.
+- **Roll Result:** The dice roll result will be displayed next to the dice button.
+- **Result Toggle:**  For standard dice rolls (d6, etc.), you can click on the result to toggle between showing the detailed roll (individual dice values) and the sum.
+- **Dice Settings:** Customize dice type, number of dice, and animation in the resource settings (see [Settings](#settings)).
 
-7.  **Status Window ("📊" button):**
-    *   Click the "📊" (Status Window) button to toggle the status window.
-    *   In server/client modes, it displays a list of connected clients and their resource counts (if not hidden by the resource settings).
+### Settings
 
-## Server/Client Mode Explanation
+Click the **⚙️ (Gear)** icon in the top right corner to open the Global Settings panel.
 
-*   **Local Mode:** This is the default mode. All data is stored locally in your browser's local storage. No Firebase connection is used. Ideal for solo play or offline use.
-*   **Server Mode:** When you start a server session, your browser becomes the server. It uses Firebase Realtime Database to host the game state. Other players can join as clients. You are responsible for saving and managing the game configuration on the server.
-*   **Client Mode:** In client mode, you connect to a server session hosted by another player. Your resource counts are synchronized with the server and other clients in real-time. You cannot modify the game configuration directly; you only interact with the counters.
+**User Preferences:**
 
-## Data Import and Export
+- **Show All Settings:**  Expands the settings for each resource to display all customization options.
+- **Disable All Animations:**  Turns off dice roll animations for faster performance or if you prefer no animations.
+- **Dark Mode:** Toggles between light and dark themes for comfortable viewing in different environments.
+- **Globally Hide Funny Names:**  Disables the use of funny names for clients, reverting to standard client names.
+- **Globally Hide All Images:** Hides all resource images to reduce visual clutter or improve performance.
 
-*   **Export Data:** Use the "Export Data" button in the Global Settings to download your current resource setup as a `resources.json` file. This file can be used as a backup or to share your setup with others.
-*   **Import Data:** Use the "Import Data" button in the Global Settings to upload a `resources.json` file. This will replace your current resource configuration with the data from the imported file.
+**Game Settings:**
 
-## Customization
+- **Enable Global Counter Limit:** Activates a limit on the total sum of all resource counters.
+- **Global Counter Limit:**  Sets the maximum total count allowed across all resources when the global limit is enabled.
 
-*   **CSS Variables:** The `style.css` file uses CSS variables (`:root`) at the beginning for easy customization of colors, fonts, and button styles. Modify these variables to change the overall look and feel of the application.
-*   **Images:** Use custom images for resources to visually represent them in your game.
-*   **Funny Names:**  Add humorous names to resources for a more playful experience.
-*   **Settings:** Utilize the various settings options to tailor the application to your specific gaming needs and preferences.
+**Data Options:**
 
-## Contributing
+- **Export Data:** Downloads your current resource configuration and counter values as a `resources.json` file.
+- **Import Data:** Allows you to upload a `resources.json` file to load previously saved configurations.
 
-[If you want to encourage contributions, add a section like this:]
+### Server/Client Mode
 
-Contributions are welcome! If you have suggestions for new features, improvements, or bug fixes, please feel free to:
+Click the **🌐 (Globe)** icon in the top right corner to open the Server/Client Settings panel.
 
-1.  Fork the repository.
-2.  Create a new branch for your feature or fix.
-3.  Make your changes and commit them.
-4.  Submit a pull request.
+- **Client Name:** Enter a name for yourself to be identified in server/client sessions.
+- **Mode:** Select the operating mode:
+    - **Client:** Join an existing server session to synchronize resource counts with others.
+    - **Server:** Start a new session and act as the server, allowing clients to connect and synchronize.
+    - **Local:**  Use the application in standalone mode, without server synchronization.
 
-## License
+**Session Management (Server/Client Modes):**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- **Session ID (Client Mode):** Enter the Session ID provided by the server to join a session.
+- **Connect Button (Client Mode):** Click to connect to the server session.
+- **Start New Session Button (Server Mode):** Click to start a new server session and generate a unique Session ID.
+- **Session ID Display (Server Mode):** Displays the generated Session ID for your server session.
+- **Export SDK Config (Server Mode):** Exports a JSON file (`sdk-config.json`) containing Firebase configuration and Session ID, simplifying client connection.
+- **Import SDK Config & Join (Client Mode):** Allows clients to import an `sdk-config.json` file to automatically configure Firebase and join a session.
+- **QR Code (Server Mode):** A QR code is generated in server mode that clients can scan to easily join the session.
 
----
+### Data Options
 
-**Enjoy using the BG Resource Counter for your board games!**
+- **Export Data:** Downloads your current resource configuration and counter values as a `resources.json` file.
+- **Import Data:** Allows you to upload a `resources.json` file to load previously saved configurations.
+
+## Server/Client Synchronization (Firebase)
+
+The BG Resource Counter utilizes Firebase Realtime Database for real-time synchronization in Server and Client modes.
+
+### Setting up Firebase
+
+To use Server and Client modes, you need to configure Firebase:
+
+1. **Create a Firebase Project:**
+   - Go to the [Firebase Console](https://console.firebase.google.com/).
+   - Click "Add project" and follow the steps to create a new project.
+2. **Get Firebase Configuration:**
+   - In your Firebase project, go to "Project settings" (gear icon next to "Project Overview").
+   - Scroll down to the "Your apps" section and click the web icon (`</>`).
+   - Register your app (you can use a placeholder name).
+   - In the "Add Firebase SDK" step, select "CDN" and copy the **"Config"** object.
+   - Paste the configuration details into the corresponding input fields in the "Server/Client Settings" panel within the BG Resource Counter:
+     - `apiKey`
+     - `authDomain`
+     - `databaseURL`
+     - `projectId`
+     - `storageBucket`
+     - `messagingSenderId`
+     - `appId`
+3. **Save Firebase Config:** Click the "Save Firebase Config" button.
+
+**Important:** Ensure that your Firebase Realtime Database rules are set to allow read and write access for authenticated users or public access for testing purposes. **Be mindful of security implications when setting database rules.**
+
+### Server Mode
+
+1. **Configure Firebase (as described above).**
+2. **Select "Server" mode in the "Server/Client Settings" panel.**
+3. **Click "Start New Session".**
+4. **Share the Session ID:** Provide the displayed Session ID or the QR code to clients who want to join your session.
+5. **Manage Resources:** As the server, you can add, modify, and remove resources. These changes will be synchronized with connected clients.
+6. **Counter Updates:** When you update a counter, the changes will be reflected in real-time for all connected clients.
+
+### Client Mode
+
+1. **Configure Firebase (as described above) or import an SDK Config file.**
+2. **Select "Client" mode in the "Server/Client Settings" panel.**
+3. **Enter the Session ID provided by the server.**
+4. **Click "Connect".**
+5. **Synchronized Counters:** Once connected, your resource counters will be synchronized with the server and other clients in the session. Counter updates from any client will be reflected on your screen in real-time.
+
+### Local Mode
+
+- **Select "Local" mode in the "Server/Client Settings" panel.**
+- In Local mode, all data is stored in your browser's local storage. Server synchronization is disabled.
+- This mode is suitable for single-player use or when real-time collaboration is not required.
+
+## Data Persistence
+
+- **Local Storage:** In Local mode and for global settings, data is stored in your browser's local storage. This means your resources and settings will be preserved across browser sessions on the same device.
+- **Firebase Realtime Database:** In Server and Client modes, resource configurations and counter values are stored in Firebase Realtime Database, enabling real-time synchronization and cross-device access for session participants.
+
+## Customization Options
+
+- **Dark Mode:**  Enable Dark Mode for a visually darker theme.
+- **Disable Animations:** Turn off dice roll animations for faster loading and performance.
+- **Funny Names:**  Enable or disable the use of humorous, automatically generated names for clients in server/client modes.
+- **Hide All Images:**  Option to globally hide all resource images for a cleaner interface.
+- **Global Counter Limit:**  Set a limit to the total sum of all resource counters.
+- **Resource-Specific Settings:**  Each resource can be further customized with options like:
+    - Image visibility
+    - Counter visibility
+    - Increment/decrement values
+    - Minimum/Maximum counts
+    - Dice rolling settings
+    - Funny name usage
+    - Counter visibility to other players
+
+## Running Locally
+
+To run the BG Resource Counter locally:
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd BG-Resource-Counter
