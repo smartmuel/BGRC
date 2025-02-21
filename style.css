@@ -324,6 +324,8 @@ body.dark-mode #globalSettingsButton {
     max-width: 300px;
     width: 90vw;
     z-index: 1004;
+    max-height: 400px;
+    overflow-y: auto;
 }
 body.dark-mode #globalSettingsContent {
     background-color: var(--card-background-dark); /* Dark mode card background */
@@ -571,6 +573,8 @@ body.dark-mode #serverClientButton {
     max-width: 300px;
     width: 90vw;
     z-index: 1004;
+    max-height: 400px;
+    overflow-y: auto;
 }
 body.dark-mode #serverClientContent {
     background-color: var(--card-background-dark); /* Dark mode card background */
@@ -621,11 +625,11 @@ body.dark-mode #statusWindowButton {
     padding: 10px;
     border-radius: 4px;
     box-shadow: 0 2px 5px var(--shadow-color-light); /* Using CSS variable */
-    max-width: 400px; /* Adjust as needed */
+    max-width: 200px; /* Adjust as needed */
     width: 90vw;
     z-index: 1004;
     overflow-y: auto; /* For scrollable content if needed */
-    max-height: 300px; /* Limit height and enable scroll */
+    max-height: 400px; /* Limit height and enable scroll */
 }
 body.dark-mode #statusWindow {
     background-color: var(--card-background-dark); /* Dark mode card background */
