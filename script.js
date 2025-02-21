@@ -114,6 +114,7 @@ async function fetchAndDisplayClientStatus() {
             if (clientFirebaseId === clientId) continue;
             const clientCounts = clientCountsData[clientFirebaseId];
             const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client';
+            let totalClientResources = 0;
 
             statusHTML += `<div class="status-item"><h4>Client: ${currentClientName}</h4><ul>`;
 
@@ -121,10 +122,13 @@ async function fetchAndDisplayClientStatus() {
                 if (configData.hasOwnProperty(resourceIndex)) {
                     const count = clientCounts ? clientCounts[resourceIndex] : undefined;
                     const resource = configData[resourceIndex];
+                    if (resource && count !== undefined) {
+                        totalClientResources += count;
+                    }
 
                     if (resource) {
                         if (resource.hideCounterForOthers) {
-                            statusHTML += `<li>${resource.name}: Counter Hidden</li>`;
+                            // statusHTML += `<li>${resource.name}: Counter Hidden</li>`; // Optionally show hidden counters in status
                         } else {
                             const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
                             statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
@@ -132,7 +136,7 @@ async function fetchAndDisplayClientStatus() {
                     }
                 }
             }
-            statusHTML += `</ul></div>`;
+            statusHTML += `</ul><p>Total Resources: ${totalClientResources}</p></div>`;
         }
 
         if (statusHTML === '') {
