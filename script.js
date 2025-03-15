@@ -1492,6 +1492,7 @@ async function rollDice(index) {
 
 function changeImage(index) {
     const targetResource = resources[index];
+    saveToLocalStorage();
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/jpeg, image/png, image/gif';
