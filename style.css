@@ -657,6 +657,18 @@ body.dark-mode .status-item {
 #qrcodeCanvas {
     margin-top: 10px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#qrcodeCanvas img,
+#qrcodeCanvas canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
 }
 
 .other-clients-counts {

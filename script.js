@@ -276,9 +276,15 @@ function initializeFirebaseWithUserInput() {
     }
 
     try {
-        firebase.initializeApp(firebaseConfigFromInput);
-        db = firebase.database();
-        console.log("Firebase Initialized Successfully with user credentials.");
+        // Check if Firebase is already initialized
+        if (firebase.apps.length > 0) {
+            console.log("Firebase already initialized, skipping re-initialization.");
+            db = firebase.database();
+        } else {
+            firebase.initializeApp(firebaseConfigFromInput);
+            db = firebase.database();
+            console.log("Firebase Initialized Successfully with user credentials.");
+        }
         saveFirebaseConfigToCache(firebaseConfigFromInput);
         displayStatusMessage("Firebase Config Saved!", false);
         return true;
@@ -917,36 +923,49 @@ function generateQRCode() {
     };
 
     console.log("Firebase Config for QR Code:", firebaseConfig);
-    const sessionDetails = {
-        sessionId: sessionId
+    
+    // Use shortened keys to reduce QR code data size
+    const compactConfig = {
+        f: {
+            a: firebaseConfig.apiKey,
+            d: firebaseConfig.authDomain,
+            u: firebaseConfig.databaseURL,
+            p: firebaseConfig.projectId,
+            s: firebaseConfig.storageBucket,
+            m: firebaseConfig.messagingSenderId,
+            i: firebaseConfig.appId
+        },
+        s: sessionId
     };
 
-    const combinedConfig = {
-        firebaseConfig: firebaseConfig,
-        sessionDetails: sessionDetails
-    };
-
-    const configString = JSON.stringify(combinedConfig);
-    const currentUrl = window.location.href.split('?')[0];
-    const qrCodeData = `${currentUrl}?config=${encodeURIComponent(configString)}`;
+    const configString = JSON.stringify(compactConfig);
+    
+    // Use proper URL - if running locally (file://), use the GitHub Pages URL
+    let baseUrl = window.location.href.split('?')[0];
+    if (baseUrl.startsWith('file://')) {
+        baseUrl = 'https://smartmuel.github.io/BGRC/index.html';
+    }
+    const qrCodeData = `${baseUrl}?c=${encodeURIComponent(configString)}`;
 
     console.log("QR Code Data:", qrCodeData);
+    console.log("QR Code Data Length:", qrCodeData.length);
 
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
     qrcodeContainer.innerHTML = ''; // Clear previous QR code
 
     const isDarkMode = document.body.classList.contains('dark-mode');
-    const colorDark = isDarkMode ? '#ffffff' : '#000000';
-    const colorLight = isDarkMode ? '#000000' : '#ffffff';
+    // Always use black on white for QR codes - better scanning reliability
+    const colorDark = '#000000';
+    const colorLight = '#ffffff';
 
-    // Always create a new QRCode instance
+    // Always create a new QRCode instance - larger size and medium error correction for better scanning
     qrcode = new QRCode(qrcodeContainer, {
         text: qrCodeData,
-        width: 300,
-        height: 300,
+        width: 256,
+        height: 256,
         colorDark: colorDark,
         colorLight: colorLight,
-        correctLevel: QRCode.CorrectLevel.H
+        correctLevel: QRCode.CorrectLevel.M
     });
 }
 
@@ -2221,6 +2240,7 @@ function updateServerClientUI() {
     const exportSdkConfigButton = document.getElementById('exportSdkConfigButton');
     const statusWindowContainer = document.getElementById('statusWindowContainer');
     const qrcodeCanvasContainer = document.getElementById('qrcodeCanvas');
+    const controlsContainer = document.getElementById('controlsContainer');
 
     if (serverClientMode === 'client') {
         sessionIdContainer.style.display = 'block';
@@ -2233,6 +2253,10 @@ function updateServerClientUI() {
         statusWindowContainer.style.display = 'block';
         if (importSdkConfigButton) importSdkConfigButton.style.display = 'inline-block';
         if (importSdkConfigFileButton) importSdkConfigFileButton.style.display = 'inline-block';
+        // Hide controls (Select Game, Add Resource) for clients when connected
+        if (sessionId && controlsContainer) {
+            controlsContainer.style.display = 'none';
+        }
     } else if (serverClientMode === 'server') {
         sessionIdContainer.style.display = 'none';
         newSessionContainer.style.display = (sessionId ? 'none' : 'block');
@@ -2313,25 +2337,51 @@ function importSdkConfigAndJoin(event) {
     reader.readAsText(file);
 }
 
-function importSdkConfigFromURL(configParam) {
+function importSdkConfigFromURL(configParam, isCompact = false) {
 
     try {
-        const sdkConfig = JSON.parse(decodeURIComponent(configParam));
+        const rawConfig = JSON.parse(decodeURIComponent(configParam));
+        
+        let firebaseConfig, sessionId;
+        
+        // Handle compact format (from new QR codes)
+        if (isCompact || (rawConfig.f && rawConfig.s)) {
+            firebaseConfig = {
+                apiKey: rawConfig.f.a,
+                authDomain: rawConfig.f.d,
+                databaseURL: rawConfig.f.u,
+                projectId: rawConfig.f.p,
+                storageBucket: rawConfig.f.s,
+                messagingSenderId: rawConfig.f.m,
+                appId: rawConfig.f.i
+            };
+            sessionId = rawConfig.s;
+        } 
+        // Handle old format (backwards compatibility)
+        else if (rawConfig.firebaseConfig && rawConfig.sessionDetails) {
+            firebaseConfig = rawConfig.firebaseConfig;
+            sessionId = rawConfig.sessionDetails.sessionId;
+        } else {
+            displayStatusMessage("Invalid SDK configuration in URL.", true);
+            console.warn("Invalid SDK configuration in URL.");
+            return;
+        }
 
-
-        if (sdkConfig && sdkConfig.firebaseConfig && sdkConfig.sessionDetails && sdkConfig.sessionDetails.sessionId) {
-            document.getElementById('apiKey').value = sdkConfig.firebaseConfig.apiKey || '';
-            document.getElementById('authDomain').value = sdkConfig.firebaseConfig.authDomain || '';
-            document.getElementById('databaseURL').value = sdkConfig.firebaseConfig.databaseURL || '';
-            document.getElementById('projectId').value = sdkConfig.firebaseConfig.projectId || '';
-            document.getElementById('storageBucket').value = sdkConfig.firebaseConfig.storageBucket || '';
-            document.getElementById('messagingSenderId').value = sdkConfig.firebaseConfig.messagingSenderId || '';
-            document.getElementById('appId').value = sdkConfig.firebaseConfig.appId || '';
+        if (firebaseConfig && sessionId) {
+            document.getElementById('apiKey').value = firebaseConfig.apiKey || '';
+            document.getElementById('authDomain').value = firebaseConfig.authDomain || '';
+            document.getElementById('databaseURL').value = firebaseConfig.databaseURL || '';
+            document.getElementById('projectId').value = firebaseConfig.projectId || '';
+            document.getElementById('storageBucket').value = firebaseConfig.storageBucket || '';
+            document.getElementById('messagingSenderId').value = firebaseConfig.messagingSenderId || '';
+            document.getElementById('appId').value = firebaseConfig.appId || '';
 
             if (initializeFirebaseWithUserInput()) {
                 console.log("Firebase re-initialized from URL config.");
-                document.getElementById('sessionId').value = sdkConfig.sessionDetails.sessionId;
+                document.getElementById('sessionId').value = sessionId;
                 connectClient();
+                // Hide controls for client after joining via QR
+                setHideAllExceptResources(true);
             } else {
                 displayStatusMessage("Firebase Initialization Failed from URL config, cannot join session.", true);
                 console.warn("Firebase Initialization Failed from URL config, cannot join session.");
@@ -2384,8 +2434,12 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleFirebaseConfigVisibility();
 
     const urlParams = new URLSearchParams(window.location.search);
+    // Check for compact format first (c=), then old format (config=)
+    const compactParam = urlParams.get('c');
     const configParam = urlParams.get('config');
-    if (configParam) {
-        importSdkConfigFromURL(configParam);
+    if (compactParam) {
+        importSdkConfigFromURL(compactParam, true);
+    } else if (configParam) {
+        importSdkConfigFromURL(configParam, false);
     }
 });

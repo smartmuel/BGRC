@@ -743,6 +743,18 @@ body.modern-ui #qrcodeCanvas {
     background: white;
     padding: var(--space-md);
     border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+body.modern-ui #qrcodeCanvas img,
+body.modern-ui #qrcodeCanvas canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
 }
 
 /* ================================================
