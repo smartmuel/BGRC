@@ -8,6 +8,7 @@
     <meta name="description"
         content="A tool to track game resources with counters, images, dice rolling, and customizable settings.">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style-modern.css">
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js" defer></script>
@@ -33,6 +34,15 @@
             <h3>User Preferences</h3>
             <div class="setting-item">
                 <label>
+                    UI Theme:
+                    <select id="uiThemeSelect" onchange="toggleUITheme()">
+                        <option value="classic">Classic</option>
+                        <option value="modern">Modern (Mobile Optimized)</option>
+                    </select>
+                </label>
+            </div>
+            <div class="setting-item">
+                <label>
                     <input type="checkbox" id="showSettingsGlobal" onchange="toggleGlobalSettings()">
                     Show All Settings
                 </label>
@@ -45,7 +55,7 @@
             </div>
             <div class="setting-item">
                 <label>
-                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" checked>
                     Dark Mode
                 </label>
             </div>

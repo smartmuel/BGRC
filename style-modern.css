@@ -1,0 +1,877 @@
+/* ================================================
+   MODERN UI - Mobile-First Responsive Design
+   ================================================ */
+
+:root {
+    /* Modern Color Palette */
+    --modern-primary: #6366f1;
+    --modern-primary-light: #818cf8;
+    --modern-primary-dark: #4f46e5;
+    --modern-secondary: #10b981;
+    --modern-secondary-dark: #059669;
+    --modern-danger: #ef4444;
+    --modern-danger-dark: #dc2626;
+    --modern-warning: #f59e0b;
+    
+    /* Light Theme */
+    --modern-bg: #f8fafc;
+    --modern-surface: #ffffff;
+    --modern-surface-elevated: #ffffff;
+    --modern-text: #1e293b;
+    --modern-text-secondary: #64748b;
+    --modern-border: #e2e8f0;
+    --modern-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --modern-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Spacing */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+    
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+}
+
+/* Dark Mode Variables */
+body.dark-mode.modern-ui {
+    --modern-bg: #0f172a;
+    --modern-surface: #1e293b;
+    --modern-surface-elevated: #334155;
+    --modern-text: #f1f5f9;
+    --modern-text-secondary: #94a3b8;
+    --modern-border: #334155;
+    --modern-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --modern-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+/* ================================================
+   BASE STYLES
+   ================================================ */
+body.modern-ui {
+    font-family: var(--font-family);
+    background-color: var(--modern-bg);
+    color: var(--modern-text);
+    margin: 0;
+    padding: var(--space-md);
+    padding-top: 60px;
+    min-height: 100vh;
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.modern-ui * {
+    box-sizing: border-box;
+}
+
+body.modern-ui h1 {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    text-align: center;
+    margin: 0 0 var(--space-md);
+    color: var(--modern-text);
+    letter-spacing: -0.025em;
+}
+
+/* ================================================
+   FLOATING ACTION BUTTONS (Settings, Status, Network)
+   ================================================ */
+body.modern-ui #globalSettings,
+body.modern-ui #serverClientSettings,
+body.modern-ui #statusWindowContainer {
+    position: fixed;
+    z-index: 1005;
+}
+
+body.modern-ui #statusWindowContainer {
+    top: var(--space-md);
+    left: var(--space-md);
+}
+
+body.modern-ui #globalSettings {
+    top: var(--space-md);
+    right: var(--space-md);
+}
+
+body.modern-ui #serverClientSettings {
+    top: calc(var(--space-md) + 52px);
+    right: var(--space-md);
+}
+
+body.modern-ui #globalSettingsButton,
+body.modern-ui #serverClientButton,
+body.modern-ui #statusWindowButton {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    background: var(--modern-surface);
+    border: 1px solid var(--modern-border);
+    box-shadow: var(--modern-shadow);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    padding: 0;
+    color: var(--modern-text);
+}
+
+body.modern-ui #globalSettingsButton:hover,
+body.modern-ui #serverClientButton:hover,
+body.modern-ui #statusWindowButton:hover {
+    transform: scale(1.05);
+    box-shadow: var(--modern-shadow-lg);
+}
+
+body.modern-ui #globalSettingsButton:active,
+body.modern-ui #serverClientButton:active,
+body.modern-ui #statusWindowButton:active {
+    transform: scale(0.95);
+}
+
+/* ================================================
+   DROPDOWN PANELS (Settings Content)
+   ================================================ */
+body.modern-ui #globalSettingsContent,
+body.modern-ui #serverClientContent,
+body.modern-ui #statusWindow {
+    display: none;
+    position: absolute;
+    background: var(--modern-surface);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--modern-shadow-lg);
+    padding: var(--space-md);
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 1004;
+    width: calc(100vw - 32px);
+    max-width: 320px;
+}
+
+body.modern-ui #globalSettingsContent,
+body.modern-ui #serverClientContent {
+    right: 0;
+    top: calc(100% + 8px);
+}
+
+body.modern-ui #statusWindow {
+    left: 0;
+    top: calc(100% + 8px);
+}
+
+body.modern-ui #globalSettingsContent h3,
+body.modern-ui #serverClientContent h3 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--modern-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: var(--space-md) 0 var(--space-sm);
+}
+
+body.modern-ui #globalSettingsContent h3:first-child {
+    margin-top: 0;
+}
+
+body.modern-ui #globalSettingsContent hr,
+body.modern-ui #serverClientContent hr {
+    border: none;
+    border-top: 1px solid var(--modern-border);
+    margin: var(--space-md) 0;
+}
+
+body.modern-ui .setting-item {
+    margin-bottom: var(--space-sm);
+}
+
+body.modern-ui .setting-item label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+    color: var(--modern-text);
+    cursor: pointer;
+}
+
+body.modern-ui .setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--modern-primary);
+    cursor: pointer;
+}
+
+body.modern-ui .setting-item input[type="number"],
+body.modern-ui .setting-item input[type="text"] {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    background: var(--modern-surface);
+    color: var(--modern-text);
+    transition: border-color var(--transition-fast);
+}
+
+body.modern-ui .setting-item input[type="number"]:focus,
+body.modern-ui .setting-item input[type="text"]:focus {
+    outline: none;
+    border-color: var(--modern-primary);
+}
+
+/* ================================================
+   BUTTONS
+   ================================================ */
+body.modern-ui button {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: var(--modern-primary);
+    color: white;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    min-height: 40px;
+    touch-action: manipulation;
+}
+
+body.modern-ui button:hover {
+    background: var(--modern-primary-dark);
+    transform: translateY(-1px);
+}
+
+body.modern-ui button:active {
+    transform: translateY(0);
+}
+
+body.modern-ui .setting-item button {
+    width: 100%;
+    margin: var(--space-xs) 0;
+}
+
+body.modern-ui .remove-button {
+    background: var(--modern-danger);
+}
+
+body.modern-ui .remove-button:hover {
+    background: var(--modern-danger-dark);
+}
+
+/* ================================================
+   CONTROLS SECTION (Add Resource)
+   ================================================ */
+body.modern-ui #controlsContainer {
+    margin-bottom: var(--space-lg);
+}
+
+body.modern-ui .controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-width: 100%;
+}
+
+body.modern-ui .controls-row {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+body.modern-ui .controls-row input[type="text"] {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    background: var(--modern-surface);
+    color: var(--modern-text);
+    min-height: 44px;
+}
+
+body.modern-ui .controls-row input[type="text"]:focus {
+    outline: none;
+    border-color: var(--modern-primary);
+}
+
+body.modern-ui #addButton {
+    white-space: nowrap;
+    min-height: 44px;
+    padding: 0 var(--space-lg);
+}
+
+body.modern-ui #exampleSelect {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    background: var(--modern-surface);
+    color: var(--modern-text);
+    min-height: 44px;
+    cursor: pointer;
+}
+
+body.modern-ui #loadExampleButton {
+    width: 100%;
+}
+
+/* ================================================
+   RESOURCES GRID - Mobile First
+   ================================================ */
+body.modern-ui #resources {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+}
+
+/* ================================================
+   RESOURCE CARD - Mobile Optimized
+   ================================================ */
+body.modern-ui .resource {
+    background: var(--modern-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    box-shadow: var(--modern-shadow);
+    border: 1px solid var(--modern-border);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    transition: box-shadow var(--transition-normal);
+    margin: 0;
+}
+
+body.modern-ui .resource:active {
+    box-shadow: var(--modern-shadow-lg);
+}
+
+/* Resource Header - Name + Image */
+body.modern-ui .resource-image-container-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+body.modern-ui .resource-image-container {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--modern-bg);
+    border: 1px solid var(--modern-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.modern-ui .resource-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Resource Name */
+body.modern-ui .resource-name-container-wrapper {
+    text-align: center;
+}
+
+body.modern-ui .resource-name-container {
+    text-align: center;
+}
+
+body.modern-ui .resource-name {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--modern-text);
+    margin: 0;
+}
+
+body.modern-ui .resource-name-container input {
+    width: 100%;
+    padding: var(--space-sm);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    text-align: center;
+    background: var(--modern-surface);
+    color: var(--modern-text);
+}
+
+/* ================================================
+   COUNTER - Touch Optimized
+   ================================================ */
+body.modern-ui .counter-container {
+    width: 100%;
+}
+
+body.modern-ui .counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+body.modern-ui .counter-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    width: 100%;
+}
+
+body.modern-ui .counter button {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    padding: 0;
+    background: var(--modern-primary);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+body.modern-ui .counter button:hover {
+    background: var(--modern-primary-dark);
+}
+
+body.modern-ui .counter button:active {
+    transform: scale(0.95);
+}
+
+body.modern-ui .counter .count-display {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    min-width: 80px;
+    text-align: center;
+    color: var(--modern-text);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--modern-bg);
+    border-radius: var(--radius-sm);
+    margin: 0;
+}
+
+/* Modifier Toggle */
+body.modern-ui .modifier-toggle-container {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+}
+
+body.modern-ui .modifier-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--modern-primary-light);
+    color: white;
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    position: static;
+}
+
+body.modern-ui .modifier-toggle:hover {
+    background: var(--modern-primary);
+}
+
+/* ================================================
+   DICE CONTROLS
+   ================================================ */
+body.modern-ui .roll-dice-container {
+    width: 100%;
+}
+
+body.modern-ui .roll-dice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+}
+
+body.modern-ui .dice-button {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-full);
+    font-size: 24px;
+    background: var(--modern-secondary);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+body.modern-ui .dice-button:hover {
+    background: var(--modern-secondary-dark);
+    transform: scale(1.05);
+}
+
+body.modern-ui .dice-button:active {
+    transform: scale(0.95);
+}
+
+body.modern-ui .roll-result {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--modern-text);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--modern-bg);
+    border-radius: var(--radius-sm);
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Dice Animation */
+body.modern-ui .rolling {
+    animation: modernRoll 0.4s ease-out;
+}
+
+@keyframes modernRoll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(90deg) scale(1.1); }
+    50% { transform: rotate(180deg) scale(1); }
+    75% { transform: rotate(270deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+/* ================================================
+   SETTINGS PANEL (Per Resource)
+   ================================================ */
+body.modern-ui .settings-container {
+    width: 100%;
+}
+
+body.modern-ui .settings {
+    background: var(--modern-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-top: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+body.modern-ui .settings > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+    color: var(--modern-text);
+}
+
+body.modern-ui .settings input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--modern-primary);
+}
+
+body.modern-ui .settings input[type="number"],
+body.modern-ui .settings input[type="text"] {
+    width: 80px;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    background: var(--modern-surface);
+    color: var(--modern-text);
+}
+
+body.modern-ui .settings .remove-button {
+    width: 100%;
+    margin-top: var(--space-sm);
+}
+
+/* ================================================
+   OTHER CLIENTS COUNTS
+   ================================================ */
+body.modern-ui .other-clients-counts {
+    font-size: var(--font-size-xs);
+    color: var(--modern-text-secondary);
+    text-align: center;
+    padding: var(--space-xs);
+    background: var(--modern-bg);
+    border-radius: var(--radius-sm);
+    margin-top: var(--space-xs);
+}
+
+/* ================================================
+   STATUS WINDOW
+   ================================================ */
+body.modern-ui .status-item {
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--modern-border);
+    margin-bottom: var(--space-sm);
+}
+
+body.modern-ui .status-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+body.modern-ui .status-item h4 {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin: 0 0 var(--space-xs);
+    color: var(--modern-text);
+}
+
+body.modern-ui .status-item ul {
+    margin: 0;
+    padding-left: var(--space-md);
+    font-size: var(--font-size-xs);
+    color: var(--modern-text-secondary);
+}
+
+/* ================================================
+   STATUS MESSAGE AREA
+   ================================================ */
+body.modern-ui #statusMessageArea {
+    text-align: center;
+    padding: var(--space-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    min-height: 24px;
+    border-radius: var(--radius-sm);
+}
+
+/* ================================================
+   LIMIT MESSAGE
+   ================================================ */
+body.modern-ui #limitMessage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, var(--modern-warning) 0%, #d97706 100%);
+    color: white;
+    padding: var(--space-md);
+    text-align: center;
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    z-index: 1010;
+    display: none;
+    box-shadow: var(--modern-shadow-lg);
+}
+
+body.modern-ui #limitMessage.show {
+    display: block;
+}
+
+/* ================================================
+   HIDE ALL TOGGLE
+   ================================================ */
+body.modern-ui #hideAllContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-sm) 0;
+    position: relative;
+    margin-bottom: var(--space-md);
+}
+
+body.modern-ui #hideAllLine {
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    background: var(--modern-border);
+}
+
+body.modern-ui #hideAllArrow {
+    background: var(--modern-bg);
+    padding: var(--space-xs) var(--space-md);
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    color: var(--modern-text-secondary);
+    transition: all var(--transition-fast);
+}
+
+body.modern-ui #hideAllArrow:hover {
+    color: var(--modern-primary);
+}
+
+/* ================================================
+   QR CODE
+   ================================================ */
+body.modern-ui #qrcodeCanvas {
+    margin-top: var(--space-md);
+    text-align: center;
+    background: white;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+}
+
+/* ================================================
+   FIREBASE FIELDS
+   ================================================ */
+body.modern-ui .firebase-fields {
+    display: none;
+}
+
+/* ================================================
+   RESPONSIVE - TABLET & DESKTOP
+   ================================================ */
+@media (min-width: 480px) {
+    body.modern-ui #resources {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    body.modern-ui .counter button {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (min-width: 768px) {
+    body.modern-ui {
+        padding: var(--space-lg);
+        padding-top: 80px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    
+    body.modern-ui h1 {
+        font-size: var(--font-size-2xl);
+    }
+    
+    body.modern-ui #resources {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-lg);
+    }
+    
+    body.modern-ui .resource {
+        padding: var(--space-lg);
+    }
+    
+    body.modern-ui .controls {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-md);
+    }
+    
+    body.modern-ui .controls-row {
+        flex: 1;
+        min-width: 250px;
+        max-width: 350px;
+    }
+    
+    body.modern-ui #exampleSelect {
+        width: auto;
+        min-width: 200px;
+    }
+    
+    body.modern-ui #loadExampleButton {
+        width: auto;
+    }
+}
+
+@media (min-width: 1024px) {
+    body.modern-ui #resources {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ================================================
+   REDUCED MOTION
+   ================================================ */
+@media (prefers-reduced-motion: reduce) {
+    body.modern-ui *,
+    body.modern-ui *::before,
+    body.modern-ui *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ================================================
+   SAFE AREA (Notched Devices)
+   ================================================ */
+@supports (padding: max(0px)) {
+    body.modern-ui {
+        padding-left: max(var(--space-md), env(safe-area-inset-left));
+        padding-right: max(var(--space-md), env(safe-area-inset-right));
+        padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    }
+}
+
+/* ================================================
+   SCROLLBAR STYLING
+   ================================================ */
+body.modern-ui ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+body.modern-ui ::-webkit-scrollbar-track {
+    background: var(--modern-bg);
+    border-radius: var(--radius-full);
+}
+
+body.modern-ui ::-webkit-scrollbar-thumb {
+    background: var(--modern-border);
+    border-radius: var(--radius-full);
+}
+
+body.modern-ui ::-webkit-scrollbar-thumb:hover {
+    background: var(--modern-text-secondary);
+}
+
+/* ================================================
+   INPUT FILE HIDDEN
+   ================================================ */
+body.modern-ui input[type="file"] {
+    display: none;
+}
+
+/* ================================================
+   SELECT STYLING
+   ================================================ */
+body.modern-ui select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+body.dark-mode.modern-ui select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+}

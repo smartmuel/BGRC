@@ -49,6 +49,7 @@ let sdkExported = false;
 let qrcode = null;
 let otherClientsResourceCounts = {};
 let globalHideAllImages = false;
+let uiTheme = localStorage.getItem('uiTheme') || 'classic';
 
 
 // ====== Utility Functions ======
@@ -1794,6 +1795,33 @@ function toggleDarkMode() {
     }
 }
 
+function toggleUITheme() {
+    const themeSelect = document.getElementById('uiThemeSelect');
+    uiTheme = themeSelect.value;
+    localStorage.setItem('uiTheme', uiTheme);
+    
+    if (uiTheme === 'modern') {
+        document.body.classList.add('modern-ui');
+    } else {
+        document.body.classList.remove('modern-ui');
+    }
+}
+
+function loadUITheme() {
+    const savedTheme = localStorage.getItem('uiTheme') || 'classic';
+    uiTheme = savedTheme;
+    const themeSelect = document.getElementById('uiThemeSelect');
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+    }
+    
+    if (savedTheme === 'modern') {
+        document.body.classList.add('modern-ui');
+    } else {
+        document.body.classList.remove('modern-ui');
+    }
+}
+
 
 // ====== Firebase Realtime Database Listeners ======
 function setupServerClientListeners() {
@@ -2324,6 +2352,7 @@ window.addEventListener('beforeunload', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadUITheme();
     refreshExamples();
     loadFromLocalStorage();
     resetInactivityTimer();
@@ -2332,7 +2361,7 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleGlobalCounterLimit();
     loadFirebaseConfigFromCache();
 
-    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) === 'true') {
+    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) !== 'false') {
         document.body.classList.add('dark-mode');
         document.getElementById('darkModeToggle').checked = true;
     } else {
