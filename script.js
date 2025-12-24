@@ -931,13 +931,33 @@ function showNameConflictModal(conflictName, existingSnapshot) {
     // Reconnect as the same user (take over the session)
     newReconnectBtn.addEventListener('click', async () => {
         modal.style.display = 'none';
-        // Remove the old client entry and connect with the same name
+        // Remove the old client entry and copy their counts to the new client
         if (existingClientKey) {
+            // Get the old client's counts before removing
+            const oldCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).get();
+            const oldCounts = oldCountsSnapshot.val();
+            
+            // Remove old client entry and their counts
             await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
+            await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
+            
+            // Set client name and connect
+            clientName = conflictName;
+            document.getElementById('clientNameInput').value = clientName;
+            
+            // Perform connection, then restore counts
+            await performClientConnectionAsync();
+            
+            // Restore the old counts to the new client ID
+            if (oldCounts) {
+                await db.ref(`sessions/${sessionId}/client_counts/${clientId}`).set(oldCounts);
+                console.log("Restored previous session counts for reconnected user.");
+            }
+        } else {
+            clientName = conflictName;
+            document.getElementById('clientNameInput').value = clientName;
+            performClientConnection();
         }
-        clientName = conflictName;
-        document.getElementById('clientNameInput').value = clientName;
-        performClientConnection();
     });
     
     // Connect with a new name
@@ -995,6 +1015,21 @@ function performClientConnection() {
         displayStatusMessage("Failed to connect to session. Please check the console for details.", true);
         console.error("Error connecting client:", error);
     });
+}
+
+// Async version for reconnection flow
+async function performClientConnectionAsync() {
+    await db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
+        clientId: clientId,
+        clientName: clientName,
+    });
+    loadConfigFromServer();
+    setupClientResourceListeners();
+    setupClientSideClientListeners();
+    updateServerClientUI();
+    displayStatusMessage(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
+    console.log(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
+    funnyNamesInUseSession.add(clientName);
 }
 
 function generateQRCode() {
