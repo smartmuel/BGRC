@@ -201,6 +201,23 @@
     <div id="statusMessageArea"></div> <!-- Status message area -->
     <div id="resources"></div>
 
+    <!-- Name Conflict Modal -->
+    <div id="nameConflictModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>Name Already in Use</h3>
+            <p>The name "<span id="conflictNameDisplay"></span>" is already connected to this session.</p>
+            <div class="modal-input-group">
+                <label for="newNameInput">Enter a different name or reconnect:</label>
+                <input type="text" id="newNameInput" placeholder="Enter new name">
+            </div>
+            <div class="modal-buttons">
+                <button id="reconnectSameNameBtn" class="modal-btn primary">Reconnect as Same User</button>
+                <button id="connectNewNameBtn" class="modal-btn secondary">Connect with New Name</button>
+                <button id="cancelConnectBtn" class="modal-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
 </body>
 

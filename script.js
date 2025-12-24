@@ -887,28 +887,114 @@ async function connectClient() {
         const clientsRef = db.ref(`sessions/${sessionId}/clients`);
         const snapshot = await clientsRef.orderByChild('clientName').equalTo(clientName).once('value');
         if (snapshot.exists()) {
-            displayStatusMessage("This client name is already taken. Please choose a different name.", true);
+            // Show name conflict modal instead of just an error
+            showNameConflictModal(clientName, snapshot);
             return;
         }
 
-        db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
-            clientId: clientId,
-            clientName: clientName,
-        }).then(() => {
-            loadConfigFromServer();
-            setupClientResourceListeners();
-            setupClientSideClientListeners();
-            updateServerClientUI();
-            displayStatusMessage(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
-            console.log(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
-            funnyNamesInUseSession.add(clientName);
-        }).catch(error => {
-            displayStatusMessage("Failed to connect to session. Please check the console for details.", true);
-            console.error("Error connecting client:", error);
-        });
+        performClientConnection();
     } else {
         displayStatusMessage("Please enter a Session ID.", true);
     }
+}
+
+function showNameConflictModal(conflictName, existingSnapshot) {
+    const modal = document.getElementById('nameConflictModal');
+    const conflictNameDisplay = document.getElementById('conflictNameDisplay');
+    const newNameInput = document.getElementById('newNameInput');
+    
+    conflictNameDisplay.textContent = conflictName;
+    newNameInput.value = conflictName;
+    modal.style.display = 'flex';
+    newNameInput.focus();
+    newNameInput.select();
+    
+    // Store the existing client's Firebase key for potential takeover
+    let existingClientKey = null;
+    existingSnapshot.forEach((childSnapshot) => {
+        existingClientKey = childSnapshot.key;
+    });
+    
+    // Remove old listeners before adding new ones
+    const reconnectBtn = document.getElementById('reconnectSameNameBtn');
+    const connectNewBtn = document.getElementById('connectNewNameBtn');
+    const cancelBtn = document.getElementById('cancelConnectBtn');
+    
+    const newReconnectBtn = reconnectBtn.cloneNode(true);
+    const newConnectNewBtn = connectNewBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    
+    reconnectBtn.parentNode.replaceChild(newReconnectBtn, reconnectBtn);
+    connectNewBtn.parentNode.replaceChild(newConnectNewBtn, connectNewBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+    // Reconnect as the same user (take over the session)
+    newReconnectBtn.addEventListener('click', async () => {
+        modal.style.display = 'none';
+        // Remove the old client entry and connect with the same name
+        if (existingClientKey) {
+            await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
+        }
+        clientName = conflictName;
+        document.getElementById('clientNameInput').value = clientName;
+        performClientConnection();
+    });
+    
+    // Connect with a new name
+    newConnectNewBtn.addEventListener('click', async () => {
+        const newName = newNameInput.value.trim();
+        if (!newName) {
+            displayStatusMessage("Please enter a name.", true);
+            return;
+        }
+        if (newName === conflictName) {
+            displayStatusMessage("Please enter a different name or use 'Reconnect as Same User'.", true);
+            return;
+        }
+        
+        // Check if the new name is also taken
+        const clientsRef = db.ref(`sessions/${sessionId}/clients`);
+        const newSnapshot = await clientsRef.orderByChild('clientName').equalTo(newName).once('value');
+        if (newSnapshot.exists()) {
+            displayStatusMessage(`The name "${newName}" is also taken. Try another name.`, true);
+            return;
+        }
+        
+        modal.style.display = 'none';
+        clientName = newName;
+        document.getElementById('clientNameInput').value = clientName;
+        performClientConnection();
+    });
+    
+    // Cancel
+    newCancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    // Allow Enter key to submit new name
+    newNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            newConnectNewBtn.click();
+        }
+    });
+}
+
+function performClientConnection() {
+    db.ref(`sessions/${sessionId}/clients/${clientId}`).set({
+        clientId: clientId,
+        clientName: clientName,
+    }).then(() => {
+        loadConfigFromServer();
+        setupClientResourceListeners();
+        setupClientSideClientListeners();
+        updateServerClientUI();
+        displayStatusMessage(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
+        console.log(`Client - Connected to session: ${sessionId}, Name: ${clientName}`);
+        funnyNamesInUseSession.add(clientName);
+    }).catch(error => {
+        displayStatusMessage("Failed to connect to session. Please check the console for details.", true);
+        console.error("Error connecting client:", error);
+    });
 }
 
 function generateQRCode() {

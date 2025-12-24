@@ -677,6 +677,122 @@ body.modern-ui #statusMessageArea {
 }
 
 /* ================================================
+   NAME CONFLICT MODAL
+   ================================================ */
+body.modern-ui .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: var(--space-md);
+}
+
+body.modern-ui .modal-content {
+    background: var(--modern-surface);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    max-width: 350px;
+    width: 100%;
+    box-shadow: var(--modern-shadow-lg);
+    border: 1px solid var(--modern-border);
+}
+
+body.modern-ui .modal-content h3 {
+    margin: 0 0 var(--space-sm);
+    color: var(--modern-danger);
+    font-size: var(--font-size-lg);
+}
+
+body.modern-ui .modal-content p {
+    margin: 0 0 var(--space-md);
+    font-size: var(--font-size-sm);
+    color: var(--modern-text-secondary);
+}
+
+body.modern-ui .modal-content #conflictNameDisplay {
+    font-weight: 600;
+    color: var(--modern-primary);
+}
+
+body.modern-ui .modal-input-group {
+    margin-bottom: var(--space-md);
+}
+
+body.modern-ui .modal-input-group label {
+    display: block;
+    margin-bottom: var(--space-xs);
+    font-size: var(--font-size-sm);
+    color: var(--modern-text);
+}
+
+body.modern-ui .modal-input-group input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    background: var(--modern-surface);
+    color: var(--modern-text);
+    box-sizing: border-box;
+}
+
+body.modern-ui .modal-input-group input:focus {
+    outline: none;
+    border-color: var(--modern-primary);
+}
+
+body.modern-ui .modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+body.modern-ui .modal-btn {
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    min-height: 40px;
+    transition: all var(--transition-fast);
+}
+
+body.modern-ui .modal-btn.primary {
+    background: var(--modern-secondary);
+    color: white;
+}
+
+body.modern-ui .modal-btn.primary:hover {
+    background: var(--modern-secondary-dark);
+}
+
+body.modern-ui .modal-btn.secondary {
+    background: var(--modern-primary);
+    color: white;
+}
+
+body.modern-ui .modal-btn.secondary:hover {
+    background: var(--modern-primary-dark);
+}
+
+body.modern-ui .modal-btn.cancel {
+    background: var(--modern-surface-elevated);
+    color: var(--modern-text-secondary);
+    border: 1px solid var(--modern-border);
+}
+
+body.modern-ui .modal-btn.cancel:hover {
+    background: var(--modern-border);
+}
+
+/* ================================================
    LIMIT MESSAGE
    ================================================ */
 body.modern-ui #limitMessage {

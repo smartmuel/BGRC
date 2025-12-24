@@ -694,3 +694,112 @@ body.dark-mode .other-clients-counts {
     font-weight: bold;
     min-height: 20px; /* Ensure it takes up space even when empty */
 }
+
+/* Name Conflict Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: var(--card-background-light);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .modal-content {
+    background: var(--card-background-dark);
+    color: var(--text-color-dark);
+}
+
+.modal-content h3 {
+    margin: 0 0 10px;
+    color: var(--remove-button-color);
+}
+
+.modal-content p {
+    margin: 0 0 15px;
+}
+
+.modal-content #conflictNameDisplay {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.modal-input-group {
+    margin-bottom: 15px;
+}
+
+.modal-input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.modal-input-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--border-color-light);
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+body.dark-mode .modal-input-group input {
+    background: var(--settings-background-dark);
+    color: var(--text-color-dark);
+    border-color: var(--border-color-dark);
+}
+
+.modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.modal-btn.primary {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.modal-btn.primary:hover {
+    background: var(--secondary-color-darker);
+}
+
+.modal-btn.secondary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.modal-btn.secondary:hover {
+    background: var(--primary-color-darker);
+}
+
+.modal-btn.cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.modal-btn.cancel:hover {
+    background: #5a6268;
+}
