@@ -321,7 +321,7 @@ function exportSdkConfig() {
 
 // ====== Dice Roll Sound ======
 async function createDiceRollSound() {
-    const audioContext = new(window.AudioContext || window.webkitContext)();
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     let buffer;
 
     try {
