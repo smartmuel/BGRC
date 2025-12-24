@@ -49,7 +49,7 @@ let sdkExported = false;
 let qrcode = null;
 let otherClientsResourceCounts = {};
 let globalHideAllImages = false;
-let uiTheme = localStorage.getItem('uiTheme') || 'classic';
+let uiTheme = localStorage.getItem('uiTheme') || 'modern';
 
 
 // ====== Utility Functions ======
@@ -1024,7 +1024,6 @@ function attachEventListeners() {
     });
 
     document.getElementById('addButton').addEventListener('click', addResource);
-    document.getElementById('loadExampleButton').addEventListener('click', loadSelectedExample);
     document.getElementById('startButton').addEventListener('click', startServer);
     document.getElementById('connectButton').addEventListener('click', connectClient);
     document.getElementById('saveFirebaseConfig').addEventListener('click', () => {
@@ -1621,6 +1620,8 @@ function populateExampleDropdown() {
 function loadSelectedExample() {
     const exampleSelect = document.getElementById('exampleSelect');
     const exampleName = exampleSelect.value;
+    
+    if (!exampleName) return; // Do nothing if placeholder selected
 
     if (exampleName !== 'clear' && (resources.length > 0 || hasUnsavedChanges)) {
         const confirmation = confirm("Loading a new game will clear your current resources. Are you sure you want to continue?");
@@ -1808,7 +1809,7 @@ function toggleUITheme() {
 }
 
 function loadUITheme() {
-    const savedTheme = localStorage.getItem('uiTheme') || 'classic';
+    const savedTheme = localStorage.getItem('uiTheme') || 'modern';
     uiTheme = savedTheme;
     const themeSelect = document.getElementById('uiThemeSelect');
     if (themeSelect) {

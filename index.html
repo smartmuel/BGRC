@@ -37,7 +37,7 @@
                     UI Theme:
                     <select id="uiThemeSelect" onchange="toggleUITheme()">
                         <option value="classic">Classic</option>
-                        <option value="modern">Modern (Mobile Optimized)</option>
+                        <option value="modern" selected>Modern (Mobile Optimized)</option>
                     </select>
                 </label>
             </div>
@@ -189,14 +189,13 @@
     <div id="controlsContainer">
         <div class="controls">
             <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/gif">
-            <div class="controls-row">
-                <input type="text" id="resourceName" placeholder="Resource Name">
-                <button id="addButton">Add Resource</button>
-            </div>
-            <select id="exampleSelect">
+            <select id="exampleSelect" onchange="loadSelectedExample()">
                 <option value="">Select a Game</option>
             </select>
-            <button id="loadExampleButton">Load Game</button>
+            <div class="controls-row">
+                <input type="text" id="resourceName" placeholder="Resource Name">
+                <button id="addButton">Add</button>
+            </div>
         </div>
     </div>
     <div id="statusMessageArea"></div> <!-- Status message area -->

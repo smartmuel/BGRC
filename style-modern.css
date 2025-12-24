@@ -24,16 +24,16 @@
     --modern-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     
     /* Spacing */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 16px;
-    --space-lg: 24px;
-    --space-xl: 32px;
+    --space-xs: 2px;
+    --space-sm: 4px;
+    --space-md: 8px;
+    --space-lg: 12px;
+    --space-xl: 16px;
     
     /* Border Radius */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 16px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 10px;
     --radius-full: 9999px;
     
     /* Typography */
@@ -70,12 +70,14 @@ body.modern-ui {
     background-color: var(--modern-bg);
     color: var(--modern-text);
     margin: 0;
-    padding: var(--space-md);
-    padding-top: 60px;
+    padding: var(--space-sm);
+    padding-top: 50px;
     min-height: 100vh;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 body.modern-ui * {
@@ -83,10 +85,10 @@ body.modern-ui * {
 }
 
 body.modern-ui h1 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
     text-align: center;
-    margin: 0 0 var(--space-md);
+    margin: 0 0 var(--space-sm);
     color: var(--modern-text);
     letter-spacing: -0.025em;
 }
@@ -285,30 +287,33 @@ body.modern-ui .remove-button:hover {
    CONTROLS SECTION (Add Resource)
    ================================================ */
 body.modern-ui #controlsContainer {
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--space-md);
 }
 
 body.modern-ui .controls {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
-    max-width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
 body.modern-ui .controls-row {
     display: flex;
     gap: var(--space-sm);
+    width: 100%;
 }
 
 body.modern-ui .controls-row input[type="text"] {
     flex: 1;
+    min-width: 0;
     padding: var(--space-sm) var(--space-md);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     background: var(--modern-surface);
     color: var(--modern-text);
-    min-height: 44px;
+    min-height: 36px;
 }
 
 body.modern-ui .controls-row input[type="text"]:focus {
@@ -318,24 +323,22 @@ body.modern-ui .controls-row input[type="text"]:focus {
 
 body.modern-ui #addButton {
     white-space: nowrap;
-    min-height: 44px;
-    padding: 0 var(--space-lg);
+    min-height: 36px;
+    padding: 0 var(--space-md);
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
 }
 
 body.modern-ui #exampleSelect {
     width: 100%;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-sm);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     background: var(--modern-surface);
     color: var(--modern-text);
-    min-height: 44px;
+    min-height: 36px;
     cursor: pointer;
-}
-
-body.modern-ui #loadExampleButton {
-    width: 100%;
 }
 
 /* ================================================
@@ -343,8 +346,8 @@ body.modern-ui #loadExampleButton {
    ================================================ */
 body.modern-ui #resources {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-md);
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
 }
 
 /* ================================================
@@ -352,16 +355,17 @@ body.modern-ui #resources {
    ================================================ */
 body.modern-ui .resource {
     background: var(--modern-surface);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
     box-shadow: var(--modern-shadow);
     border: 1px solid var(--modern-border);
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     transition: box-shadow var(--transition-normal);
     margin: 0;
+    flex: 0 0 calc(50% - 2px);
 }
 
 body.modern-ui .resource:active {
@@ -375,9 +379,9 @@ body.modern-ui .resource-image-container-wrapper {
 }
 
 body.modern-ui .resource-image-container {
-    width: 56px;
-    height: 56px;
-    border-radius: var(--radius-md);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
     overflow: hidden;
     background: var(--modern-bg);
     border: 1px solid var(--modern-border);
@@ -402,18 +406,19 @@ body.modern-ui .resource-name-container {
 }
 
 body.modern-ui .resource-name {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--modern-text);
     margin: 0;
+    line-height: 1.2;
 }
 
 body.modern-ui .resource-name-container input {
     width: 100%;
-    padding: var(--space-sm);
+    padding: var(--space-xs);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-sm);
     text-align: center;
     background: var(--modern-surface);
     color: var(--modern-text);
@@ -430,22 +435,22 @@ body.modern-ui .counter {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
 }
 
 body.modern-ui .counter-buttons {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     width: 100%;
 }
 
 body.modern-ui .counter button {
-    width: 52px;
-    height: 52px;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-lg);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     padding: 0;
     background: var(--modern-primary);
@@ -455,6 +460,7 @@ body.modern-ui .counter button {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    min-height: unset;
 }
 
 body.modern-ui .counter button:hover {
@@ -466,12 +472,12 @@ body.modern-ui .counter button:active {
 }
 
 body.modern-ui .counter .count-display {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-lg);
     font-weight: 700;
-    min-width: 80px;
+    min-width: 40px;
     text-align: center;
     color: var(--modern-text);
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     background: var(--modern-bg);
     border-radius: var(--radius-sm);
     margin: 0;
@@ -480,17 +486,17 @@ body.modern-ui .counter .count-display {
 /* Modifier Toggle */
 body.modern-ui .modifier-toggle-container {
     position: absolute;
-    top: var(--space-sm);
-    right: var(--space-sm);
+    top: var(--space-xs);
+    right: var(--space-xs);
 }
 
 body.modern-ui .modifier-toggle {
-    width: 32px;
-    height: 32px;
+    width: 22px;
+    height: 22px;
     border-radius: var(--radius-sm);
     background: var(--modern-primary-light);
     color: white;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -514,14 +520,14 @@ body.modern-ui .roll-dice {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-md);
+    gap: var(--space-sm);
 }
 
 body.modern-ui .dice-button {
-    width: 52px;
-    height: 52px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-full);
-    font-size: 24px;
+    font-size: 16px;
     background: var(--modern-secondary);
     color: white;
     border: none;
@@ -530,6 +536,7 @@ body.modern-ui .dice-button {
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-fast);
+    min-height: unset;
 }
 
 body.modern-ui .dice-button:hover {
@@ -542,13 +549,13 @@ body.modern-ui .dice-button:active {
 }
 
 body.modern-ui .roll-result {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-base);
     font-weight: 700;
     color: var(--modern-text);
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     background: var(--modern-bg);
     border-radius: var(--radius-sm);
-    min-width: 60px;
+    min-width: 40px;
     text-align: center;
 }
 
@@ -574,36 +581,36 @@ body.modern-ui .settings-container {
 
 body.modern-ui .settings {
     background: var(--modern-bg);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    margin-top: var(--space-sm);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    margin-top: var(--space-xs);
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
 }
 
 body.modern-ui .settings > div {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-sm);
-    font-size: var(--font-size-sm);
+    gap: var(--space-xs);
+    font-size: var(--font-size-xs);
     color: var(--modern-text);
 }
 
 body.modern-ui .settings input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     accent-color: var(--modern-primary);
 }
 
 body.modern-ui .settings input[type="number"],
 body.modern-ui .settings input[type="text"] {
-    width: 80px;
-    padding: var(--space-xs) var(--space-sm);
+    width: 60px;
+    padding: var(--space-xs);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     text-align: center;
     background: var(--modern-surface);
     color: var(--modern-text);
@@ -611,7 +618,9 @@ body.modern-ui .settings input[type="text"] {
 
 body.modern-ui .settings .remove-button {
     width: 100%;
-    margin-top: var(--space-sm);
+    margin-top: var(--space-xs);
+    min-height: 28px;
+    font-size: var(--font-size-xs);
 }
 
 /* ================================================
@@ -747,64 +756,47 @@ body.modern-ui .firebase-fields {
    RESPONSIVE - TABLET & DESKTOP
    ================================================ */
 @media (min-width: 480px) {
-    body.modern-ui #resources {
-        grid-template-columns: repeat(2, 1fr);
+    body.modern-ui .counter button {
+        width: 40px;
+        height: 40px;
     }
     
-    body.modern-ui .counter button {
-        width: 48px;
-        height: 48px;
+    body.modern-ui .dice-button {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
     }
 }
 
 @media (min-width: 768px) {
     body.modern-ui {
-        padding: var(--space-lg);
-        padding-top: 80px;
+        padding: var(--space-md);
+        padding-top: 60px;
         max-width: 900px;
         margin: 0 auto;
     }
     
     body.modern-ui h1 {
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-xl);
     }
     
     body.modern-ui #resources {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-lg);
-    }
-    
-    body.modern-ui .resource {
-        padding: var(--space-lg);
-    }
-    
-    body.modern-ui .controls {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
+        grid-template-columns: repeat(3, 1fr);
         gap: var(--space-md);
     }
     
-    body.modern-ui .controls-row {
-        flex: 1;
-        min-width: 250px;
+    body.modern-ui .resource {
+        padding: var(--space-md);
+    }
+    
+    body.modern-ui .controls {
         max-width: 350px;
-    }
-    
-    body.modern-ui #exampleSelect {
-        width: auto;
-        min-width: 200px;
-    }
-    
-    body.modern-ui #loadExampleButton {
-        width: auto;
     }
 }
 
 @media (min-width: 1024px) {
     body.modern-ui #resources {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
     }
 }
 
@@ -826,9 +818,9 @@ body.modern-ui .firebase-fields {
    ================================================ */
 @supports (padding: max(0px)) {
     body.modern-ui {
-        padding-left: max(var(--space-md), env(safe-area-inset-left));
-        padding-right: max(var(--space-md), env(safe-area-inset-right));
-        padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+        padding-left: max(var(--space-sm), env(safe-area-inset-left));
+        padding-right: max(var(--space-sm), env(safe-area-inset-right));
+        padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
     }
 }
 
