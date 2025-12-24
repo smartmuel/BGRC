@@ -1821,6 +1821,11 @@ function loadUITheme() {
     } else {
         document.body.classList.remove('modern-ui');
     }
+    
+    // Apply dark mode immediately so it works with modern-ui class
+    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) !== 'false') {
+        document.body.classList.add('dark-mode');
+    }
 }
 
 
@@ -2362,13 +2367,12 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleGlobalCounterLimit();
     loadFirebaseConfigFromCache();
 
-    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) !== 'false') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').checked = true;
-    } else {
-        document.body.classList.remove('dark-mode');
-        document.getElementById('darkModeToggle').checked = false;
-    }
+    // Sync dark mode checkbox with actual state
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    document.getElementById('darkModeToggle').checked = isDarkMode;
+    
+    // Ensure controls are visible on fresh page load (not hidden)
+    setHideAllExceptResources(false);
 
     const serverClientModeSelect = document.getElementById('serverClientMode');
     serverClientModeSelect.addEventListener('change', handleServerClientModeChange);
