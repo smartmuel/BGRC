@@ -14,6 +14,7 @@
     <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js" defer></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 
@@ -155,6 +156,15 @@
                 <input type="file" id="importFirebaseFile" accept=".json" style="display: none;" onchange="importFirebaseConfig(event)">
             </div>
             <hr/> <!-- Separator for Firebase settings and Server/Client Mode -->
+            <div class="setting-item">
+                <label>
+                    Connection Type:
+                    <select id="connectionType" onchange="handleConnectionTypeChange()">
+                        <option value="firebase" selected>Firebase (Cloud)</option>
+                        <option value="p2p">P2P (Direct)</option>
+                    </select>
+                </label>
+            </div>
             <div class="setting-item">
                 <label>
                     Client Name:

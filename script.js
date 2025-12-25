@@ -53,6 +53,12 @@ let globalHideAllImages = false;
 let uiTheme = localStorage.getItem('uiTheme') || 'modern';
 let compactOthersDisplay = localStorage.getItem('compactOthersDisplay') === 'true'; // Default to false (expanded)
 
+// ====== P2P (PeerJS) Variables ======
+let connectionType = localStorage.getItem('connectionType') || 'firebase'; // 'firebase' or 'p2p'
+let peer = null; // PeerJS instance
+let p2pConnections = {}; // Store connections to other peers { peerId: connection }
+let isP2PHost = false; // Is this device the P2P host?
+
 
 // ====== Utility Functions ======
 function getRandomBrainrotName() {
@@ -91,7 +97,7 @@ function toggleStatusWindowVisibility() {
     statusWindowVisible = !statusWindowVisible;
     document.getElementById('statusWindow').style.display = statusWindowVisible ? 'block' : 'none';
     if (statusWindowVisible && serverClientMode !== 'local') {
-        fetchAndDisplayClientStatus();
+        updateStatusWindow();
     }
 }
 
@@ -151,6 +157,51 @@ async function fetchAndDisplayClientStatus() {
     } catch (error) {
         console.error("Error fetching client status:", error);
         statusWindowContent.innerHTML = "<p>Error loading client status.</p>";
+    }
+}
+
+function updateStatusWindow() {
+    // Update status window content based on current state
+    const statusWindowContent = document.getElementById('statusWindow');
+    if (!statusWindowContent) return;
+    
+    // Only update if window is visible
+    if (!statusWindowVisible) return;
+    
+    if (connectionType === 'p2p') {
+        // P2P mode: show connected peers
+        let statusHTML = '';
+        
+        for (const peerId in clientsInSession) {
+            if (peerId === clientId) continue; // Skip self
+            const peerName = clientsInSession[peerId] || 'Unknown';
+            const peerCounts = otherClientsResourceCounts[peerId] || {};
+            let totalResources = 0;
+            
+            statusHTML += `<div class="status-item"><h4>Peer: ${peerName}</h4><ul>`;
+            
+            resources.forEach((resource, index) => {
+                const count = peerCounts[index];
+                if (count !== undefined) {
+                    totalResources += count;
+                }
+                if (!resource.hideCounterForOthers) {
+                    const resourceDisplayName = !globalHideFunnyNames && resource.useFunnyName && resource.funnyName ? resource.funnyName : resource.name;
+                    statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
+                }
+            });
+            
+            statusHTML += `</ul><p>Total Resources: ${totalResources}</p></div>`;
+        }
+        
+        if (statusHTML === '') {
+            statusHTML = "<p>No other peers connected.</p>";
+        }
+        
+        statusWindowContent.innerHTML = statusHTML;
+    } else {
+        // Firebase mode: use existing fetch function
+        fetchAndDisplayClientStatus();
     }
 }
 
@@ -818,6 +869,12 @@ function updateRollDiceCustomValues(index, value) {
 }
 
 function startServer() {
+    // Check connection type
+    if (connectionType === 'p2p') {
+        startP2PServer();
+        return;
+    }
+    
     if (!db) {
         displayStatusMessage("Firebase database not initialized. Please save Firebase config first.", true);
         console.warn("Firebase database not initialized. Please save Firebase config first.");
@@ -877,6 +934,16 @@ async function connectClient() {
 
     if (!clientName) {
         displayStatusMessage("Please enter a client name.", true);
+        return;
+    }
+
+    // Check connection type
+    if (connectionType === 'p2p') {
+        if (!sessionId) {
+            displayStatusMessage("Please enter a Peer ID to connect.", true);
+            return;
+        }
+        connectP2PClient(sessionId);
         return;
     }
 
@@ -1286,6 +1353,23 @@ async function updateCount(event, index, change) {
 
     let newCount = potentialNewResourceCount;
 
+    // P2P Mode handling
+    if (connectionType === 'p2p' && sessionId) {
+        targetResource.count = newCount;
+        const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-display`);
+        if (resourceElement) {
+            resourceElement.textContent = newCount;
+        }
+        saveToLocalStorage();
+        broadcastP2PCountUpdate(index, newCount);
+        hasUnsavedChanges = true;
+        setHideAllExceptResources(true);
+        resetInactivityTimer();
+        checkGlobalCounterLimit();
+        return;
+    }
+
+    // Firebase Mode handling
     if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
         if (!db) {
             displayStatusMessage("Firebase db is not initialized in updateCount (Server Mode).", true);
@@ -2459,8 +2543,8 @@ function updateServerClientUI() {
         serverClientButton.textContent = '👤';
         serverClientModeSelect.style.display = 'inline-block';
         statusWindowContainer.style.display = 'block';
-        if (importSdkConfigButton) importSdkConfigButton.style.display = 'inline-block';
-        if (importSdkConfigFileButton) importSdkConfigFileButton.style.display = 'inline-block';
+        if (importSdkConfigButton) importSdkConfigButton.style.display = (connectionType === 'p2p' ? 'none' : 'inline-block');
+        if (importSdkConfigFileButton) importSdkConfigFileButton.style.display = (connectionType === 'p2p' ? 'none' : 'inline-block');
         // Hide controls (Select Game, Add Resource) for clients when connected
         if (sessionId && controlsContainer) {
             controlsContainer.style.display = 'none';
@@ -2468,14 +2552,18 @@ function updateServerClientUI() {
         // Show QR code for clients to share the session
         if (sessionId) {
             document.getElementById('serverIDDisplay').value = sessionId;
-            generateQRCode();
+            if (connectionType === 'p2p') {
+                generateP2PQRCode();
+            } else {
+                generateQRCode();
+            }
         }
     } else if (serverClientMode === 'server') {
         sessionIdContainer.style.display = 'none';
         newSessionContainer.style.display = (sessionId ? 'none' : 'block');
         serverIDDisplayContainer.style.display = (sessionId ? 'block' : 'none');
         qrcodeCanvasContainer.style.display = (sessionId ? 'block' : 'none');
-        exportSdkConfigButton.style.display = (sessionId ? 'inline-block' : 'none');
+        exportSdkConfigButton.style.display = (sessionId && connectionType !== 'p2p' ? 'inline-block' : 'none');
         serverClientButton.textContent = '🌐';
         serverClientModeSelect.style.display = 'inline-block';
         statusWindowContainer.style.display = 'block';
@@ -2483,7 +2571,11 @@ function updateServerClientUI() {
         if (importSdkConfigFileButton) importSdkConfigFileButton.style.display = 'none';
         if (sessionId) {
             document.getElementById('serverIDDisplay').value = sessionId;
-            generateQRCode();
+            if (connectionType === 'p2p') {
+                generateP2PQRCode();
+            } else {
+                generateQRCode();
+            }
         }
     } else {
         sessionIdContainer.style.display = 'block';
@@ -2611,6 +2703,416 @@ function importSdkConfigFromURL(configParam, isCompact = false) {
 }
 
 
+// ====== P2P (PeerJS) Functions ======
+function handleConnectionTypeChange() {
+    connectionType = document.getElementById('connectionType').value;
+    localStorage.setItem('connectionType', connectionType);
+    
+    // Show/hide Firebase fields based on connection type
+    const firebaseFields = document.querySelectorAll('.firebase-fields');
+    const showFirebaseToggle = document.getElementById('showFirebaseFieldsToggle');
+    
+    if (connectionType === 'p2p') {
+        firebaseFields.forEach(el => el.style.display = 'none');
+        if (showFirebaseToggle) showFirebaseToggle.parentElement.style.display = 'none';
+    } else {
+        // Restore based on toggle state
+        if (showFirebaseToggle) {
+            showFirebaseToggle.parentElement.style.display = '';
+            toggleFirebaseConfigVisibility();
+        }
+    }
+    
+    displayStatusMessage(`Connection type: ${connectionType === 'p2p' ? 'P2P (Direct)' : 'Firebase (Cloud)'}`);
+}
+
+function initializePeerJS() {
+    return new Promise((resolve, reject) => {
+        if (peer && !peer.destroyed) {
+            resolve(peer);
+            return;
+        }
+        
+        peer = new Peer();
+        
+        peer.on('open', (id) => {
+            console.log('PeerJS initialized. My peer ID:', id);
+            resolve(peer);
+        });
+        
+        peer.on('connection', (conn) => {
+            console.log('Incoming P2P connection from:', conn.peer);
+            setupP2PConnection(conn);
+        });
+        
+        peer.on('error', (err) => {
+            console.error('PeerJS error:', err);
+            displayStatusMessage('P2P error: ' + err.type, true);
+            reject(err);
+        });
+        
+        peer.on('disconnected', () => {
+            console.log('PeerJS disconnected from signaling server');
+            displayStatusMessage('P2P disconnected. Attempting to reconnect...', true);
+            peer.reconnect();
+        });
+    });
+}
+
+function setupP2PConnection(conn) {
+    const peerId = conn.peer;
+    p2pConnections[peerId] = conn;
+    
+    conn.on('open', () => {
+        console.log('P2P connection opened with:', peerId);
+        const peerName = conn.metadata?.name || 'Unknown';
+        clientsInSession[peerId] = peerName;
+        
+        // If we're the host, send current config to new peer
+        if (isP2PHost) {
+            conn.send({
+                type: 'config',
+                resources: resources.map(r => ({
+                    name: r.name,
+                    funnyName: r.funnyName,
+                    useFunnyName: r.useFunnyName,
+                    image: r.image,
+                    count: r.count,
+                    minCount: r.minCount,
+                    maxCount: r.maxCount,
+                    maxGameCounterLimit: r.maxGameCounterLimit,
+                    customIncrement1: r.customIncrement1,
+                    customIncrement2: r.customIncrement2,
+                    customIncrement3: r.customIncrement3,
+                    hideImage: r.hideImage,
+                    hideCounter: r.hideCounter,
+                    hideCounterForOthers: r.hideCounterForOthers,
+                    keepOneModifier: r.keepOneModifier,
+                    showRollDice: r.showRollDice,
+                    rollDiceMin: r.rollDiceMin,
+                    rollDiceMax: r.rollDiceMax,
+                    rollDiceIncrement: r.rollDiceIncrement,
+                    useCustomDiceValues: r.useCustomDiceValues,
+                    rollDiceCustomValues: r.rollDiceCustomValues,
+                    numberOfDice: r.numberOfDice,
+                    enableDiceAnimation: r.enableDiceAnimation
+                })),
+                gameSettings: {
+                    enableGlobalCounterLimit,
+                    globalCounterLimit,
+                    globalHideFunnyNames,
+                    globalHideAllImages
+                },
+                clients: clientsInSession
+            });
+            
+            // Send all current client counts
+            for (const cId in otherClientsResourceCounts) {
+                conn.send({
+                    type: 'allCounts',
+                    clientId: cId,
+                    counts: otherClientsResourceCounts[cId]
+                });
+            }
+            // Send host's own counts
+            const hostCounts = {};
+            resources.forEach((r, i) => hostCounts[i] = r.count);
+            conn.send({
+                type: 'allCounts',
+                clientId: clientId,
+                clientName: clientName,
+                counts: hostCounts
+            });
+        }
+        
+        // Send our name
+        conn.send({
+            type: 'nameUpdate',
+            clientId: clientId,
+            name: clientName
+        });
+        
+        // Send our counts
+        const myCounts = {};
+        resources.forEach((r, i) => myCounts[i] = r.count);
+        conn.send({
+            type: 'allCounts',
+            clientId: clientId,
+            counts: myCounts
+        });
+        
+        updateStatusWindow();
+        resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+        displayStatusMessage(`P2P: ${peerName} connected`);
+    });
+    
+    conn.on('data', (data) => {
+        handleP2PData(peerId, data);
+    });
+    
+    conn.on('close', () => {
+        console.log('P2P connection closed:', peerId);
+        delete p2pConnections[peerId];
+        delete clientsInSession[peerId];
+        delete otherClientsResourceCounts[peerId];
+        updateStatusWindow();
+        resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+        displayStatusMessage(`P2P: Peer disconnected`);
+    });
+    
+    conn.on('error', (err) => {
+        console.error('P2P connection error:', peerId, err);
+    });
+}
+
+function handleP2PData(peerId, data) {
+    console.log('P2P data received from', peerId, ':', data.type);
+    
+    switch (data.type) {
+        case 'config':
+            // Client receives config from host
+            resources = data.resources.map(processResourceData);
+            enableGlobalCounterLimit = data.gameSettings.enableGlobalCounterLimit;
+            globalCounterLimit = data.gameSettings.globalCounterLimit;
+            globalHideFunnyNames = data.gameSettings.globalHideFunnyNames;
+            globalHideAllImages = data.gameSettings.globalHideAllImages;
+            
+            document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+            document.getElementById('globalCounterLimit').value = globalCounterLimit;
+            document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
+            document.getElementById('globalHideAllImages').checked = globalHideAllImages;
+            
+            // Update clients list
+            if (data.clients) {
+                for (const cId in data.clients) {
+                    clientsInSession[cId] = data.clients[cId];
+                }
+            }
+            
+            renderResources();
+            updateStatusWindow();
+            displayStatusMessage('P2P: Configuration received from host');
+            break;
+            
+        case 'countUpdate':
+            // Receive single count update from a peer
+            if (!otherClientsResourceCounts[data.clientId]) {
+                otherClientsResourceCounts[data.clientId] = {};
+            }
+            otherClientsResourceCounts[data.clientId][data.resourceIndex] = data.count;
+            updateOtherClientsCountsDisplay(data.resourceIndex);
+            
+            // If we're the host, broadcast to other peers
+            if (isP2PHost) {
+                broadcastToP2PPeers(data, peerId); // Exclude sender
+            }
+            break;
+            
+        case 'allCounts':
+            // Receive all counts from a peer
+            if (!otherClientsResourceCounts[data.clientId]) {
+                otherClientsResourceCounts[data.clientId] = {};
+            }
+            if (data.clientName) {
+                clientsInSession[data.clientId] = data.clientName;
+            }
+            for (const idx in data.counts) {
+                otherClientsResourceCounts[data.clientId][idx] = data.counts[idx];
+            }
+            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            updateStatusWindow();
+            break;
+            
+        case 'nameUpdate':
+            clientsInSession[data.clientId] = data.name;
+            updateStatusWindow();
+            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            
+            // If we're the host, broadcast to other peers
+            if (isP2PHost) {
+                broadcastToP2PPeers(data, peerId);
+            }
+            break;
+            
+        case 'configUpdate':
+            // Host sent updated config (for server mode changes)
+            if (data.resources) {
+                resources = data.resources.map(processResourceData);
+                renderResources();
+            }
+            if (data.gameSettings) {
+                enableGlobalCounterLimit = data.gameSettings.enableGlobalCounterLimit;
+                globalCounterLimit = data.gameSettings.globalCounterLimit;
+                document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
+                document.getElementById('globalCounterLimit').value = globalCounterLimit;
+            }
+            break;
+            
+        case 'peerJoined':
+            // Another peer joined (broadcast from host)
+            clientsInSession[data.clientId] = data.name;
+            updateStatusWindow();
+            displayStatusMessage(`P2P: ${data.name} joined`);
+            break;
+            
+        case 'peerLeft':
+            // Another peer left (broadcast from host)
+            delete clientsInSession[data.clientId];
+            delete otherClientsResourceCounts[data.clientId];
+            updateStatusWindow();
+            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            displayStatusMessage(`P2P: ${data.name} left`);
+            break;
+    }
+}
+
+function broadcastToP2PPeers(data, excludePeerId = null) {
+    Object.entries(p2pConnections).forEach(([peerId, conn]) => {
+        if (peerId !== excludePeerId && conn.open) {
+            conn.send(data);
+        }
+    });
+}
+
+function broadcastP2PCountUpdate(index, count) {
+    if (connectionType !== 'p2p') return;
+    
+    broadcastToP2PPeers({
+        type: 'countUpdate',
+        clientId: clientId,
+        resourceIndex: index,
+        count: count
+    });
+}
+
+async function startP2PServer() {
+    try {
+        displayStatusMessage('Starting P2P host...');
+        await initializePeerJS();
+        
+        isP2PHost = true;
+        serverClientMode = 'server';
+        sessionId = peer.id; // Use peer ID as session ID
+        
+        clientName = document.getElementById('clientNameInput').value.trim();
+        if (!clientName) {
+            clientName = getRandomBrainrotName();
+            document.getElementById('clientNameInput').value = clientName;
+        }
+        
+        clientsInSession[clientId] = clientName;
+        
+        document.getElementById('serverIDDisplay').value = sessionId;
+        document.getElementById('serverIDDisplayContainer').style.display = 'block';
+        document.getElementById('newSessionContainer').style.display = 'none';
+        
+        generateP2PQRCode();
+        updateServerClientUI();
+        updateStatusWindow();
+        
+        displayStatusMessage(`P2P host started. Share the QR code or ID: ${sessionId}`);
+    } catch (error) {
+        displayStatusMessage('Failed to start P2P host: ' + error.message, true);
+        console.error('P2P server start error:', error);
+    }
+}
+
+async function connectP2PClient(hostPeerId) {
+    try {
+        displayStatusMessage('Connecting to P2P host...');
+        await initializePeerJS();
+        
+        isP2PHost = false;
+        serverClientMode = 'client';
+        sessionId = hostPeerId;
+        
+        clientName = document.getElementById('clientNameInput').value.trim();
+        if (!clientName) {
+            clientName = getRandomBrainrotName();
+            document.getElementById('clientNameInput').value = clientName;
+        }
+        
+        const conn = peer.connect(hostPeerId, {
+            metadata: { name: clientName }
+        });
+        
+        setupP2PConnection(conn);
+        
+        document.getElementById('serverIDDisplay').value = sessionId;
+        document.getElementById('serverIDDisplayContainer').style.display = 'block';
+        
+        updateServerClientUI();
+        
+    } catch (error) {
+        displayStatusMessage('Failed to connect to P2P host: ' + error.message, true);
+        console.error('P2P client connect error:', error);
+    }
+}
+
+function generateP2PQRCode() {
+    if (!peer || !peer.id) return;
+    
+    const qrcodeContainer = document.getElementById('qrcodeCanvas');
+    qrcodeContainer.innerHTML = '';
+    
+    let baseUrl = window.location.href.split('?')[0];
+    if (baseUrl.startsWith('file://')) {
+        baseUrl = 'https://smartmuel.github.io/BGRC/index.html';
+    }
+    const qrCodeData = `${baseUrl}?p2p=${peer.id}`;
+    
+    console.log("P2P QR Code Data:", qrCodeData);
+    
+    qrcode = new QRCode(qrcodeContainer, {
+        text: qrCodeData,
+        width: 256,
+        height: 256,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+    });
+    
+    // Apply styles to prevent dark mode inversion
+    qrcodeContainer.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+    qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+    
+    setTimeout(() => {
+        const qrImg = qrcodeContainer.querySelector('img');
+        const qrCanvas = qrcodeContainer.querySelector('canvas');
+        if (qrImg) {
+            qrImg.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+        }
+        if (qrCanvas) {
+            qrCanvas.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+        }
+    }, 100);
+}
+
+function disconnectP2P() {
+    // Close all connections
+    Object.values(p2pConnections).forEach(conn => {
+        if (conn.open) conn.close();
+    });
+    p2pConnections = {};
+    
+    // Destroy peer
+    if (peer && !peer.destroyed) {
+        peer.destroy();
+    }
+    peer = null;
+    
+    isP2PHost = false;
+    sessionId = null;
+    clientsInSession = {};
+    otherClientsResourceCounts = {};
+    
+    updateServerClientUI();
+    updateStatusWindow();
+    resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+    
+    displayStatusMessage('P2P disconnected');
+}
+
 // ====== Initialization and Setup ======
 window.addEventListener('beforeunload', (event) => {
     if (hasUnsavedChanges) {
@@ -2630,6 +3132,14 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleGlobalCounterLimit();
     loadFirebaseConfigFromCache();
 
+    // Load connection type
+    connectionType = localStorage.getItem('connectionType') || 'firebase';
+    const connectionTypeSelect = document.getElementById('connectionType');
+    if (connectionTypeSelect) {
+        connectionTypeSelect.value = connectionType;
+        handleConnectionTypeChange();
+    }
+
     // Sync dark mode checkbox with actual state
     const isDarkMode = document.body.classList.contains('dark-mode');
     document.getElementById('darkModeToggle').checked = isDarkMode;
@@ -2647,6 +3157,20 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleFirebaseConfigVisibility();
 
     const urlParams = new URLSearchParams(window.location.search);
+    // Check for P2P connection first
+    const p2pParam = urlParams.get('p2p');
+    if (p2pParam) {
+        // Switch to P2P mode and connect
+        connectionType = 'p2p';
+        localStorage.setItem('connectionType', 'p2p');
+        if (connectionTypeSelect) connectionTypeSelect.value = 'p2p';
+        handleConnectionTypeChange();
+        document.getElementById('sessionId').value = p2pParam;
+        document.getElementById('serverClientMode').value = 'client';
+        handleServerClientModeChange();
+        // Auto-connect after a short delay to let UI update
+        setTimeout(() => connectP2PClient(p2pParam), 500);
+    }
     // Check for compact format first (c=), then old format (config=)
     const compactParam = urlParams.get('c');
     const configParam = urlParams.get('config');
