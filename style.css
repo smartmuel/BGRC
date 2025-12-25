@@ -737,29 +737,54 @@ body.dark-mode .compact-count {
     color: #eee;
 }
 
-/* Ultra-compact inline display */
-.compact-others-inline {
+/* Inline wrap display for both regular and compact modes */
+.others-inline-wrap {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 2px;
     justify-content: center;
-    overflow: hidden;
-    white-space: nowrap;
 }
 
-.compact-count-inline {
+/* Regular mode: full names with visible frames */
+.others-count-inline {
     background: #e0e0e0;
-    padding: 1px 3px;
+    padding: 1px 4px;
     border-radius: 3px;
     font-size: 0.7em;
     white-space: nowrap;
     cursor: default;
-    flex-shrink: 0;
+    border: 1px solid #ccc;
+}
+
+body.dark-mode .others-count-inline {
+    background: #555;
+    color: #eee;
+    border-color: #666;
+}
+
+/* Compact mode: abbreviated names, minimal styling */
+.compact-count-inline {
+    background: transparent;
+    padding: 0px 1px;
+    border-radius: 0;
+    font-size: 0.65em;
+    white-space: nowrap;
+    cursor: default;
 }
 
 body.dark-mode .compact-count-inline {
-    background: #555;
-    color: #eee;
+    color: #ccc;
+}
+
+/* Compact mode: plain comma-separated text */
+.compact-text-inline {
+    font-size: 0.65em;
+    color: #666;
+    cursor: default;
+}
+
+body.dark-mode .compact-text-inline {
+    color: #ccc;
 }
 
 #statusMessageArea {

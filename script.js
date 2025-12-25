@@ -868,16 +868,8 @@ async function connectClient() {
     sessionId = document.getElementById('sessionId').value.trim();
     clientName = document.getElementById('clientNameInput').value.trim();
     if (!clientName) {
+        // Only generate random name if field is empty
         clientName = getRandomBrainrotName();
-        document.getElementById('clientNameInput').value = clientName;
-    }
-
-     if (!globalHideFunnyNames) {
-        let funnyName = getRandomBrainrotName();
-        while (funnyNamesInUseSession.has(funnyName)) {
-            funnyName = getRandomBrainrotName();
-        }
-        clientName = funnyName;
         document.getElementById('clientNameInput').value = clientName;
     }
 
@@ -1906,16 +1898,8 @@ function toggleGlobalHideFunnyNames() {
     globalHideFunnyNames = document.getElementById('globalHideFunnyNames').checked;
     saveGlobalSettingsToLocalStorage();
 
-    if (globalHideFunnyNames) {
-        resources.forEach((resource, index) => {
-            previousFunnyNameStates[index] = resource.useFunnyName;
-            resource.useFunnyName = false;
-        });
-   } else {
-        resources.forEach((resource, index) => {
-            resource.useFunnyName = previousFunnyNameStates[index] === true;
-        });
-    }
+    // No longer modify individual resource useFunnyName settings
+    // globalHideFunnyNames now acts purely as a display override
 
     renderResources();
     saveToLocalStorage();
@@ -2353,18 +2337,17 @@ function updateOtherClientsCountsDisplay(resourceIndex) {
 
     if (hasCounts) {
         if (compactOthersDisplay) {
-            // Ultra-compact mode: fit on one line with smart abbreviations
+            // Compact mode: abbreviated names, comma-separated plain text
             const abbreviated = getSmartAbbreviations(counts.map(c => c.name));
-            displayHTML = '<div class="compact-others-inline">';
-            counts.forEach((c, i) => {
-                displayHTML += `<span class="compact-count-inline" title="${c.name}: ${c.count}">${abbreviated[i]}:${c.count}</span>`;
+            const compactText = counts.map((c, i) => `${abbreviated[i]}:${c.count}`).join(', ');
+            displayHTML = `<span class="compact-text-inline" title="${counts.map(c => c.name + ': ' + c.count).join(', ')}">${compactText}</span>`;
+        } else {
+            // Regular mode: full names, inline with wrapping
+            displayHTML = '<div class="others-inline-wrap">';
+            counts.forEach(c => {
+                displayHTML += `<span class="others-count-inline" title="${c.name}: ${c.count}">${c.name}:${c.count}</span>`;
             });
             displayHTML += '</div>';
-        } else {
-            // Traditional mode: each on separate line
-            counts.forEach(c => {
-                displayHTML += `<p>${c.name}: ${c.count}</p>`;
-            });
         }
         displayElement.innerHTML = displayHTML;
         displayElement.style.display = 'block';
@@ -2472,8 +2455,8 @@ function updateServerClientUI() {
     if (serverClientMode === 'client') {
         sessionIdContainer.style.display = 'block';
         newSessionContainer.style.display = 'none';
-        serverIDDisplayContainer.style.display = 'none';
-        qrcodeCanvasContainer.style.display = 'none';
+        serverIDDisplayContainer.style.display = (sessionId ? 'block' : 'none');
+        qrcodeCanvasContainer.style.display = (sessionId ? 'block' : 'none');
         exportSdkConfigButton.style.display = 'none';
         serverClientButton.textContent = '👤';
         serverClientModeSelect.style.display = 'inline-block';
@@ -2483,6 +2466,11 @@ function updateServerClientUI() {
         // Hide controls (Select Game, Add Resource) for clients when connected
         if (sessionId && controlsContainer) {
             controlsContainer.style.display = 'none';
+        }
+        // Show QR code for clients to share the session
+        if (sessionId) {
+            document.getElementById('serverIDDisplay').value = sessionId;
+            generateQRCode();
         }
     } else if (serverClientMode === 'server') {
         sessionIdContainer.style.display = 'none';

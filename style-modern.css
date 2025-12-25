@@ -769,26 +769,43 @@ body.modern-ui .compact-count {
     color: var(--modern-text-secondary);
 }
 
-/* Ultra-compact inline display */
-body.modern-ui .compact-others-inline {
+/* Inline wrap display for both regular and compact modes */
+body.modern-ui .others-inline-wrap {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 2px;
     justify-content: center;
-    overflow: hidden;
-    white-space: nowrap;
 }
 
-body.modern-ui .compact-count-inline {
+/* Regular mode: full names with visible frames */
+body.modern-ui .others-count-inline {
     background: var(--modern-surface-elevated);
-    padding: 0px 3px;
+    padding: 1px 4px;
     border-radius: 3px;
     font-size: 0.65em;
     white-space: nowrap;
     cursor: default;
-    flex-shrink: 0;
     border: 1px solid var(--modern-border);
     color: var(--modern-text-secondary);
+}
+
+/* Compact mode: abbreviated names, minimal styling */
+body.modern-ui .compact-count-inline {
+    background: transparent;
+    padding: 0px 1px;
+    border-radius: 0;
+    font-size: 0.6em;
+    white-space: nowrap;
+    cursor: default;
+    border: none;
+    color: var(--modern-text-secondary);
+}
+
+/* Compact mode: plain comma-separated text */
+body.modern-ui .compact-text-inline {
+    font-size: 0.6em;
+    color: var(--modern-text-secondary);
+    cursor: default;
 }
 
 /* ================================================
