@@ -2,7 +2,8 @@
    MODERN UI - Mobile-First Responsive Design
    ================================================ */
 
-:root {
+/* Light Theme - Applied to body.modern-ui */
+body.modern-ui {
     /* Modern Color Palette */
     --modern-primary: #6366f1;
     --modern-primary-light: #818cf8;
@@ -13,7 +14,7 @@
     --modern-danger-dark: #dc2626;
     --modern-warning: #f59e0b;
     
-    /* Light Theme */
+    /* Light Theme Colors */
     --modern-bg: #f8fafc;
     --modern-surface: #ffffff;
     --modern-surface-elevated: #ffffff;
@@ -48,24 +49,8 @@
     /* Transitions */
     --transition-fast: 150ms ease;
     --transition-normal: 250ms ease;
-}
-
-/* Dark Mode Variables */
-body.dark-mode.modern-ui {
-    --modern-bg: #0f172a;
-    --modern-surface: #1e293b;
-    --modern-surface-elevated: #334155;
-    --modern-text: #f1f5f9;
-    --modern-text-secondary: #94a3b8;
-    --modern-border: #334155;
-    --modern-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --modern-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-}
-
-/* ================================================
-   BASE STYLES
-   ================================================ */
-body.modern-ui {
+    
+    /* Base Styles */
     font-family: var(--font-family);
     background-color: var(--modern-bg);
     color: var(--modern-text);
@@ -78,6 +63,18 @@ body.modern-ui {
     -moz-osx-font-smoothing: grayscale;
     max-width: 100%;
     overflow-x: hidden;
+}
+
+/* Dark Mode Variables - Override light theme */
+body.modern-ui.dark-mode {
+    --modern-bg: #0f172a;
+    --modern-surface: #1e293b;
+    --modern-surface-elevated: #334155;
+    --modern-text: #f1f5f9;
+    --modern-text-secondary: #94a3b8;
+    --modern-border: #334155;
+    --modern-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --modern-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
 }
 
 body.modern-ui * {
@@ -383,7 +380,7 @@ body.modern-ui .resource-image-container {
     height: 40px;
     border-radius: var(--radius-sm);
     overflow: hidden;
-    background: var(--modern-bg);
+    background: #ffffff; /* Always white background for images - better visibility */
     border: 1px solid var(--modern-border);
     display: flex;
     align-items: center;
