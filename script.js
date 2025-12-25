@@ -42,6 +42,7 @@ let exampleDropdownPopulated = false;
 let clientName = localStorage.getItem(LOCAL_STORAGE_CLIENT_NAME_KEY) || '';
 let configSavedToServer = false;
 let initialLoad = true;
+let pendingRestoredCounts = null; // Stores counts to restore when reconnecting with same name
 let statusWindowVisible = false;
 let clientsInSession = {};
 let funnyNamesInUseSession = new Set();
@@ -931,48 +932,27 @@ function showNameConflictModal(conflictName, existingSnapshot) {
     // Reconnect as the same user (take over the session)
     newReconnectBtn.addEventListener('click', async () => {
         modal.style.display = 'none';
-        // Remove the old client entry and copy their counts to the new client
+        // Remove the old client entry and transfer their counts to the new client ID
         if (existingClientKey) {
-            try {
-                // Get the old client's counts before removing (use once() for compatibility)
-                const oldCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).once('value');
-                const oldCounts = oldCountsSnapshot.val();
-                console.log("Old counts retrieved:", oldCounts, "for key:", existingClientKey);
-                
-                // Remove old client entry and their counts
-                await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
-                await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
-                console.log("Removed old client entry and counts");
-                
-                // Set client name and connect
-                clientName = conflictName;
-                document.getElementById('clientNameInput').value = clientName;
-                
-                // Perform connection, then restore counts
-                await performClientConnectionAsync();
-                console.log("Connected as new client with ID:", clientId);
-                
-                // Restore the old counts to the new client ID
-                if (oldCounts) {
-                    await db.ref(`sessions/${sessionId}/client_counts/${clientId}`).set(oldCounts);
-                    console.log("Restored previous session counts for reconnected user:", oldCounts);
-                    
-                    // Also update local resources array immediately
-                    for (const resourceIndex in oldCounts) {
-                        if (resources[resourceIndex]) {
-                            resources[resourceIndex].count = oldCounts[resourceIndex];
-                        }
-                    }
-                    renderResources();
-                    displayStatusMessage(`Reconnected as ${clientName} with previous resource counts restored.`);
-                } else {
-                    console.log("No old counts found to restore");
-                    displayStatusMessage(`Reconnected as ${clientName} (no previous counts found).`);
-                }
-            } catch (error) {
-                console.error("Error during reconnection:", error);
-                displayStatusMessage("Error reconnecting. Please try again.", true);
-            }
+            // Get the old client's counts before removing
+            const oldCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).once('value');
+            const oldCounts = oldCountsSnapshot.val();
+            
+            // Remove old client entry (but keep counts temporarily)
+            await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
+            
+            // Set client name and connect
+            clientName = conflictName;
+            document.getElementById('clientNameInput').value = clientName;
+            
+            // Store old counts to restore after connection
+            pendingRestoredCounts = oldCounts;
+            
+            // Perform connection
+            performClientConnection();
+            
+            // Remove old counts after new client is set up
+            await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
         } else {
             clientName = conflictName;
             document.getElementById('clientNameInput').value = clientName;
@@ -2211,10 +2191,24 @@ function loadConfigFromServer() {
             renderResources();
 
             if (initialLoad && (serverClientMode === 'client' || serverClientMode === 'server')) {
-                const clientCounts = {};
-                resources.forEach((resource, index) => {
-                    clientCounts[index] = resource.count;
-                });
+                // Check if we have pending restored counts from reconnection
+                let clientCounts;
+                if (pendingRestoredCounts) {
+                    clientCounts = pendingRestoredCounts;
+                    // Also update local resources with restored counts
+                    for (const index in clientCounts) {
+                        if (resources[index]) {
+                            resources[index].count = clientCounts[index];
+                        }
+                    }
+                    renderResources();
+                    pendingRestoredCounts = null; // Clear after use
+                } else {
+                    clientCounts = {};
+                    resources.forEach((resource, index) => {
+                        clientCounts[index] = resource.count;
+                    });
+                }
                 db.ref(`sessions/${sessionId}/client_counts/${clientId}`).set(clientCounts)
                     .then(() => {
                         setupClientResourceListeners();
