@@ -1962,8 +1962,10 @@ function loadUITheme() {
         document.body.classList.remove('modern-ui');
     }
     
-    // Apply dark mode immediately so it works with modern-ui class
-    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) !== 'false') {
+    // Apply dark mode based on saved preference
+    if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) === 'false') {
+        document.body.classList.remove('dark-mode');
+    } else {
         document.body.classList.add('dark-mode');
     }
 }
