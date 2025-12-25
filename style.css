@@ -664,6 +664,10 @@ body.dark-mode .status-item {
     background: #ffffff !important;
     padding: 10px;
     border-radius: 8px;
+    /* Prevent browser/OS dark mode from inverting colors */
+    filter: none !important;
+    -webkit-filter: none !important;
+    color-scheme: light only;
 }
 
 #qrcodeCanvas img,
@@ -673,6 +677,10 @@ body.dark-mode .status-item {
     max-width: 100%;
     height: auto;
     background: #ffffff !important;
+    /* Prevent browser/OS dark mode from inverting colors */
+    filter: none !important;
+    -webkit-filter: none !important;
+    mix-blend-mode: normal !important;
 }
 
 .other-clients-counts {
