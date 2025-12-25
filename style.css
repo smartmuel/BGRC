@@ -662,12 +662,14 @@ body.dark-mode .status-item {
     align-items: center;
     justify-content: center;
     background: #ffffff !important;
+    background-color: #ffffff !important;
     padding: 10px;
     border-radius: 8px;
     /* Prevent browser/OS dark mode from inverting colors */
     filter: none !important;
     -webkit-filter: none !important;
     color-scheme: light only;
+    forced-color-adjust: none;
 }
 
 #qrcodeCanvas img,
@@ -677,10 +679,24 @@ body.dark-mode .status-item {
     max-width: 100%;
     height: auto;
     background: #ffffff !important;
+    background-color: #ffffff !important;
     /* Prevent browser/OS dark mode from inverting colors */
     filter: none !important;
     -webkit-filter: none !important;
     mix-blend-mode: normal !important;
+    forced-color-adjust: none;
+}
+
+/* Specifically prevent dark mode media query from affecting QR code */
+@media (prefers-color-scheme: dark) {
+    #qrcodeCanvas,
+    #qrcodeCanvas img,
+    #qrcodeCanvas canvas {
+        background: #ffffff !important;
+        background-color: #ffffff !important;
+        filter: none !important;
+        -webkit-filter: none !important;
+    }
 }
 
 .other-clients-counts {

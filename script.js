@@ -1088,6 +1088,24 @@ function generateQRCode() {
         colorLight: colorLight,
         correctLevel: QRCode.CorrectLevel.M
     });
+    
+    // Apply inline styles to prevent Android/mobile dark mode from inverting the QR code
+    qrcodeContainer.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+    qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+    
+    // Wait for QR code to render then style the image/canvas
+    setTimeout(() => {
+        const qrImg = qrcodeContainer.querySelector('img');
+        const qrCanvas = qrcodeContainer.querySelector('canvas');
+        if (qrImg) {
+            qrImg.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+            qrImg.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+        }
+        if (qrCanvas) {
+            qrCanvas.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
+            qrCanvas.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+        }
+    }, 100);
 }
 
 function updateClientName() {
