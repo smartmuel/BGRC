@@ -51,7 +51,7 @@ let qrcode = null;
 let otherClientsResourceCounts = {};
 let globalHideAllImages = false;
 let uiTheme = localStorage.getItem('uiTheme') || 'modern';
-let compactOthersDisplay = localStorage.getItem('compactOthersDisplay') !== 'false'; // Default to true (compact)
+let compactOthersDisplay = localStorage.getItem('compactOthersDisplay') === 'true'; // Default to false (expanded)
 
 
 // ====== Utility Functions ======
@@ -466,7 +466,7 @@ function loadGlobalSettingsFromLocalStorage() {
         document.getElementById('serverClientMode').value = serverClientMode;
     }
     document.getElementById('globalHideAllImages').checked = localStorage.getItem('globalHideAllImages') === 'true';
-    document.getElementById('compactOthersDisplay').checked = localStorage.getItem('compactOthersDisplay') !== 'false';
+    document.getElementById('compactOthersDisplay').checked = localStorage.getItem('compactOthersDisplay') === 'true';
     compactOthersDisplay = document.getElementById('compactOthersDisplay').checked;
 
     document.getElementById('showFirebaseFieldsToggle').checked = false;
