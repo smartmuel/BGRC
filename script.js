@@ -2779,8 +2779,8 @@ function setupP2PConnection(conn) {
                     image: r.image,
                     count: r.count,
                     minCount: r.minCount,
-                    maxCount: r.maxCount,
-                    maxGameCounterLimit: r.maxGameCounterLimit,
+                    maxCount: r.maxCount === Infinity ? null : r.maxCount, // Convert Infinity to null for serialization
+                    maxGameCounterLimit: r.maxGameCounterLimit === Infinity ? null : r.maxGameCounterLimit,
                     customIncrement1: r.customIncrement1,
                     customIncrement2: r.customIncrement2,
                     customIncrement3: r.customIncrement3,
@@ -2891,6 +2891,20 @@ function handleP2PData(peerId, data) {
             
             renderResources();
             updateStatusWindow();
+            
+            // After receiving config, send our initialized counts back to host
+            const myCounts = {};
+            resources.forEach((r, i) => myCounts[i] = r.count);
+            // Send to the peer who sent us the config (the host)
+            if (p2pConnections[peerId] && p2pConnections[peerId].open) {
+                p2pConnections[peerId].send({
+                    type: 'allCounts',
+                    clientId: clientId,
+                    clientName: clientName,
+                    counts: myCounts
+                });
+            }
+            
             displayStatusMessage('P2P: Configuration received from host');
             break;
             
@@ -2921,6 +2935,11 @@ function handleP2PData(peerId, data) {
             }
             resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
             updateStatusWindow();
+            
+            // If we're the host, broadcast to other peers so everyone sees everyone
+            if (isP2PHost) {
+                broadcastToP2PPeers(data, peerId); // Exclude sender
+            }
             break;
             
         case 'nameUpdate':
