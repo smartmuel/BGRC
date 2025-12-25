@@ -54,7 +54,7 @@ let uiTheme = localStorage.getItem('uiTheme') || 'modern';
 let compactOthersDisplay = localStorage.getItem('compactOthersDisplay') === 'true'; // Default to false (expanded)
 
 // ====== P2P (PeerJS) Variables ======
-let connectionType = localStorage.getItem('connectionType') || 'firebase'; // 'firebase' or 'p2p'
+let connectionType = localStorage.getItem('connectionType') || 'p2p'; // 'firebase' or 'p2p'
 let peer = null; // PeerJS instance
 let p2pConnections = {}; // Store connections to other peers { peerId: connection }
 let isP2PHost = false; // Is this device the P2P host?
@@ -2710,12 +2710,16 @@ function handleConnectionTypeChange() {
     
     // Show/hide Firebase fields based on connection type
     const firebaseFields = document.querySelectorAll('.firebase-fields');
+    const firebaseConfigButtons = document.querySelectorAll('.firebase-config-buttons');
     const showFirebaseToggle = document.getElementById('showFirebaseFieldsToggle');
     
     if (connectionType === 'p2p') {
         firebaseFields.forEach(el => el.style.display = 'none');
+        firebaseConfigButtons.forEach(el => el.style.display = 'none');
         if (showFirebaseToggle) showFirebaseToggle.parentElement.style.display = 'none';
     } else {
+        // Restore Firebase config buttons
+        firebaseConfigButtons.forEach(el => el.style.display = '');
         // Restore based on toggle state
         if (showFirebaseToggle) {
             showFirebaseToggle.parentElement.style.display = '';
@@ -3134,10 +3138,14 @@ function disconnectP2P() {
 
 // ====== Initialization and Setup ======
 window.addEventListener('beforeunload', (event) => {
-    if (hasUnsavedChanges) {
+    // Warn if user is a server/host - session will be lost
+    const isServer = serverClientMode === 'server' || isP2PHost;
+    
+    if (hasUnsavedChanges || isServer) {
         event.preventDefault();
-        event.returnValue = '';
-        event.returnValue = '';
+        event.returnValue = isServer 
+            ? 'You are hosting a session. Leaving will disconnect all clients and end the session.' 
+            : '';
     }
 });
 
