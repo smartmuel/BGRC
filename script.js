@@ -2191,10 +2191,8 @@ function loadConfigFromServer() {
         console.warn('No Session ID provided to load configuration from server.');
         return;
     }
-    if (clientListeners.configListener) {
-        db.ref(`sessions/${sessionId}/config`).off('value', clientListeners.configListener)
-    }
-    clientListeners.configListener = db.ref(`sessions/${sessionId}/config`).once('value', snapshot => {
+    // Using .once() - no need to track/unsubscribe as it only fires once
+    db.ref(`sessions/${sessionId}/config`).once('value', snapshot => {
         const serverConfig = snapshot.val();
         if (serverConfig) {
             resources = Object.values(serverConfig).map(processResourceData);
