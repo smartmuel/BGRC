@@ -859,7 +859,7 @@ body.modern-ui #hideAllArrow:hover {
 body.modern-ui #qrcodeCanvas {
     margin-top: var(--space-md);
     text-align: center;
-    background: white;
+    background: #ffffff !important;
     padding: var(--space-md);
     border-radius: var(--radius-md);
     display: flex;
@@ -874,6 +874,7 @@ body.modern-ui #qrcodeCanvas canvas {
     margin: 0 auto;
     max-width: 100%;
     height: auto;
+    background: #ffffff !important;
 }
 
 /* ================================================
