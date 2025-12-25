@@ -51,6 +51,7 @@ let qrcode = null;
 let otherClientsResourceCounts = {};
 let globalHideAllImages = false;
 let uiTheme = localStorage.getItem('uiTheme') || 'modern';
+let compactOthersDisplay = localStorage.getItem('compactOthersDisplay') !== 'false'; // Default to true (compact)
 
 
 // ====== Utility Functions ======
@@ -452,6 +453,7 @@ function saveGlobalSettingsToLocalStorage() {
     localStorage.setItem('globalHideFunnyNames', document.getElementById('globalHideFunnyNames').checked);
     localStorage.setItem('serverClientMode', serverClientMode);
     localStorage.setItem('globalHideAllImages', document.getElementById('globalHideAllImages').checked);
+    localStorage.setItem('compactOthersDisplay', document.getElementById('compactOthersDisplay').checked);
 }
 
 function loadGlobalSettingsFromLocalStorage() {
@@ -464,6 +466,8 @@ function loadGlobalSettingsFromLocalStorage() {
         document.getElementById('serverClientMode').value = serverClientMode;
     }
     document.getElementById('globalHideAllImages').checked = localStorage.getItem('globalHideAllImages') === 'true';
+    document.getElementById('compactOthersDisplay').checked = localStorage.getItem('compactOthersDisplay') !== 'false';
+    compactOthersDisplay = document.getElementById('compactOthersDisplay').checked;
 
     document.getElementById('showFirebaseFieldsToggle').checked = false;
 
@@ -938,8 +942,13 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             const oldCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).once('value');
             const oldCounts = oldCountsSnapshot.val();
             
-            // Remove old client entry (but keep counts temporarily)
+            // Remove old client entry and counts from Firebase
             await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
+            await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
+            
+            // Also remove from local tracking immediately
+            delete clientsInSession[existingClientKey];
+            delete otherClientsResourceCounts[existingClientKey];
             
             // Set client name and connect
             clientName = conflictName;
@@ -950,9 +959,6 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             
             // Perform connection
             performClientConnection();
-            
-            // Remove old counts after new client is set up
-            await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
         } else {
             clientName = conflictName;
             document.getElementById('clientNameInput').value = clientName;
@@ -2334,23 +2340,89 @@ function updateOtherClientsCountsDisplay(resourceIndex) {
 
     let displayHTML = '';
     let hasCounts = false;
+    const counts = [];
 
     for (const clientFirebaseId in otherClientsResourceCounts) {
         const clientCounts = otherClientsResourceCounts[clientFirebaseId];
          if (clientCounts && clientCounts[resourceIndex] !== undefined) {
             const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client';
-            displayHTML += `<p>${currentClientName}: ${clientCounts[resourceIndex]}</p>`;
+            counts.push({ name: currentClientName, count: clientCounts[resourceIndex] });
             hasCounts = true;
         }
     }
 
     if (hasCounts) {
+        if (compactOthersDisplay) {
+            // Ultra-compact mode: fit on one line with smart abbreviations
+            const abbreviated = getSmartAbbreviations(counts.map(c => c.name));
+            displayHTML = '<div class="compact-others-inline">';
+            counts.forEach((c, i) => {
+                displayHTML += `<span class="compact-count-inline" title="${c.name}: ${c.count}">${abbreviated[i]}:${c.count}</span>`;
+            });
+            displayHTML += '</div>';
+        } else {
+            // Traditional mode: each on separate line
+            counts.forEach(c => {
+                displayHTML += `<p>${c.name}: ${c.count}</p>`;
+            });
+        }
         displayElement.innerHTML = displayHTML;
         displayElement.style.display = 'block';
     } else {
         displayElement.innerHTML = '';
         displayElement.style.display = 'none';
     }
+}
+
+// Smart abbreviation: shortest unique prefixes, minimum 1 character
+function getSmartAbbreviations(names) {
+    if (names.length === 0) return [];
+    if (names.length === 1) return [names[0].charAt(0) || '?'];
+    
+    const result = new Array(names.length);
+    const lengths = new Array(names.length).fill(1);
+    const maxIterations = 100; // Safety limit to prevent infinite loops
+    let iterations = 0;
+    
+    // Keep increasing lengths until all abbreviations are unique (or we hit max iterations)
+    let hasConflict = true;
+    while (hasConflict && iterations < maxIterations) {
+        hasConflict = false;
+        iterations++;
+        const abbrevs = names.map((name, i) => (name || '?').substring(0, lengths[i]));
+        
+        // Find conflicts
+        for (let i = 0; i < abbrevs.length; i++) {
+            for (let j = i + 1; j < abbrevs.length; j++) {
+                if (abbrevs[i] === abbrevs[j]) {
+                    // Check if we can still increase either length
+                    const canIncreaseI = lengths[i] < (names[i] || '').length;
+                    const canIncreaseJ = lengths[j] < (names[j] || '').length;
+                    
+                    if (canIncreaseI || canIncreaseJ) {
+                        hasConflict = true;
+                        if (canIncreaseI) lengths[i]++;
+                        if (canIncreaseJ) lengths[j]++;
+                    }
+                    // If neither can increase, they're identical - stop trying
+                }
+            }
+        }
+    }
+    
+    // Generate final abbreviations
+    for (let i = 0; i < names.length; i++) {
+        result[i] = (names[i] || '?').substring(0, lengths[i]) || '?';
+    }
+    
+    return result;
+}
+
+function toggleCompactOthersDisplay() {
+    compactOthersDisplay = document.getElementById('compactOthersDisplay').checked;
+    saveGlobalSettingsToLocalStorage();
+    // Re-render to apply new display mode
+    resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
 }
 
 function handleServerClientModeChange() {

@@ -130,7 +130,7 @@ body.dark-mode .resource {
     height: auto;
     aspect-ratio: 1;
     overflow: hidden;
-    margin-bottom: 10px;
+    margin-bottom: 0px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -713,6 +713,53 @@ body.dark-mode .status-item {
 
 body.dark-mode .other-clients-counts {
     color: #aaa; /* Lighter color in dark mode */
+}
+
+/* Compact display for other clients' resources */
+.compact-others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.compact-count {
+    background: #e0e0e0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    white-space: nowrap;
+    cursor: default;
+}
+
+body.dark-mode .compact-count {
+    background: #555;
+    color: #eee;
+}
+
+/* Ultra-compact inline display */
+.compact-others-inline {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.compact-count-inline {
+    background: #e0e0e0;
+    padding: 1px 3px;
+    border-radius: 3px;
+    font-size: 0.7em;
+    white-space: nowrap;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+body.dark-mode .compact-count-inline {
+    background: #555;
+    color: #eee;
 }
 
 #statusMessageArea {

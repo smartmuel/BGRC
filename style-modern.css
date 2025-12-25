@@ -55,8 +55,8 @@ body.modern-ui {
     background-color: var(--modern-bg);
     color: var(--modern-text);
     margin: 0;
-    padding: var(--space-sm);
-    padding-top: 50px;
+    padding: 2px;
+    padding-top: 46px;
     min-height: 100vh;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
@@ -91,7 +91,7 @@ body.modern-ui h1 {
     font-size: var(--font-size-lg);
     font-weight: 700;
     text-align: center;
-    margin: 0 0 var(--space-sm);
+    margin: 0;
     color: var(--modern-text);
     letter-spacing: -0.025em;
 }
@@ -191,7 +191,7 @@ body.modern-ui #serverClientContent h3 {
     color: var(--modern-text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin: var(--space-md) 0 var(--space-sm);
+    margin: var(--space-xs) 0;
 }
 
 body.modern-ui #globalSettingsContent h3:first-child {
@@ -202,11 +202,11 @@ body.modern-ui #globalSettingsContent hr,
 body.modern-ui #serverClientContent hr {
     border: none;
     border-top: 1px solid var(--modern-border);
-    margin: var(--space-md) 0;
+    margin: var(--space-xs) 0;
 }
 
 body.modern-ui .setting-item {
-    margin-bottom: var(--space-sm);
+    margin-bottom: 1px;
 }
 
 body.modern-ui .setting-item label {
@@ -275,7 +275,7 @@ body.modern-ui button:active {
 
 body.modern-ui .setting-item button {
     width: 100%;
-    margin: var(--space-xs) 0;
+    margin: 0;
 }
 
 body.modern-ui .remove-button {
@@ -290,13 +290,13 @@ body.modern-ui .remove-button:hover {
    CONTROLS SECTION (Add Resource)
    ================================================ */
 body.modern-ui #controlsContainer {
-    margin-bottom: var(--space-md);
+    margin-bottom: 2px;
 }
 
 body.modern-ui .controls {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm);
+    gap: 2px;
     max-width: 280px;
     margin: 0 auto;
 }
@@ -350,7 +350,7 @@ body.modern-ui #exampleSelect {
 body.modern-ui #resources {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-sm);
+    gap: 2px;
 }
 
 /* ================================================
@@ -359,13 +359,13 @@ body.modern-ui #resources {
 body.modern-ui .resource {
     background: var(--modern-surface);
     border-radius: var(--radius-md);
-    padding: var(--space-sm);
+    padding: 2px;
     box-shadow: var(--modern-shadow);
     border: 1px solid var(--modern-border);
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: 1px;
     transition: box-shadow var(--transition-normal);
     margin: 0;
     flex: 0 0 calc(50% - 2px);
@@ -401,11 +401,16 @@ body.modern-ui .resource-image {
 
 /* Resource Name */
 body.modern-ui .resource-name-container-wrapper {
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 body.modern-ui .resource-name-container {
     text-align: center;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 body.modern-ui .resource-name {
@@ -418,6 +423,7 @@ body.modern-ui .resource-name {
 
 body.modern-ui .resource-name-container input {
     width: 100%;
+    max-width: 100%;
     padding: var(--space-xs);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
@@ -425,6 +431,7 @@ body.modern-ui .resource-name-container input {
     text-align: center;
     background: var(--modern-surface);
     color: var(--modern-text);
+    box-sizing: border-box;
 }
 
 /* ================================================
@@ -580,50 +587,154 @@ body.modern-ui .rolling {
    ================================================ */
 body.modern-ui .settings-container {
     width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 body.modern-ui .settings {
     background: var(--modern-bg);
     border-radius: var(--radius-sm);
-    padding: var(--space-sm);
-    margin-top: var(--space-xs);
+    padding: 1px;
+    margin-top: 1px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
+    gap: 1px;
+    font-size: 0.6em;
+    max-width: 100%;
+    overflow: hidden;
+    word-break: break-word;
 }
 
-body.modern-ui .settings > div {
+/* Default: all rows stacked vertically */
+body.modern-ui .settings div {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    font-size: inherit;
+    color: var(--modern-text);
+    min-width: 0;
+    margin: 0;
+}
+
+/* Remove margins from specific checkbox containers */
+body.modern-ui .settings .hide-image-checkbox,
+body.modern-ui .settings .hide-counter-others-checkbox,
+body.modern-ui .settings .keep-one-modifier-checkbox,
+body.modern-ui .settings .use-funny-name-checkbox,
+body.modern-ui .settings .hide-counter-checkbox {
+    margin: 0;
+}
+
+/* Checkbox rows: label and checkbox on same line, checkbox on right */
+body.modern-ui .settings div:has(> input[type="checkbox"]) {
+    flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-xs);
-    font-size: var(--font-size-xs);
-    color: var(--modern-text);
+    gap: 4px;
+}
+
+/* Number input rows: label and input on same line, input on right */
+body.modern-ui .settings div:has(> input[type="number"]) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
 }
 
 body.modern-ui .settings input[type="checkbox"] {
     width: 16px;
     height: 16px;
     accent-color: var(--modern-primary);
+    flex-shrink: 0;
+    cursor: pointer;
+    order: 1; /* Force checkbox to right side */
 }
 
-body.modern-ui .settings input[type="number"],
-body.modern-ui .settings input[type="text"] {
-    width: 60px;
-    padding: var(--space-xs);
+body.modern-ui .settings input[type="number"] {
+    width: 55px;
+    flex-shrink: 0;
+    padding: 2px 4px;
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-xs);
+    font-size: inherit;
     text-align: center;
+    background: var(--modern-surface);
+    color: var(--modern-text);
+    /* Ensure spin buttons are visible for scroll/increment */
+    -moz-appearance: textfield;
+    appearance: auto;
+    order: 1; /* Force input to right side */
+}
+
+/* Show spin buttons on number inputs */
+body.modern-ui .settings input[type="number"]::-webkit-inner-spin-button,
+body.modern-ui .settings input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    height: 20px;
+    cursor: pointer;
+}
+
+body.modern-ui .settings input[type="text"] {
+    width: 100%;
+    max-width: 100%;
+    padding: 2px 4px;
+    border: 1px solid var(--modern-border);
+    border-radius: var(--radius-sm);
+    font-size: inherit;
     background: var(--modern-surface);
     color: var(--modern-text);
 }
 
+body.modern-ui .settings button {
+    font-size: 0.75em;
+    padding: 2px 4px;
+    min-height: 20px;
+    width: 100%;
+    display: block;
+    margin: 0 auto;
+    text-align: center;
+}
+
 body.modern-ui .settings .remove-button {
     width: 100%;
-    margin-top: var(--space-xs);
-    min-height: 28px;
-    font-size: var(--font-size-xs);
+    margin-top: 1px;
+    min-height: 22px;
+    font-size: 0.75em;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+/* Counter settings container */
+body.modern-ui .settings .counter-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;
+}
+
+/* Counter settings inner divs - ensure inputs on right */
+body.modern-ui .settings .counter-settings > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+}
+
+body.modern-ui .settings .counter-settings > div > input[type="checkbox"],
+body.modern-ui .settings .counter-settings > div > input[type="number"] {
+    order: 1;
+}
+
+/* Roll dice settings nested divs */
+body.modern-ui .settings .roll-dice-settings {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
 }
 
 /* ================================================
@@ -633,19 +744,60 @@ body.modern-ui .other-clients-counts {
     font-size: var(--font-size-xs);
     color: var(--modern-text-secondary);
     text-align: center;
-    padding: var(--space-xs);
+    padding: 1px;
     background: var(--modern-bg);
     border-radius: var(--radius-sm);
-    margin-top: var(--space-xs);
+    margin-top: 1px;
+}
+
+/* Compact display for other clients' resources */
+body.modern-ui .compact-others {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+}
+
+body.modern-ui .compact-count {
+    background: var(--modern-surface-elevated);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+    cursor: default;
+    border: 1px solid var(--modern-border);
+    color: var(--modern-text-secondary);
+}
+
+/* Ultra-compact inline display */
+body.modern-ui .compact-others-inline {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+body.modern-ui .compact-count-inline {
+    background: var(--modern-surface-elevated);
+    padding: 0px 3px;
+    border-radius: 3px;
+    font-size: 0.65em;
+    white-space: nowrap;
+    cursor: default;
+    flex-shrink: 0;
+    border: 1px solid var(--modern-border);
+    color: var(--modern-text-secondary);
 }
 
 /* ================================================
    STATUS WINDOW
    ================================================ */
 body.modern-ui .status-item {
-    padding: var(--space-sm);
+    padding: 2px;
     border-bottom: 1px solid var(--modern-border);
-    margin-bottom: var(--space-sm);
+    margin-bottom: 2px;
 }
 
 body.modern-ui .status-item:last-child {
@@ -656,7 +808,7 @@ body.modern-ui .status-item:last-child {
 body.modern-ui .status-item h4 {
     font-size: var(--font-size-sm);
     font-weight: 600;
-    margin: 0 0 var(--space-xs);
+    margin: 0;
     color: var(--modern-text);
 }
 
@@ -672,10 +824,10 @@ body.modern-ui .status-item ul {
    ================================================ */
 body.modern-ui #statusMessageArea {
     text-align: center;
-    padding: var(--space-sm);
+    padding: 2px;
     font-size: var(--font-size-sm);
     font-weight: 500;
-    min-height: 24px;
+    min-height: 20px;
     border-radius: var(--radius-sm);
 }
 
@@ -825,9 +977,9 @@ body.modern-ui #hideAllContainer {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: var(--space-sm) 0;
+    padding: 2px 0;
     position: relative;
-    margin-bottom: var(--space-md);
+    margin-bottom: 2px;
 }
 
 body.modern-ui #hideAllLine {
