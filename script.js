@@ -1356,28 +1356,30 @@ async function updateCount(event, index, change) {
     if (connectionType === 'p2p' && sessionId) {
         // Check maxGameCounterLimit for P2P mode
         if (targetResource.maxGameCounterLimit !== Infinity) {
-            // Calculate current total for this resource across all peers
-            let currentGameResourceCount = targetResource.count; // Start with our current count
+            // Calculate current total for this resource across all peers (excluding local)
+            let otherPlayersTotal = 0;
             for (const peerId in otherClientsResourceCounts) {
                 const peerCounts = otherClientsResourceCounts[peerId];
                 if (peerCounts && peerCounts[index] !== undefined) {
-                    currentGameResourceCount += peerCounts[index];
+                    otherPlayersTotal += peerCounts[index];
                 }
             }
             
-            let potentialNewGameResourceCount = currentGameResourceCount - targetResource.count + newCount;
+            // Calculate max this player can have without causing negative Bank
+            const maxAllowedForPlayer = targetResource.maxGameCounterLimit - otherPlayersTotal;
             
-            if (potentialNewGameResourceCount > targetResource.maxGameCounterLimit) {
-                newCount = targetResource.maxGameCounterLimit - (currentGameResourceCount - targetResource.count);
-                newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+            if (newCount > maxAllowedForPlayer) {
+                newCount = Math.max(targetResource.minCount, maxAllowedForPlayer);
                 if (newCount <= targetResource.count && change > 0) {
                     const limitMessageElement = document.getElementById('limitMessage');
-                    limitMessageElement.textContent = `Game counter limit for ${targetResource.name} (${targetResource.maxGameCounterLimit}) reached!`;
+                    limitMessageElement.textContent = `Bank for ${targetResource.name} is empty!`;
                     limitMessageElement.classList.add('show');
                     setTimeout(() => limitMessageElement.classList.remove('show'), 3000);
                     return;
                 }
             }
+            // Also ensure newCount respects maxCount
+            newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
         }
         
         targetResource.count = newCount;
@@ -1405,32 +1407,34 @@ async function updateCount(event, index, change) {
 
         if (targetResource.maxGameCounterLimit !== Infinity) {
             const resourceCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts`).get();
-            let currentGameResourceCount = 0;
+            let otherPlayersTotal = 0;
             const clientCountsData = resourceCountsSnapshot.val();
             if (clientCountsData) {
                 for (const clientFirebaseId in clientCountsData) {
-                    const clientResourceCounts = clientCountsData[clientFirebaseId];
-                    if (clientResourceCounts && clientResourceCounts[index] !== undefined) {
-                        currentGameResourceCount += clientResourceCounts[index];
+                    if (clientFirebaseId !== clientId) { // Exclude our own count
+                        const clientResourceCounts = clientCountsData[clientFirebaseId];
+                        if (clientResourceCounts && clientResourceCounts[index] !== undefined) {
+                            otherPlayersTotal += clientResourceCounts[index];
+                        }
                     }
                 }
             }
-            let potentialNewGameResourceCount = currentGameResourceCount - targetResource.count + potentialNewResourceCount;
+            
+            // Calculate max this player can have without causing negative Bank
+            const maxAllowedForPlayer = targetResource.maxGameCounterLimit - otherPlayersTotal;
 
-
-            if (potentialNewGameResourceCount > targetResource.maxGameCounterLimit) {
-                potentialNewResourceCount = targetResource.maxGameCounterLimit - (currentGameResourceCount - targetResource.count);
-                newCount = Math.max(targetResource.minCount, Math.min(potentialNewResourceCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
-                if (newCount < targetResource.count) {
+            if (newCount > maxAllowedForPlayer) {
+                newCount = Math.max(targetResource.minCount, maxAllowedForPlayer);
+                if (newCount <= targetResource.count && change > 0) {
                     const limitMessageElement = document.getElementById('limitMessage');
-                    limitMessageElement.textContent = `Game counter limit for ${targetResource.name} (${targetResource.maxGameCounterLimit}) reached!`;
+                    limitMessageElement.textContent = `Bank for ${targetResource.name} is empty!`;
                     limitMessageElement.classList.add('show');
                     setTimeout(() => limitMessageElement.classList.remove('show'), 3000);
                     return;
                 }
             }
+            // Also ensure newCount respects maxCount
             newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
-
         }
 
 
@@ -2867,6 +2871,27 @@ function setupP2PConnection(conn) {
     conn.on('open', () => {
         console.log('P2P connection opened with:', peerId);
         const peerName = conn.metadata?.name || 'Unknown';
+        const isNameCheckOnly = conn.metadata?.checkNameOnly || false;
+        const kickClientId = conn.metadata?.kickClientId || null;
+        
+        // If this is just a name check connection, don't add to clients yet
+        if (isNameCheckOnly) {
+            console.log('P2P: Name check connection from', peerName);
+            return; // Wait for checkName message
+        }
+        
+        // If we're the host and there's a kick request, kick the old client
+        if (isP2PHost && kickClientId) {
+            const oldConn = p2pConnections[kickClientId];
+            if (oldConn) {
+                oldConn.send({ type: 'kicked', reason: 'Another user connected with your name' });
+                oldConn.close();
+            }
+            delete p2pConnections[kickClientId];
+            delete clientsInSession[kickClientId];
+            delete otherClientsResourceCounts[kickClientId];
+        }
+        
         clientsInSession[peerId] = peerName;
         
         // If we're the host, send current config to new peer
@@ -2974,6 +2999,54 @@ function handleP2PData(peerId, data) {
     console.log('P2P data received from', peerId, ':', data.type);
     
     switch (data.type) {
+        case 'checkName':
+            // Host receives name check request - check if name is already taken
+            if (isP2PHost) {
+                const requestedName = data.name;
+                let conflict = false;
+                let existingClientId = null;
+                
+                // Check if any existing client has this name
+                for (const cId in clientsInSession) {
+                    if (clientsInSession[cId] === requestedName) {
+                        conflict = true;
+                        existingClientId = cId;
+                        break;
+                    }
+                }
+                // Also check host's name
+                if (clientName === requestedName) {
+                    conflict = true;
+                    existingClientId = clientId;
+                }
+                
+                // Send result back
+                if (p2pConnections[peerId] && p2pConnections[peerId].open) {
+                    p2pConnections[peerId].send({
+                        type: 'nameCheckResult',
+                        conflict: conflict,
+                        existingClientId: existingClientId
+                    });
+                }
+            }
+            break;
+            
+        case 'kicked':
+            // We've been kicked from the session
+            displayStatusMessage('You were disconnected: ' + (data.reason || 'Another user took over your session'), true);
+            // Clean up and disconnect
+            for (const connId in p2pConnections) {
+                p2pConnections[connId].close();
+            }
+            p2pConnections = {};
+            clientsInSession = {};
+            otherClientsResourceCounts = {};
+            sessionId = null;
+            isP2PHost = false;
+            document.getElementById('serverIDDisplayContainer').style.display = 'none';
+            updateServerClientUI();
+            break;
+            
         case 'config':
             // Client receives config from host
             resources = data.resources.map(processResourceData);
@@ -3161,25 +3234,125 @@ async function connectP2PClient(hostPeerId) {
             document.getElementById('clientNameInput').value = clientName;
         }
         
-        const conn = peer.connect(hostPeerId, {
-            metadata: { name: clientName }
+        // Create a temporary connection to check for name conflicts
+        const tempConn = peer.connect(hostPeerId, {
+            metadata: { name: clientName, checkNameOnly: true }
         });
         
-        setupP2PConnection(conn);
+        tempConn.on('open', () => {
+            // Request name check from host
+            tempConn.send({
+                type: 'checkName',
+                name: clientName
+            });
+        });
         
-        document.getElementById('serverIDDisplay').value = sessionId;
-        document.getElementById('serverIDDisplayContainer').style.display = 'block';
+        tempConn.on('data', (data) => {
+            if (data.type === 'nameCheckResult') {
+                tempConn.close();
+                
+                if (data.conflict) {
+                    // Name conflict - show modal
+                    showP2PNameConflictModal(clientName, hostPeerId, data.existingClientId);
+                } else {
+                    // No conflict - proceed with connection
+                    proceedWithP2PConnection(hostPeerId);
+                }
+            }
+        });
         
-        // Hide controls for clients
-        const controlsContainer = document.getElementById('controlsContainer');
-        if (controlsContainer) controlsContainer.style.display = 'none';
-        
-        updateServerClientUI();
+        tempConn.on('error', (err) => {
+            console.error('Name check connection error:', err);
+            // If check fails, just proceed with connection
+            proceedWithP2PConnection(hostPeerId);
+        });
         
     } catch (error) {
         displayStatusMessage('Failed to connect to P2P host: ' + error.message, true);
         console.error('P2P client connect error:', error);
     }
+}
+
+function showP2PNameConflictModal(conflictName, hostPeerId, existingClientId) {
+    const modal = document.getElementById('nameConflictModal');
+    const conflictNameDisplay = document.getElementById('conflictNameDisplay');
+    const newNameInput = document.getElementById('newNameInput');
+    
+    conflictNameDisplay.textContent = conflictName;
+    newNameInput.value = conflictName;
+    modal.style.display = 'flex';
+    newNameInput.focus();
+    newNameInput.select();
+    
+    // Remove old listeners before adding new ones
+    const reconnectBtn = document.getElementById('reconnectSameNameBtn');
+    const connectNewBtn = document.getElementById('connectNewNameBtn');
+    const cancelBtn = document.getElementById('cancelConnectBtn');
+    
+    const newReconnectBtn = reconnectBtn.cloneNode(true);
+    const newConnectNewBtn = connectNewBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    
+    reconnectBtn.parentNode.replaceChild(newReconnectBtn, reconnectBtn);
+    connectNewBtn.parentNode.replaceChild(newConnectNewBtn, connectNewBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    
+    // Reconnect as the same user (take over the session)
+    newReconnectBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        clientName = conflictName;
+        document.getElementById('clientNameInput').value = clientName;
+        // Connect and tell host to kick the old client
+        proceedWithP2PConnection(hostPeerId, existingClientId);
+    });
+    
+    // Connect with a new name
+    newConnectNewBtn.addEventListener('click', () => {
+        const newName = newNameInput.value.trim();
+        if (!newName) {
+            displayStatusMessage("Please enter a name.", true);
+            return;
+        }
+        if (newName === conflictName) {
+            displayStatusMessage("Please enter a different name or use 'Reconnect as Same User'.", true);
+            return;
+        }
+        
+        modal.style.display = 'none';
+        clientName = newName;
+        document.getElementById('clientNameInput').value = clientName;
+        // Retry connection with new name - need to check again
+        connectP2PClient(hostPeerId);
+    });
+    
+    // Cancel
+    newCancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    
+    // Allow Enter key to submit new name
+    newNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            newConnectNewBtn.click();
+        }
+    });
+}
+
+function proceedWithP2PConnection(hostPeerId, kickClientId = null) {
+    const conn = peer.connect(hostPeerId, {
+        metadata: { name: clientName, kickClientId: kickClientId }
+    });
+    
+    setupP2PConnection(conn);
+    
+    document.getElementById('serverIDDisplay').value = sessionId;
+    document.getElementById('serverIDDisplayContainer').style.display = 'block';
+    
+    // Hide controls for clients
+    const controlsContainer = document.getElementById('controlsContainer');
+    if (controlsContainer) controlsContainer.style.display = 'none';
+    
+    updateServerClientUI();
 }
 
 function generateP2PQRCode() {
