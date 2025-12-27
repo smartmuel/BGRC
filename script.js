@@ -1387,6 +1387,7 @@ async function updateCount(event, index, change) {
         }
         saveToLocalStorage();
         broadcastP2PCountUpdate(index, newCount);
+        updateOtherClientsCountsDisplay(index); // Update Bank display
         hasUnsavedChanges = true;
         setHideAllExceptResources(true);
         resetInactivityTimer();
@@ -1451,6 +1452,7 @@ async function updateCount(event, index, change) {
             resourceElement.textContent = newCount; // Targeted DOM update
         }
         saveToLocalStorage();
+        updateOtherClientsCountsDisplay(index); // Update Bank display
     }
 
     hasUnsavedChanges = true;
