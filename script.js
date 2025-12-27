@@ -2102,7 +2102,9 @@ function setupServerClientListeners() {
             funnyNamesInUseSession.add(connectedClientName); // Track funny name in session
         }
         console.log(`Server - Client connected: ${connectedClientName} (${newClientId})`);
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
          fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
@@ -2115,7 +2117,9 @@ function setupServerClientListeners() {
             funnyNamesInUseSession.delete(removedClientName); // Remove name from session-used names
         }
         console.log(`Server - Client disconnected: ${removedClientId}`);
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
          fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
@@ -2123,7 +2127,9 @@ function setupServerClientListeners() {
         const changedClientIdFB = snapshot.key;
         const clientData = snapshot.val();
         clientsInSession[changedClientIdFB] = clientData.clientName;
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         fetchAndDisplayClientStatus(); // Refresh status window on client name change
     });
 
@@ -2147,7 +2153,9 @@ function setupClientSideClientListeners() {
         const newClientIdFB = snapshot.key;
         const clientData = snapshot.val();
         clientsInSession[newClientIdFB] = clientData.clientName;
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
@@ -2155,14 +2163,18 @@ function setupClientSideClientListeners() {
         const changedClientIdFB = snapshot.key;
         const clientData = snapshot.val();
         clientsInSession[changedClientIdFB] = clientData.clientName;
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         fetchAndDisplayClientStatus(); // Refresh status window on client name change
     });
 
     clientListeners.clientListRemovedListener = clientsRef.on('child_removed', (snapshot) => { // Listen for removed clients
         const removedClientIdFB = snapshot.key;
         delete clientsInSession[removedClientIdFB];
-        resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
@@ -2174,7 +2186,9 @@ function setupClientSideClientListeners() {
                 clientsInSession[clientIdFB] = clientsData[clientIdFB].clientName;
             }
         }
-         resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+         resources.forEach((resource, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
          fetchAndDisplayClientStatus(); // Initial status window population
 
     }, (error) => {
@@ -2429,7 +2443,9 @@ function setupClientResourceListeners() {
             renderResources();
         } else {
             otherClientsResourceCounts = {};
-            resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+            resources.forEach((resource, index) => {
+                updateOtherClientsCountsDisplay(index);
+            });
             renderResources();
         }
     }, (error) => {
@@ -2448,27 +2464,57 @@ function updateOtherClientsCountsDisplay(resourceIndex) {
     }
 
     let displayHTML = '';
-    let hasCounts = false;
+    let hasContent = false;
     const counts = [];
 
+    // Calculate Bank remaining
+    const resource = resources[resourceIndex];
+    let bankRemaining = null;
+    if (resource && resource.maxGameCounterLimit !== Infinity) {
+        let totalUsed = resource.count; // Local player's count
+        for (const cId in otherClientsResourceCounts) {
+            const cnts = otherClientsResourceCounts[cId];
+            if (cnts && cnts[resourceIndex] !== undefined) {
+                totalUsed += cnts[resourceIndex];
+            }
+        }
+        bankRemaining = resource.maxGameCounterLimit - totalUsed;
+    }
+
+    // Collect other players' counts
     for (const clientFirebaseId in otherClientsResourceCounts) {
         const clientCounts = otherClientsResourceCounts[clientFirebaseId];
-         if (clientCounts && clientCounts[resourceIndex] !== undefined) {
+        if (clientCounts && clientCounts[resourceIndex] !== undefined) {
             const currentClientName = clientsInSession[clientFirebaseId] || 'Unknown Client';
             counts.push({ name: currentClientName, count: clientCounts[resourceIndex] });
-            hasCounts = true;
         }
     }
 
-    if (hasCounts) {
+    // Build display with Bank first (if available), then other players
+    if (bankRemaining !== null || counts.length > 0) {
+        hasContent = true;
         if (compactOthersDisplay) {
             // Compact mode: abbreviated names, comma-separated plain text
-            const abbreviated = getSmartAbbreviations(counts.map(c => c.name));
-            const compactText = counts.map((c, i) => `${abbreviated[i]}:${c.count}`).join(', ');
-            displayHTML = `<span class="compact-text-inline" title="${counts.map(c => c.name + ': ' + c.count).join(', ')}">${compactText}</span>`;
+            let parts = [];
+            if (bankRemaining !== null) {
+                parts.push(`<span class="bank-inline">Bank:${bankRemaining}</span>`);
+            }
+            if (counts.length > 0) {
+                const abbreviated = getSmartAbbreviations(counts.map(c => c.name));
+                counts.forEach((c, i) => {
+                    parts.push(`${abbreviated[i]}:${c.count}`);
+                });
+            }
+            const titleParts = [];
+            if (bankRemaining !== null) titleParts.push(`Bank: ${bankRemaining}`);
+            titleParts.push(...counts.map(c => `${c.name}: ${c.count}`));
+            displayHTML = `<span class="compact-text-inline" title="${titleParts.join(', ')}">${parts.join(', ')}</span>`;
         } else {
             // Regular mode: full names, inline with wrapping
             displayHTML = '<div class="others-inline-wrap">';
+            if (bankRemaining !== null) {
+                displayHTML += `<span class="others-count-inline bank-inline" title="Bank: ${bankRemaining}">Bank:${bankRemaining}</span>`;
+            }
             counts.forEach(c => {
                 displayHTML += `<span class="others-count-inline" title="${c.name}: ${c.count}">${c.name}:${c.count}</span>`;
             });
@@ -2481,6 +2527,8 @@ function updateOtherClientsCountsDisplay(resourceIndex) {
         displayElement.style.display = 'none';
     }
 }
+
+
 
 // Smart abbreviation: shortest unique prefixes, minimum 1 character
 function getSmartAbbreviations(names) {
@@ -2530,7 +2578,9 @@ function toggleCompactOthersDisplay() {
     compactOthersDisplay = document.getElementById('compactOthersDisplay').checked;
     saveGlobalSettingsToLocalStorage();
     // Re-render to apply new display mode
-    resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+    resources.forEach((resource, index) => {
+        updateOtherClientsCountsDisplay(index);
+    });
 }
 
 function handleServerClientModeChange() {
@@ -2548,7 +2598,9 @@ function handleServerClientModeChange() {
     funnyNamesInUseSession.clear(); // Clear session-used funny names when mode changes
     cleanupClientSideClientListeners();
     otherClientsResourceCounts = {};
-    resources.forEach((resource, index) => updateOtherClientsCountsDisplay(index));
+    resources.forEach((resource, index) => {
+        updateOtherClientsCountsDisplay(index);
+    });
 
     if (serverClientMode === 'client') {
         connectClientUI();
@@ -2889,7 +2941,9 @@ function setupP2PConnection(conn) {
         });
         
         updateStatusWindow();
-        resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((_, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         displayStatusMessage(`P2P: ${peerName} connected`);
     });
     
@@ -2903,7 +2957,9 @@ function setupP2PConnection(conn) {
         delete clientsInSession[peerId];
         delete otherClientsResourceCounts[peerId];
         updateStatusWindow();
-        resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+        resources.forEach((_, index) => {
+            updateOtherClientsCountsDisplay(index);
+        });
         displayStatusMessage(`P2P: Peer disconnected`);
     });
     
@@ -2980,7 +3036,9 @@ function handleP2PData(peerId, data) {
             for (const idx in data.counts) {
                 otherClientsResourceCounts[data.clientId][idx] = data.counts[idx];
             }
-            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            resources.forEach((_, index) => {
+                updateOtherClientsCountsDisplay(index);
+            });
             updateStatusWindow();
             
             // If we're the host, broadcast to other peers so everyone sees everyone
@@ -2992,7 +3050,9 @@ function handleP2PData(peerId, data) {
         case 'nameUpdate':
             clientsInSession[data.clientId] = data.name;
             updateStatusWindow();
-            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            resources.forEach((_, index) => {
+                updateOtherClientsCountsDisplay(index);
+            });
             
             // If we're the host, broadcast to other peers
             if (isP2PHost) {
@@ -3026,7 +3086,9 @@ function handleP2PData(peerId, data) {
             delete clientsInSession[data.clientId];
             delete otherClientsResourceCounts[data.clientId];
             updateStatusWindow();
-            resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
+            resources.forEach((_, index) => {
+                updateOtherClientsCountsDisplay(index);
+            });
             displayStatusMessage(`P2P: ${data.name} left`);
             break;
     }

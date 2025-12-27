@@ -715,6 +715,16 @@ body.dark-mode .other-clients-counts {
     color: #aaa; /* Lighter color in dark mode */
 }
 
+/* Bank display - shown inline with other players */
+.bank-inline {
+    color: #2196F3 !important; /* Blue color to differentiate from player names */
+    font-weight: 600; /* Slightly bolder to stand out */
+}
+
+body.dark-mode .bank-inline {
+    color: #64B5F6 !important; /* Lighter blue in dark mode */
+}
+
 /* Compact display for other clients' resources */
 .compact-others {
     display: flex;

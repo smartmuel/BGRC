@@ -804,6 +804,16 @@ body.modern-ui .other-clients-counts {
     margin-top: 1px;
 }
 
+/* Bank display - shown inline with other players */
+body.modern-ui .bank-inline {
+    color: #2196F3 !important; /* Blue color to differentiate from player names */
+    font-weight: 600; /* Slightly bolder to stand out */
+}
+
+body.modern-ui.dark-mode .bank-inline {
+    color: #64B5F6 !important; /* Lighter blue in dark mode */
+}
+
 /* Compact display for other clients' resources */
 body.modern-ui .compact-others {
     display: flex;
