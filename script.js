@@ -2888,6 +2888,8 @@ function setupP2PConnection(conn) {
                 restoredCounts = { ...otherClientsResourceCounts[kickClientId] };
             }
             
+            const oldClientName = clientsInSession[kickClientId];
+            
             const oldConn = p2pConnections[kickClientId];
             if (oldConn) {
                 oldConn.send({ type: 'kicked', reason: 'Another user connected with your name' });
@@ -2896,6 +2898,13 @@ function setupP2PConnection(conn) {
             delete p2pConnections[kickClientId];
             delete clientsInSession[kickClientId];
             delete otherClientsResourceCounts[kickClientId];
+            
+            // Broadcast to all other peers that the old client left
+            broadcastToP2PPeers({
+                type: 'peerLeft',
+                clientId: kickClientId,
+                name: oldClientName
+            }, peerId); // Exclude the new peer
         }
         
         clientsInSession[peerId] = peerName;
@@ -2956,6 +2965,13 @@ function setupP2PConnection(conn) {
                 clientName: clientName,
                 counts: hostCounts
             });
+            
+            // Broadcast to all other peers that a new peer joined
+            broadcastToP2PPeers({
+                type: 'peerJoined',
+                clientId: peerId,
+                name: peerName
+            }, peerId); // Exclude the new peer itself
         }
         
         // Send our name
@@ -2987,9 +3003,20 @@ function setupP2PConnection(conn) {
     
     conn.on('close', () => {
         console.log('P2P connection closed:', peerId);
+        const closedPeerName = clientsInSession[peerId];
         delete p2pConnections[peerId];
         delete clientsInSession[peerId];
         delete otherClientsResourceCounts[peerId];
+        
+        // If we're the host, broadcast to all other peers that this peer left
+        if (isP2PHost) {
+            broadcastToP2PPeers({
+                type: 'peerLeft',
+                clientId: peerId,
+                name: closedPeerName
+            });
+        }
+        
         updateStatusWindow();
         resources.forEach((_, index) => {
             updateOtherClientsCountsDisplay(index);
