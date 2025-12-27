@@ -3372,23 +3372,28 @@ function proceedWithP2PConnection(hostPeerId, kickClientId = null) {
 }
 
 function generateP2PQRCode() {
-    if (!peer || !peer.id) return;
+    // For P2P, we need the host's peer ID
+    // For hosts: peer.id is correct
+    // For clients: sessionId contains the host's peer ID
+    const hostPeerId = isP2PHost ? peer?.id : sessionId;
+    
+    if (!hostPeerId) return;
     
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
     
     // Don't regenerate if QR code already exists for the same peer ID
-    if (qrcodeContainer.dataset.peerId === peer.id && qrcodeContainer.children.length > 0) {
+    if (qrcodeContainer.dataset.peerId === hostPeerId && qrcodeContainer.children.length > 0) {
         return;
     }
     
     qrcodeContainer.innerHTML = '';
-    qrcodeContainer.dataset.peerId = peer.id;
+    qrcodeContainer.dataset.peerId = hostPeerId;
     
     let baseUrl = window.location.href.split('?')[0];
     if (baseUrl.startsWith('file://')) {
         baseUrl = 'https://smartmuel.github.io/BGRC/index.html';
     }
-    const qrCodeData = `${baseUrl}?p2p=${peer.id}`;
+    const qrCodeData = `${baseUrl}?p2p=${hostPeerId}`;
     
     console.log("P2P QR Code Data:", qrCodeData);
     
