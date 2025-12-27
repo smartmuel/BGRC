@@ -2880,8 +2880,14 @@ function setupP2PConnection(conn) {
             return; // Wait for checkName message
         }
         
-        // If we're the host and there's a kick request, kick the old client
+        // If we're the host and there's a kick request, kick the old client and transfer counts
+        let restoredCounts = null;
         if (isP2PHost && kickClientId) {
+            // Save the old client's counts before kicking
+            if (otherClientsResourceCounts[kickClientId]) {
+                restoredCounts = { ...otherClientsResourceCounts[kickClientId] };
+            }
+            
             const oldConn = p2pConnections[kickClientId];
             if (oldConn) {
                 oldConn.send({ type: 'kicked', reason: 'Another user connected with your name' });
@@ -2929,7 +2935,8 @@ function setupP2PConnection(conn) {
                     globalHideFunnyNames,
                     globalHideAllImages
                 },
-                clients: clientsInSession
+                clients: clientsInSession,
+                restoredCounts: restoredCounts // Send restored counts if reconnecting
             });
             
             // Send all current client counts
@@ -3067,10 +3074,19 @@ function handleP2PData(peerId, data) {
                 }
             }
             
+            // If we have restored counts from a previous session, apply them
+            if (data.restoredCounts) {
+                for (const idx in data.restoredCounts) {
+                    if (resources[idx]) {
+                        resources[idx].count = data.restoredCounts[idx];
+                    }
+                }
+            }
+            
             renderResources();
             updateStatusWindow();
             
-            // After receiving config, send our initialized counts back to host
+            // After receiving config, send our counts back to host
             const myCounts = {};
             resources.forEach((r, i) => myCounts[i] = r.count);
             // Send to the peer who sent us the config (the host)
