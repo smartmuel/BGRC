@@ -33,7 +33,7 @@ let diceSound = null;
 let globalHideFunnyNames = true;
 let previousFunnyNameStates = {};
 let serverClientSettingsVisible = false;
-let serverClientMode = 'client';
+let serverClientMode = 'server';
 let sessionId = null;
 let clientId = generateClientId();
 let serverListeners = {};
@@ -566,7 +566,7 @@ function applyGlobalConfig(globalConfig) {
     globalHideFunnyNames = globalConfig.globalHideFunnyNames === undefined ? true : globalConfig.globalHideFunnyNames;
     previousFunnyNameStates = globalConfig.previousFunnyNameStates || {};
     clientName = globalConfig.clientName || '';
-    serverClientMode = globalConfig.serverClientMode || 'client';
+    serverClientMode = globalConfig.serverClientMode || 'server';
     globalHideAllImages = globalConfig.globalHideAllImages === undefined ? false : globalConfig.globalHideAllImages;
 
     document.getElementById('showSettingsGlobal').checked = showSettingsGlobal;
@@ -1137,7 +1137,14 @@ function generateQRCode() {
     console.log("QR Code Data Length:", qrCodeData.length);
 
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
+    
+    // Don't regenerate if QR code already exists for the same session
+    if (qrcodeContainer.dataset.sessionId === sessionId && qrcodeContainer.children.length > 0) {
+        return;
+    }
+    
     qrcodeContainer.innerHTML = ''; // Clear previous QR code
+    qrcodeContainer.dataset.sessionId = sessionId;
 
     const isDarkMode = document.body.classList.contains('dark-mode');
     // Always use black on white for QR codes - better scanning reliability
@@ -1145,32 +1152,24 @@ function generateQRCode() {
     const colorLight = '#ffffff';
 
     // Always create a new QRCode instance - larger size and medium error correction for better scanning
-    qrcode = new QRCode(qrcodeContainer, {
-        text: qrCodeData,
-        width: 256,
-        height: 256,
-        colorDark: colorDark,
-        colorLight: colorLight,
-        correctLevel: QRCode.CorrectLevel.M
-    });
-    
-    // Apply inline styles to prevent Android/mobile dark mode from inverting the QR code
-    qrcodeContainer.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-    qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
-    
-    // Wait for QR code to render then style the image/canvas
-    setTimeout(() => {
-        const qrImg = qrcodeContainer.querySelector('img');
-        const qrCanvas = qrcodeContainer.querySelector('canvas');
-        if (qrImg) {
-            qrImg.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-            qrImg.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
-        }
-        if (qrCanvas) {
-            qrCanvas.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-            qrCanvas.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
-        }
-    }, 100);
+    try {
+        new QRCode(qrcodeContainer, {
+            text: qrCodeData,
+            width: 256,
+            height: 256,
+            colorDark: colorDark,
+            colorLight: colorLight,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        
+        // Apply inline styles to prevent Android/mobile dark mode from inverting the QR code (preserve display)
+        qrcodeContainer.style.backgroundColor = '#ffffff';
+        qrcodeContainer.style.filter = 'none';
+        qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+    } catch (error) {
+        console.error('QR Code generation error:', error);
+        displayStatusMessage('Failed to generate QR code', true);
+    }
 }
 
 function updateClientName() {
@@ -1355,6 +1354,32 @@ async function updateCount(event, index, change) {
 
     // P2P Mode handling
     if (connectionType === 'p2p' && sessionId) {
+        // Check maxGameCounterLimit for P2P mode
+        if (targetResource.maxGameCounterLimit !== Infinity) {
+            // Calculate current total for this resource across all peers
+            let currentGameResourceCount = targetResource.count; // Start with our current count
+            for (const peerId in otherClientsResourceCounts) {
+                const peerCounts = otherClientsResourceCounts[peerId];
+                if (peerCounts && peerCounts[index] !== undefined) {
+                    currentGameResourceCount += peerCounts[index];
+                }
+            }
+            
+            let potentialNewGameResourceCount = currentGameResourceCount - targetResource.count + newCount;
+            
+            if (potentialNewGameResourceCount > targetResource.maxGameCounterLimit) {
+                newCount = targetResource.maxGameCounterLimit - (currentGameResourceCount - targetResource.count);
+                newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
+                if (newCount <= targetResource.count && change > 0) {
+                    const limitMessageElement = document.getElementById('limitMessage');
+                    limitMessageElement.textContent = `Game counter limit for ${targetResource.name} (${targetResource.maxGameCounterLimit}) reached!`;
+                    limitMessageElement.classList.add('show');
+                    setTimeout(() => limitMessageElement.classList.remove('show'), 3000);
+                    return;
+                }
+            }
+        }
+        
         targetResource.count = newCount;
         const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-display`);
         if (resourceElement) {
@@ -3029,7 +3054,6 @@ async function startP2PServer() {
         document.getElementById('serverIDDisplayContainer').style.display = 'block';
         document.getElementById('newSessionContainer').style.display = 'none';
         
-        generateP2PQRCode();
         updateServerClientUI();
         updateStatusWindow();
         
@@ -3076,7 +3100,14 @@ function generateP2PQRCode() {
     if (!peer || !peer.id) return;
     
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
+    
+    // Don't regenerate if QR code already exists for the same peer ID
+    if (qrcodeContainer.dataset.peerId === peer.id && qrcodeContainer.children.length > 0) {
+        return;
+    }
+    
     qrcodeContainer.innerHTML = '';
+    qrcodeContainer.dataset.peerId = peer.id;
     
     let baseUrl = window.location.href.split('?')[0];
     if (baseUrl.startsWith('file://')) {
@@ -3086,29 +3117,24 @@ function generateP2PQRCode() {
     
     console.log("P2P QR Code Data:", qrCodeData);
     
-    qrcode = new QRCode(qrcodeContainer, {
-        text: qrCodeData,
-        width: 256,
-        height: 256,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-    });
-    
-    // Apply styles to prevent dark mode inversion
-    qrcodeContainer.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-    qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
-    
-    setTimeout(() => {
-        const qrImg = qrcodeContainer.querySelector('img');
-        const qrCanvas = qrcodeContainer.querySelector('canvas');
-        if (qrImg) {
-            qrImg.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-        }
-        if (qrCanvas) {
-            qrCanvas.style.cssText = 'background-color: #ffffff !important; filter: none !important;';
-        }
-    }, 100);
+    try {
+        new QRCode(qrcodeContainer, {
+            text: qrCodeData,
+            width: 256,
+            height: 256,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+        });
+        
+        // Apply styles to prevent dark mode inversion (preserve display property)
+        qrcodeContainer.style.backgroundColor = '#ffffff';
+        qrcodeContainer.style.filter = 'none';
+        qrcodeContainer.setAttribute('data-darkreader-inline-bgcolor', '#ffffff');
+    } catch (error) {
+        console.error('QR Code generation error:', error);
+        displayStatusMessage('Failed to generate QR code', true);
+    }
 }
 
 function disconnectP2P() {
@@ -3160,7 +3186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFirebaseConfigFromCache();
 
     // Load connection type
-    connectionType = localStorage.getItem('connectionType') || 'firebase';
+    connectionType = localStorage.getItem('connectionType') || 'p2p';
     const connectionTypeSelect = document.getElementById('connectionType');
     if (connectionTypeSelect) {
         connectionTypeSelect.value = connectionType;
