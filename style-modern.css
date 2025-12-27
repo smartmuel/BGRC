@@ -218,23 +218,74 @@ body.modern-ui .setting-item label {
     cursor: pointer;
 }
 
+/* Global settings: checkboxes on the right */
+body.modern-ui #globalSettingsContent .setting-item label {
+    flex-direction: row-reverse;
+    justify-content: space-between;
+}
+
+/* UI Theme container: label left, select right */
+body.modern-ui #globalSettingsContent #uiThemeContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+body.modern-ui #globalSettingsContent #uiThemeContainer label {
+    flex: 0 0 auto;
+}
+
+body.modern-ui #globalSettingsContent #uiThemeContainer select {
+    width: auto;
+    min-width: 120px;
+    padding: 2px 4px;
+    text-align: center;
+}
+
+/* Global counter limit container: label left, value right */
+body.modern-ui #globalSettingsContent #globalCounterLimitContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+body.modern-ui #globalSettingsContent #globalCounterLimitContainer label {
+    flex: 0 0 auto;
+    flex-direction: row !important;
+}
+
+body.modern-ui #globalSettingsContent #globalCounterLimitContainer input[type="number"] {
+    width: 60px;
+    padding: 2px 4px;
+    text-align: center;
+}
+
+/* UI Theme container: override row-reverse */
+body.modern-ui #globalSettingsContent #uiThemeContainer label {
+    flex-direction: row !important;
+}
+
 body.modern-ui .setting-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
     accent-color: var(--modern-primary);
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 body.modern-ui .setting-item input[type="number"],
 body.modern-ui .setting-item input[type="text"] {
     width: 100%;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     border: 1px solid var(--modern-border);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-sm);
     background: var(--modern-surface);
     color: var(--modern-text);
     transition: border-color var(--transition-fast);
+    margin: 0;
 }
 
 body.modern-ui .setting-item input[type="number"]:focus,
@@ -594,11 +645,11 @@ body.modern-ui .settings-container {
 body.modern-ui .settings {
     background: var(--modern-bg);
     border-radius: var(--radius-sm);
-    padding: 1px;
-    margin-top: 1px;
+    padding: 0;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     font-size: 0.6em;
     max-width: 100%;
     overflow: hidden;
@@ -610,11 +661,12 @@ body.modern-ui .settings div {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 1px;
+    gap: 0;
     font-size: inherit;
     color: var(--modern-text);
     min-width: 0;
     margin: 0;
+    padding: 0;
 }
 
 /* Remove margins from specific checkbox containers */
@@ -711,7 +763,7 @@ body.modern-ui .settings .remove-button {
 body.modern-ui .settings .counter-settings {
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     width: 100%;
 }
 
@@ -721,8 +773,10 @@ body.modern-ui .settings .counter-settings > div {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 body.modern-ui .settings .counter-settings > div > input[type="checkbox"],

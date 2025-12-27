@@ -35,14 +35,12 @@
         <button id="globalSettingsButton" onclick="toggleGlobalSettingsVisibility()" aria-label="Toggle Global Settings">⚙️</button>
         <div id="globalSettingsContent">
             <h3>User Preferences</h3>
-            <div class="setting-item">
-                <label>
-                    UI Theme:
-                    <select id="uiThemeSelect" onchange="toggleUITheme()">
-                        <option value="classic">Classic</option>
-                        <option value="modern" selected>Modern (Mobile Optimized)</option>
-                    </select>
-                </label>
+            <div class="setting-item" id="uiThemeContainer">
+                <label>UI Theme:</label>
+                <select id="uiThemeSelect" onchange="toggleUITheme()">
+                    <option value="classic">Classic</option>
+                    <option value="modern" selected>Modern (Mobile Optimized)</option>
+                </select>
             </div>
             <div class="setting-item">
                 <label>
@@ -89,10 +87,8 @@
                 </label>
             </div>
             <div class="setting-item" id="globalCounterLimitContainer" style="display: none;">
-                <label>
-                    Global Counter Limit:
-                    <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
-                </label>
+                <label>Global Counter Limit:</label>
+                <input type="number" id="globalCounterLimit" value="100" onchange="updateGlobalCounterLimit()">
             </div>
             <hr/>
             <h3>Data Options</h3>

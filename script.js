@@ -1941,7 +1941,7 @@ function toggleGlobalSettings() {
     saveGlobalSettingsToLocalStorage();
     renderResources();
     saveToLocalStorage();
-    if (serverClientMode === 'server' && sessionId) {
+    if (serverClientMode === 'server' && sessionId && (connectionType !== 'p2p' || connectionType === 'p2p')) {
         saveConfigToServer();
     }
 }
@@ -1999,7 +1999,7 @@ function updateGlobalCounterLimit() {
 
 function toggleGlobalCounterLimit() {
     enableGlobalCounterLimit = document.getElementById('enableGlobalCounterLimit').checked;
-    document.getElementById('globalCounterLimitContainer').style.display = enableGlobalCounterLimit ? 'block' : 'none';
+    document.getElementById('globalCounterLimitContainer').style.display = enableGlobalCounterLimit ? 'flex' : 'none';
     checkGlobalCounterLimit();
 }
 
@@ -2231,6 +2231,24 @@ function cleanupClientSideClientListeners() {
 
 function saveConfigToServer() {
     if (!sessionId || serverClientMode !== 'server') return;
+    
+    // In P2P mode, broadcast config to peers instead of saving to Firebase
+    if (connectionType === 'p2p') {
+        broadcastToP2PPeers({
+            type: 'config',
+            resources: resources.map(r => ({
+                ...r,
+                maxCount: r.maxCount === Infinity ? null : r.maxCount,
+                maxGameCounterLimit: r.maxGameCounterLimit === Infinity ? null : r.maxGameCounterLimit
+            }))
+        });
+        return;
+    }
+    
+    if (!db) {
+        console.warn('Firebase db not initialized');
+        return;
+    }
 
     const firebaseResources = resources.map(resource => {
         const resourceData = {
@@ -3087,6 +3105,10 @@ async function connectP2PClient(hostPeerId) {
         
         document.getElementById('serverIDDisplay').value = sessionId;
         document.getElementById('serverIDDisplayContainer').style.display = 'block';
+        
+        // Hide controls for clients
+        const controlsContainer = document.getElementById('controlsContainer');
+        if (controlsContainer) controlsContainer.style.display = 'none';
         
         updateServerClientUI();
         
