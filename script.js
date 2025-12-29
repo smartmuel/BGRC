@@ -3419,6 +3419,9 @@ function proceedWithP2PConnection(hostPeerId, kickClientId = null) {
     const controlsContainer = document.getElementById('controlsContainer');
     if (controlsContainer) controlsContainer.style.display = 'none';
     
+    // Hide controls (Select Game, Add Resource) for P2P clients
+    setHideAllExceptResources(true);
+    
     updateServerClientUI();
 }
 
