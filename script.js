@@ -1178,12 +1178,20 @@ function updateClientName() {
         return; // No update if name is empty or hasn't changed
     }
 
-    const oldClientName = clientName;
-    clientName = newClientName;
-    localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
-
-    // P2P mode: broadcast name update to all peers
+    // P2P mode: check for duplicate name before updating
     if (connectionType === 'p2p' && sessionId) {
+        // Check if name is already taken by another peer
+        for (const peerId in clientsInSession) {
+            if (peerId !== clientId && clientsInSession[peerId] === newClientName) {
+                displayStatusMessage(`Name "${newClientName}" is already taken.`, true);
+                document.getElementById('clientNameInput').value = clientName; // Revert input
+                return;
+            }
+        }
+        
+        clientName = newClientName;
+        localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
+        
         broadcastToP2PPeers({
             type: 'nameUpdate',
             clientId: clientId,
@@ -1192,6 +1200,10 @@ function updateClientName() {
         displayStatusMessage("Name updated for all peers.");
         return;
     }
+
+    const oldClientName = clientName;
+    clientName = newClientName;
+    localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
 
     // Firebase mode: update in database
     if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
