@@ -1178,20 +1178,32 @@ function updateClientName() {
         return; // No update if name is empty or hasn't changed
     }
 
+    const oldClientName = clientName;
+    clientName = newClientName;
+    localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
+
+    // P2P mode: broadcast name update to all peers
+    if (connectionType === 'p2p' && sessionId) {
+        broadcastToP2PPeers({
+            type: 'nameUpdate',
+            clientId: clientId,
+            name: clientName
+        });
+        displayStatusMessage("Name updated for all peers.");
+        return;
+    }
+
+    // Firebase mode: update in database
     if ((serverClientMode === 'client' || serverClientMode === 'server') && sessionId) {
         db.ref(`sessions/${sessionId}/clients/${clientId}`).update({
             clientName: newClientName
         }).then(() => {
-            clientName = newClientName;
-            localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
             displayStatusMessage("Client name updated for session.");
         }).catch(error => {
             displayStatusMessage("Failed to update client name.", true);
             console.error("Error updating client name:", error);
         });
     } else {
-        clientName = newClientName;
-        localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
         displayStatusMessage("Client name updated locally.");
     }
 }
