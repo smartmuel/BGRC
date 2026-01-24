@@ -58,6 +58,7 @@ let connectionType = localStorage.getItem('connectionType') || 'p2p'; // 'fireba
 let peer = null; // PeerJS instance
 let p2pConnections = {}; // Store connections to other peers { peerId: connection }
 let isP2PHost = false; // Is this device the P2P host?
+let lastHostPeerId = null; // Store the last host peer ID for reconnection
 
 
 // ====== Utility Functions ======
@@ -3040,6 +3041,11 @@ function setupP2PConnection(conn) {
                 clientId: peerId,
                 name: closedPeerName
             });
+        } else {
+            // If we're a client and this was our connection to the host, show reconnect modal
+            if (peerId === lastHostPeerId) {
+                showDisconnectModal('Connection to host lost.');
+            }
         }
 
         updateStatusWindow();
@@ -3295,6 +3301,7 @@ async function connectP2PClient(hostPeerId) {
         isP2PHost = false;
         serverClientMode = 'client';
         sessionId = hostPeerId;
+        lastHostPeerId = hostPeerId; // Store for reconnection
 
         clientName = document.getElementById('clientNameInput').value.trim();
         if (!clientName) {
@@ -3470,6 +3477,46 @@ function generateP2PQRCode() {
         console.error('QR Code generation error:', error);
         displayStatusMessage('Failed to generate QR code', true);
     }
+}
+
+function showDisconnectModal(reason = 'You have been disconnected from the server.') {
+    const modal = document.getElementById('disconnectModal');
+    const messageEl = document.getElementById('disconnectMessage');
+    const reconnectBtn = document.getElementById('reconnectBtn');
+    const goLocalBtn = document.getElementById('goLocalBtn');
+
+    messageEl.textContent = reason;
+    modal.style.display = 'flex';
+
+    // Remove old listeners before adding new ones (prevent duplicates)
+    const newReconnectBtn = reconnectBtn.cloneNode(true);
+    const newGoLocalBtn = goLocalBtn.cloneNode(true);
+    reconnectBtn.parentNode.replaceChild(newReconnectBtn, reconnectBtn);
+    goLocalBtn.parentNode.replaceChild(newGoLocalBtn, goLocalBtn);
+
+    // Reconnect button handler
+    newReconnectBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        if (lastHostPeerId) {
+            displayStatusMessage('Attempting to reconnect...');
+            connectP2PClient(lastHostPeerId);
+        } else {
+            displayStatusMessage('No host to reconnect to.', true);
+        }
+    });
+
+    // Go to local mode button handler
+    newGoLocalBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        // Switch to local mode
+        serverClientMode = 'local';
+        document.getElementById('serverClientMode').value = 'local';
+        sessionId = null;
+        lastHostPeerId = null;
+        updateServerClientUI();
+        setHideAllExceptResources(false);
+        displayStatusMessage('Switched to local mode.');
+    });
 }
 
 function disconnectP2P() {
