@@ -164,22 +164,22 @@ function updateStatusWindow() {
     // Update status window content based on current state
     const statusWindowContent = document.getElementById('statusWindow');
     if (!statusWindowContent) return;
-    
+
     // Only update if window is visible
     if (!statusWindowVisible) return;
-    
+
     if (connectionType === 'p2p') {
         // P2P mode: show connected peers
         let statusHTML = '';
-        
+
         for (const peerId in clientsInSession) {
             if (peerId === clientId) continue; // Skip self
             const peerName = clientsInSession[peerId] || 'Unknown';
             const peerCounts = otherClientsResourceCounts[peerId] || {};
             let totalResources = 0;
-            
+
             statusHTML += `<div class="status-item"><h4>Peer: ${peerName}</h4><ul>`;
-            
+
             resources.forEach((resource, index) => {
                 const count = peerCounts[index];
                 if (count !== undefined) {
@@ -190,14 +190,14 @@ function updateStatusWindow() {
                     statusHTML += `<li>${resourceDisplayName}: ${count !== undefined ? count : 'N/A'}</li>`;
                 }
             });
-            
+
             statusHTML += `</ul><p>Total Resources: ${totalResources}</p></div>`;
         }
-        
+
         if (statusHTML === '') {
             statusHTML = "<p>No other peers connected.</p>";
         }
-        
+
         statusWindowContent.innerHTML = statusHTML;
     } else {
         // Firebase mode: use existing fetch function
@@ -270,7 +270,7 @@ function importFirebaseConfig(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const importedConfig = JSON.parse(e.target.result);
             if (typeof importedConfig === 'object' &&
@@ -299,7 +299,7 @@ function importFirebaseConfig(event) {
             console.error("Firebase config import error:", error);
         }
     };
-    reader.onerror = function(error) {
+    reader.onerror = function (error) {
         displayStatusMessage("Error reading the Firebase configuration file.", true);
         console.warn("Error reading the Firebase configuration file.");
         console.error("File read error:", error);
@@ -434,7 +434,7 @@ function saveToLocalStorage() {
             clientName,
             globalHideAllImages,
         };
-        localStorage.setItem(LOCAL_STORAGE_GLOBAL_CONFIG_KEY,  JSON.stringify(globalConfig));
+        localStorage.setItem(LOCAL_STORAGE_GLOBAL_CONFIG_KEY, JSON.stringify(globalConfig));
         localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
     }
 
@@ -659,7 +659,8 @@ function renderResources() {
 function generateModifierToggle(resource, index) {
     if (resource.hideCounter) return `<div class="modifier-toggle-container"></div>`; // Empty container if hidden
     const modifierIcon = resource.keepOneModifier ? '➕' : '➖';
-    return `<div class="modifier-toggle-container"><div class="modifier-toggle" data-resource-index="${index}" onclick="toggleKeepOneModifier(event, ${index})">${modifierIcon}</div></div>`}
+    return `<div class="modifier-toggle-container"><div class="modifier-toggle" data-resource-index="${index}" onclick="toggleKeepOneModifier(event, ${index})">${modifierIcon}</div></div>`
+}
 
 function generateResourceImage(resource) {
     if (globalHideAllImages) return `<div class="resource-image-container-wrapper"></div>`; // Empty wrapper if hidden
@@ -676,12 +677,12 @@ function generateResourceNameContainer(resource, index) {
 
     return `<div class="resource-name-container-wrapper"><div class="resource-name-container">
             ${showSettingsGlobal
-                ? (resource.useFunnyName
-                    ? `<input type="text" placeholder="Funny Resource Name" value="${resource.funnyName}" onblur="updateFunnyName(${index}, this.value)">`
-                    : `<input type="text" placeholder="Resource Name" value="${resource.name}" onblur="updateName(${index}, this.value)">`
-                  )
-                : `<span class="resource-name">${displayName}</span>`
-            }
+            ? (resource.useFunnyName
+                ? `<input type="text" placeholder="Funny Resource Name" value="${resource.funnyName}" onblur="updateFunnyName(${index}, this.value)">`
+                : `<input type="text" placeholder="Resource Name" value="${resource.name}" onblur="updateName(${index}, this.value)">`
+            )
+            : `<span class="resource-name">${displayName}</span>`
+        }
         </div></div>`
 }
 
@@ -719,8 +720,8 @@ function generateDiceControls(resource, index) {
          <button class="dice-button" onclick="rollDice(${index})" aria-label="Roll Dice">🎲</button>
          <div class="roll-result" id="rollResult${index}" style="cursor: pointer; margin-left: 10px;" title="Click to toggle between detailed result and sum">
             ${resource.useCustomDiceValues && resource.rollDiceCustomValues.length > 0
-                ? Array(resource.numberOfDice).fill(resource.rollDiceCustomValues[resource.rollDiceCustomValues.length - 1]).join(', ')
-                : Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}
+            ? Array(resource.numberOfDice).fill(resource.rollDiceCustomValues[resource.rollDiceCustomValues.length - 1]).join(', ')
+            : Array(resource.numberOfDice).fill(resource.rollDiceMax).join(', ')}
          </div>
     </div></div>
 `;
@@ -874,7 +875,7 @@ function startServer() {
         startP2PServer();
         return;
     }
-    
+
     if (!db) {
         displayStatusMessage("Firebase database not initialized. Please save Firebase config first.", true);
         console.warn("Firebase database not initialized. Please save Firebase config first.");
@@ -966,32 +967,32 @@ function showNameConflictModal(conflictName, existingSnapshot) {
     const modal = document.getElementById('nameConflictModal');
     const conflictNameDisplay = document.getElementById('conflictNameDisplay');
     const newNameInput = document.getElementById('newNameInput');
-    
+
     conflictNameDisplay.textContent = conflictName;
     newNameInput.value = conflictName;
     modal.style.display = 'flex';
     newNameInput.focus();
     newNameInput.select();
-    
+
     // Store the existing client's Firebase key for potential takeover
     let existingClientKey = null;
     existingSnapshot.forEach((childSnapshot) => {
         existingClientKey = childSnapshot.key;
     });
-    
+
     // Remove old listeners before adding new ones
     const reconnectBtn = document.getElementById('reconnectSameNameBtn');
     const connectNewBtn = document.getElementById('connectNewNameBtn');
     const cancelBtn = document.getElementById('cancelConnectBtn');
-    
+
     const newReconnectBtn = reconnectBtn.cloneNode(true);
     const newConnectNewBtn = connectNewBtn.cloneNode(true);
     const newCancelBtn = cancelBtn.cloneNode(true);
-    
+
     reconnectBtn.parentNode.replaceChild(newReconnectBtn, reconnectBtn);
     connectNewBtn.parentNode.replaceChild(newConnectNewBtn, connectNewBtn);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    
+
     // Reconnect as the same user (take over the session)
     newReconnectBtn.addEventListener('click', async () => {
         modal.style.display = 'none';
@@ -1000,22 +1001,22 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             // Get the old client's counts before removing
             const oldCountsSnapshot = await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).once('value');
             const oldCounts = oldCountsSnapshot.val();
-            
+
             // Remove old client entry and counts from Firebase
             await db.ref(`sessions/${sessionId}/clients/${existingClientKey}`).remove();
             await db.ref(`sessions/${sessionId}/client_counts/${existingClientKey}`).remove();
-            
+
             // Also remove from local tracking immediately
             delete clientsInSession[existingClientKey];
             delete otherClientsResourceCounts[existingClientKey];
-            
+
             // Set client name and connect
             clientName = conflictName;
             document.getElementById('clientNameInput').value = clientName;
-            
+
             // Store old counts to restore after connection
             pendingRestoredCounts = oldCounts;
-            
+
             // Perform connection
             performClientConnection();
         } else {
@@ -1024,7 +1025,7 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             performClientConnection();
         }
     });
-    
+
     // Connect with a new name
     newConnectNewBtn.addEventListener('click', async () => {
         const newName = newNameInput.value.trim();
@@ -1036,7 +1037,7 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             displayStatusMessage("Please enter a different name or use 'Reconnect as Same User'.", true);
             return;
         }
-        
+
         // Check if the new name is also taken
         const clientsRef = db.ref(`sessions/${sessionId}/clients`);
         const newSnapshot = await clientsRef.orderByChild('clientName').equalTo(newName).once('value');
@@ -1044,18 +1045,18 @@ function showNameConflictModal(conflictName, existingSnapshot) {
             displayStatusMessage(`The name "${newName}" is also taken. Try another name.`, true);
             return;
         }
-        
+
         modal.style.display = 'none';
         clientName = newName;
         document.getElementById('clientNameInput').value = clientName;
         performClientConnection();
     });
-    
+
     // Cancel
     newCancelBtn.addEventListener('click', () => {
         modal.style.display = 'none';
     });
-    
+
     // Allow Enter key to submit new name
     newNameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1109,7 +1110,7 @@ function generateQRCode() {
     };
 
     console.log("Firebase Config for QR Code:", firebaseConfig);
-    
+
     // Use shortened keys to reduce QR code data size
     const compactConfig = {
         f: {
@@ -1125,7 +1126,7 @@ function generateQRCode() {
     };
 
     const configString = JSON.stringify(compactConfig);
-    
+
     // Use proper URL - if running locally (file://), use the GitHub Pages URL
     let baseUrl = window.location.href.split('?')[0];
     if (baseUrl.startsWith('file://')) {
@@ -1137,12 +1138,12 @@ function generateQRCode() {
     console.log("QR Code Data Length:", qrCodeData.length);
 
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
-    
+
     // Don't regenerate if QR code already exists for the same session
     if (qrcodeContainer.dataset.sessionId === sessionId && qrcodeContainer.children.length > 0) {
         return;
     }
-    
+
     qrcodeContainer.innerHTML = ''; // Clear previous QR code
     qrcodeContainer.dataset.sessionId = sessionId;
 
@@ -1161,7 +1162,7 @@ function generateQRCode() {
             colorLight: colorLight,
             correctLevel: QRCode.CorrectLevel.M
         });
-        
+
         // Apply inline styles to prevent Android/mobile dark mode from inverting the QR code (preserve display)
         qrcodeContainer.style.backgroundColor = '#ffffff';
         qrcodeContainer.style.filter = 'none';
@@ -1188,10 +1189,10 @@ function updateClientName() {
                 return;
             }
         }
-        
+
         clientName = newClientName;
         localStorage.setItem(LOCAL_STORAGE_CLIENT_NAME_KEY, clientName);
-        
+
         broadcastToP2PPeers({
             type: 'nameUpdate',
             clientId: clientId,
@@ -1293,7 +1294,7 @@ function attachEventListeners() {
 }
 
 function updateResourceSetting(index, setting, value) {
-     const targetResource = resources[index];
+    const targetResource = resources[index];
     switch (setting) {
         case 'hideimage': updateHideImage(index, value); break;
         case 'hidecounter': updateHideCounter(index, value); break;
@@ -1318,7 +1319,7 @@ function updateResourceSetting(index, setting, value) {
         case 'enablediceanimation': updateEnableDiceAnimation(index, value); break; // Added enableDiceAnimation
         case 'hidecounterforothers': updateHideCounterForOthers(index, value); break;
     }
-     if (serverClientMode === 'server' && sessionId) {
+    if (serverClientMode === 'server' && sessionId) {
         saveConfigToServer();
     }
 }
@@ -1388,10 +1389,10 @@ async function updateCount(event, index, change) {
                     otherPlayersTotal += peerCounts[index];
                 }
             }
-            
+
             // Calculate max this player can have without causing negative Bank
             const maxAllowedForPlayer = targetResource.maxGameCounterLimit - otherPlayersTotal;
-            
+
             if (newCount > maxAllowedForPlayer) {
                 newCount = Math.max(targetResource.minCount, maxAllowedForPlayer);
                 if (newCount <= targetResource.count && change > 0) {
@@ -1405,7 +1406,7 @@ async function updateCount(event, index, change) {
             // Also ensure newCount respects maxCount
             newCount = Math.max(targetResource.minCount, Math.min(newCount, targetResource.maxCount === null ? Infinity : targetResource.maxCount));
         }
-        
+
         targetResource.count = newCount;
         const resourceElement = document.querySelector(`.resource[data-resource-index="${index}"] .count-display`);
         if (resourceElement) {
@@ -1443,7 +1444,7 @@ async function updateCount(event, index, change) {
                     }
                 }
             }
-            
+
             // Calculate max this player can have without causing negative Bank
             const maxAllowedForPlayer = targetResource.maxGameCounterLimit - otherPlayersTotal;
 
@@ -1915,7 +1916,7 @@ function populateExampleDropdown() {
 function loadSelectedExample() {
     const exampleSelect = document.getElementById('exampleSelect');
     const exampleName = exampleSelect.value;
-    
+
     if (!exampleName) return; // Do nothing if placeholder selected
 
     if (exampleName !== 'clear' && (resources.length > 0 || hasUnsavedChanges)) {
@@ -2087,7 +2088,7 @@ function toggleUITheme() {
     const themeSelect = document.getElementById('uiThemeSelect');
     uiTheme = themeSelect.value;
     localStorage.setItem('uiTheme', uiTheme);
-    
+
     if (uiTheme === 'modern') {
         document.body.classList.add('modern-ui');
     } else {
@@ -2102,13 +2103,13 @@ function loadUITheme() {
     if (themeSelect) {
         themeSelect.value = savedTheme;
     }
-    
+
     if (savedTheme === 'modern') {
         document.body.classList.add('modern-ui');
     } else {
         document.body.classList.remove('modern-ui');
     }
-    
+
     // Apply dark mode based on saved preference
     if (localStorage.getItem(LOCAL_STORAGE_DARK_MODE_KEY) === 'false') {
         document.body.classList.remove('dark-mode');
@@ -2135,7 +2136,7 @@ function setupServerClientListeners() {
         resources.forEach((resource, index) => {
             updateOtherClientsCountsDisplay(index);
         });
-         fetchAndDisplayClientStatus(); // Refresh status window on client change
+        fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
     serverListeners.removeClientListener = clientsRef.on('child_removed', (snapshot) => {
@@ -2150,7 +2151,7 @@ function setupServerClientListeners() {
         resources.forEach((resource, index) => {
             updateOtherClientsCountsDisplay(index);
         });
-         fetchAndDisplayClientStatus(); // Refresh status window on client change
+        fetchAndDisplayClientStatus(); // Refresh status window on client change
     });
 
     serverListeners.clientChangedListener = clientsRef.on('child_changed', (snapshot) => { // Listen for name changes
@@ -2216,10 +2217,10 @@ function setupClientSideClientListeners() {
                 clientsInSession[clientIdFB] = clientsData[clientIdFB].clientName;
             }
         }
-         resources.forEach((resource, index) => {
+        resources.forEach((resource, index) => {
             updateOtherClientsCountsDisplay(index);
         });
-         fetchAndDisplayClientStatus(); // Initial status window population
+        fetchAndDisplayClientStatus(); // Initial status window population
 
     }, (error) => {
         displayStatusMessage("Error fetching client list for client-side clientsInSession.", true);
@@ -2275,7 +2276,7 @@ function cleanupClientSideClientListeners() {
 
 function saveConfigToServer() {
     if (!sessionId || serverClientMode !== 'server') return;
-    
+
     // In P2P mode, broadcast config to peers instead of saving to Firebase
     if (connectionType === 'p2p') {
         broadcastToP2PPeers({
@@ -2288,7 +2289,7 @@ function saveConfigToServer() {
         });
         return;
     }
-    
+
     if (!db) {
         console.warn('Firebase db not initialized');
         return;
@@ -2414,7 +2415,7 @@ function loadConfigFromServer() {
         console.warn('Failed to load configuration from server.');
     });
 
-     db.ref(`sessions/${sessionId}/gameSettings`).once('value', snapshot => {
+    db.ref(`sessions/${sessionId}/gameSettings`).once('value', snapshot => {
         const gameSettings = snapshot.val();
         if (gameSettings) {
             enableGlobalCounterLimit = gameSettings.enableGlobalCounterLimit === undefined ? false : gameSettings.enableGlobalCounterLimit;
@@ -2564,19 +2565,19 @@ function updateOtherClientsCountsDisplay(resourceIndex) {
 function getSmartAbbreviations(names) {
     if (names.length === 0) return [];
     if (names.length === 1) return [names[0].charAt(0) || '?'];
-    
+
     const result = new Array(names.length);
     const lengths = new Array(names.length).fill(1);
     const maxIterations = 100; // Safety limit to prevent infinite loops
     let iterations = 0;
-    
+
     // Keep increasing lengths until all abbreviations are unique (or we hit max iterations)
     let hasConflict = true;
     while (hasConflict && iterations < maxIterations) {
         hasConflict = false;
         iterations++;
         const abbrevs = names.map((name, i) => (name || '?').substring(0, lengths[i]));
-        
+
         // Find conflicts
         for (let i = 0; i < abbrevs.length; i++) {
             for (let j = i + 1; j < abbrevs.length; j++) {
@@ -2584,7 +2585,7 @@ function getSmartAbbreviations(names) {
                     // Check if we can still increase either length
                     const canIncreaseI = lengths[i] < (names[i] || '').length;
                     const canIncreaseJ = lengths[j] < (names[j] || '').length;
-                    
+
                     if (canIncreaseI || canIncreaseJ) {
                         hasConflict = true;
                         if (canIncreaseI) lengths[i]++;
@@ -2595,12 +2596,12 @@ function getSmartAbbreviations(names) {
             }
         }
     }
-    
+
     // Generate final abbreviations
     for (let i = 0; i < names.length; i++) {
         result[i] = (names[i] || '?').substring(0, lengths[i]) || '?';
     }
-    
+
     return result;
 }
 
@@ -2729,7 +2730,7 @@ function importSdkConfigAndJoin(event) {
     const file = event.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const sdkConfig = JSON.parse(e.target.result);
             if (sdkConfig && sdkConfig.firebaseConfig && sdkConfig.sessionDetails && sdkConfig.sessionDetails.sessionId) {
@@ -2759,7 +2760,7 @@ function importSdkConfigAndJoin(event) {
             console.error("SDK config import error:", error);
         }
     };
-    reader.onerror = function(error) {
+    reader.onerror = function (error) {
         displayStatusMessage("Error reading the SDK configuration file.", true);
         console.warn("Error reading the SDK configuration file.");
         console.error("File read error:", error);
@@ -2771,9 +2772,9 @@ function importSdkConfigFromURL(configParam, isCompact = false) {
 
     try {
         const rawConfig = JSON.parse(decodeURIComponent(configParam));
-        
+
         let firebaseConfig, sessionId;
-        
+
         // Handle compact format (from new QR codes)
         if (isCompact || (rawConfig.f && rawConfig.s)) {
             firebaseConfig = {
@@ -2786,7 +2787,7 @@ function importSdkConfigFromURL(configParam, isCompact = false) {
                 appId: rawConfig.f.i
             };
             sessionId = rawConfig.s;
-        } 
+        }
         // Handle old format (backwards compatibility)
         else if (rawConfig.firebaseConfig && rawConfig.sessionDetails) {
             firebaseConfig = rawConfig.firebaseConfig;
@@ -2832,12 +2833,12 @@ function importSdkConfigFromURL(configParam, isCompact = false) {
 function handleConnectionTypeChange() {
     connectionType = document.getElementById('connectionType').value;
     localStorage.setItem('connectionType', connectionType);
-    
+
     // Show/hide Firebase fields based on connection type
     const firebaseFields = document.querySelectorAll('.firebase-fields');
     const firebaseConfigButtons = document.querySelectorAll('.firebase-config-buttons');
     const showFirebaseToggle = document.getElementById('showFirebaseFieldsToggle');
-    
+
     if (connectionType === 'p2p') {
         firebaseFields.forEach(el => el.style.display = 'none');
         firebaseConfigButtons.forEach(el => el.style.display = 'none');
@@ -2851,7 +2852,7 @@ function handleConnectionTypeChange() {
             toggleFirebaseConfigVisibility();
         }
     }
-    
+
     displayStatusMessage(`Connection type: ${connectionType === 'p2p' ? 'P2P (Direct)' : 'Firebase (Cloud)'}`);
 }
 
@@ -2861,25 +2862,25 @@ function initializePeerJS() {
             resolve(peer);
             return;
         }
-        
+
         peer = new Peer();
-        
+
         peer.on('open', (id) => {
             console.log('PeerJS initialized. My peer ID:', id);
             resolve(peer);
         });
-        
+
         peer.on('connection', (conn) => {
             console.log('Incoming P2P connection from:', conn.peer);
             setupP2PConnection(conn);
         });
-        
+
         peer.on('error', (err) => {
             console.error('PeerJS error:', err);
             displayStatusMessage('P2P error: ' + err.type, true);
             reject(err);
         });
-        
+
         peer.on('disconnected', () => {
             console.log('PeerJS disconnected from signaling server');
             displayStatusMessage('P2P disconnected. Attempting to reconnect...', true);
@@ -2891,19 +2892,19 @@ function initializePeerJS() {
 function setupP2PConnection(conn) {
     const peerId = conn.peer;
     p2pConnections[peerId] = conn;
-    
+
     conn.on('open', () => {
         console.log('P2P connection opened with:', peerId);
         const peerName = conn.metadata?.name || 'Unknown';
         const isNameCheckOnly = conn.metadata?.checkNameOnly || false;
         const kickClientId = conn.metadata?.kickClientId || null;
-        
+
         // If this is just a name check connection, don't add to clients yet
         if (isNameCheckOnly) {
             console.log('P2P: Name check connection from', peerName);
             return; // Wait for checkName message
         }
-        
+
         // If we're the host and there's a kick request, kick the old client and transfer counts
         let restoredCounts = null;
         if (isP2PHost && kickClientId) {
@@ -2911,9 +2912,9 @@ function setupP2PConnection(conn) {
             if (otherClientsResourceCounts[kickClientId]) {
                 restoredCounts = { ...otherClientsResourceCounts[kickClientId] };
             }
-            
+
             const oldClientName = clientsInSession[kickClientId];
-            
+
             const oldConn = p2pConnections[kickClientId];
             if (oldConn) {
                 oldConn.send({ type: 'kicked', reason: 'Another user connected with your name' });
@@ -2922,7 +2923,7 @@ function setupP2PConnection(conn) {
             delete p2pConnections[kickClientId];
             delete clientsInSession[kickClientId];
             delete otherClientsResourceCounts[kickClientId];
-            
+
             // Broadcast to all other peers that the old client left
             broadcastToP2PPeers({
                 type: 'peerLeft',
@@ -2930,9 +2931,9 @@ function setupP2PConnection(conn) {
                 name: oldClientName
             }, peerId); // Exclude the new peer
         }
-        
+
         clientsInSession[peerId] = peerName;
-        
+
         // If we're the host, send current config to new peer
         if (isP2PHost) {
             conn.send({
@@ -2971,7 +2972,7 @@ function setupP2PConnection(conn) {
                 clients: clientsInSession,
                 restoredCounts: restoredCounts // Send restored counts if reconnecting
             });
-            
+
             // Send all current client counts
             for (const cId in otherClientsResourceCounts) {
                 conn.send({
@@ -2989,7 +2990,7 @@ function setupP2PConnection(conn) {
                 clientName: clientName,
                 counts: hostCounts
             });
-            
+
             // Broadcast to all other peers that a new peer joined
             broadcastToP2PPeers({
                 type: 'peerJoined',
@@ -2997,14 +2998,14 @@ function setupP2PConnection(conn) {
                 name: peerName
             }, peerId); // Exclude the new peer itself
         }
-        
+
         // Send our name
         conn.send({
             type: 'nameUpdate',
             clientId: clientId,
             name: clientName
         });
-        
+
         // Send our counts
         const myCounts = {};
         resources.forEach((r, i) => myCounts[i] = r.count);
@@ -3013,25 +3014,25 @@ function setupP2PConnection(conn) {
             clientId: clientId,
             counts: myCounts
         });
-        
+
         updateStatusWindow();
         resources.forEach((_, index) => {
             updateOtherClientsCountsDisplay(index);
         });
         displayStatusMessage(`P2P: ${peerName} connected`);
     });
-    
+
     conn.on('data', (data) => {
         handleP2PData(peerId, data);
     });
-    
+
     conn.on('close', () => {
         console.log('P2P connection closed:', peerId);
         const closedPeerName = clientsInSession[peerId];
         delete p2pConnections[peerId];
         delete clientsInSession[peerId];
         delete otherClientsResourceCounts[peerId];
-        
+
         // If we're the host, broadcast to all other peers that this peer left
         if (isP2PHost) {
             broadcastToP2PPeers({
@@ -3040,14 +3041,14 @@ function setupP2PConnection(conn) {
                 name: closedPeerName
             });
         }
-        
+
         updateStatusWindow();
         resources.forEach((_, index) => {
             updateOtherClientsCountsDisplay(index);
         });
         displayStatusMessage(`P2P: Peer disconnected`);
     });
-    
+
     conn.on('error', (err) => {
         console.error('P2P connection error:', peerId, err);
     });
@@ -3055,7 +3056,7 @@ function setupP2PConnection(conn) {
 
 function handleP2PData(peerId, data) {
     console.log('P2P data received from', peerId, ':', data.type);
-    
+
     switch (data.type) {
         case 'checkName':
             // Host receives name check request - check if name is already taken
@@ -3063,7 +3064,7 @@ function handleP2PData(peerId, data) {
                 const requestedName = data.name;
                 let conflict = false;
                 let existingClientId = null;
-                
+
                 // Check if any existing client has this name
                 for (const cId in clientsInSession) {
                     if (clientsInSession[cId] === requestedName) {
@@ -3077,7 +3078,7 @@ function handleP2PData(peerId, data) {
                     conflict = true;
                     existingClientId = clientId;
                 }
-                
+
                 // Send result back
                 if (p2pConnections[peerId] && p2pConnections[peerId].open) {
                     p2pConnections[peerId].send({
@@ -3088,7 +3089,7 @@ function handleP2PData(peerId, data) {
                 }
             }
             break;
-            
+
         case 'kicked':
             // We've been kicked from the session
             displayStatusMessage('You were disconnected: ' + (data.reason || 'Another user took over your session'), true);
@@ -3104,7 +3105,7 @@ function handleP2PData(peerId, data) {
             document.getElementById('serverIDDisplayContainer').style.display = 'none';
             updateServerClientUI();
             break;
-            
+
         case 'config':
             // Client receives config from host
             resources = data.resources.map(processResourceData);
@@ -3112,19 +3113,19 @@ function handleP2PData(peerId, data) {
             globalCounterLimit = data.gameSettings.globalCounterLimit;
             globalHideFunnyNames = data.gameSettings.globalHideFunnyNames;
             globalHideAllImages = data.gameSettings.globalHideAllImages;
-            
+
             document.getElementById('enableGlobalCounterLimit').checked = enableGlobalCounterLimit;
             document.getElementById('globalCounterLimit').value = globalCounterLimit;
             document.getElementById('globalHideFunnyNames').checked = globalHideFunnyNames;
             document.getElementById('globalHideAllImages').checked = globalHideAllImages;
-            
+
             // Update clients list
             if (data.clients) {
                 for (const cId in data.clients) {
                     clientsInSession[cId] = data.clients[cId];
                 }
             }
-            
+
             // If we have restored counts from a previous session, apply them
             if (data.restoredCounts) {
                 for (const idx in data.restoredCounts) {
@@ -3133,10 +3134,10 @@ function handleP2PData(peerId, data) {
                     }
                 }
             }
-            
+
             renderResources();
             updateStatusWindow();
-            
+
             // After receiving config, send our counts back to host
             const myCounts = {};
             resources.forEach((r, i) => myCounts[i] = r.count);
@@ -3149,10 +3150,10 @@ function handleP2PData(peerId, data) {
                     counts: myCounts
                 });
             }
-            
+
             displayStatusMessage('P2P: Configuration received from host');
             break;
-            
+
         case 'countUpdate':
             // Receive single count update from a peer
             if (!otherClientsResourceCounts[data.clientId]) {
@@ -3160,13 +3161,13 @@ function handleP2PData(peerId, data) {
             }
             otherClientsResourceCounts[data.clientId][data.resourceIndex] = data.count;
             updateOtherClientsCountsDisplay(data.resourceIndex);
-            
+
             // If we're the host, broadcast to other peers
             if (isP2PHost) {
                 broadcastToP2PPeers(data, peerId); // Exclude sender
             }
             break;
-            
+
         case 'allCounts':
             // Receive all counts from a peer
             if (!otherClientsResourceCounts[data.clientId]) {
@@ -3182,26 +3183,26 @@ function handleP2PData(peerId, data) {
                 updateOtherClientsCountsDisplay(index);
             });
             updateStatusWindow();
-            
+
             // If we're the host, broadcast to other peers so everyone sees everyone
             if (isP2PHost) {
                 broadcastToP2PPeers(data, peerId); // Exclude sender
             }
             break;
-            
+
         case 'nameUpdate':
             clientsInSession[data.clientId] = data.name;
             updateStatusWindow();
             resources.forEach((_, index) => {
                 updateOtherClientsCountsDisplay(index);
             });
-            
+
             // If we're the host, broadcast to other peers
             if (isP2PHost) {
                 broadcastToP2PPeers(data, peerId);
             }
             break;
-            
+
         case 'configUpdate':
             // Host sent updated config (for server mode changes)
             if (data.resources) {
@@ -3215,14 +3216,14 @@ function handleP2PData(peerId, data) {
                 document.getElementById('globalCounterLimit').value = globalCounterLimit;
             }
             break;
-            
+
         case 'peerJoined':
             // Another peer joined (broadcast from host)
             clientsInSession[data.clientId] = data.name;
             updateStatusWindow();
             displayStatusMessage(`P2P: ${data.name} joined`);
             break;
-            
+
         case 'peerLeft':
             // Another peer left (broadcast from host)
             delete clientsInSession[data.clientId];
@@ -3246,7 +3247,7 @@ function broadcastToP2PPeers(data, excludePeerId = null) {
 
 function broadcastP2PCountUpdate(index, count) {
     if (connectionType !== 'p2p') return;
-    
+
     broadcastToP2PPeers({
         type: 'countUpdate',
         clientId: clientId,
@@ -3259,26 +3260,26 @@ async function startP2PServer() {
     try {
         displayStatusMessage('Starting P2P host...');
         await initializePeerJS();
-        
+
         isP2PHost = true;
         serverClientMode = 'server';
         sessionId = peer.id; // Use peer ID as session ID
-        
+
         clientName = document.getElementById('clientNameInput').value.trim();
         if (!clientName) {
             clientName = getRandomBrainrotName();
             document.getElementById('clientNameInput').value = clientName;
         }
-        
+
         clientsInSession[clientId] = clientName;
-        
+
         document.getElementById('serverIDDisplay').value = sessionId;
         document.getElementById('serverIDDisplayContainer').style.display = 'block';
         document.getElementById('newSessionContainer').style.display = 'none';
-        
+
         updateServerClientUI();
         updateStatusWindow();
-        
+
         displayStatusMessage(`P2P host started. Share the QR code or ID: ${sessionId}`);
     } catch (error) {
         displayStatusMessage('Failed to start P2P host: ' + error.message, true);
@@ -3290,22 +3291,22 @@ async function connectP2PClient(hostPeerId) {
     try {
         displayStatusMessage('Connecting to P2P host...');
         await initializePeerJS();
-        
+
         isP2PHost = false;
         serverClientMode = 'client';
         sessionId = hostPeerId;
-        
+
         clientName = document.getElementById('clientNameInput').value.trim();
         if (!clientName) {
             clientName = getRandomBrainrotName();
             document.getElementById('clientNameInput').value = clientName;
         }
-        
+
         // Create a temporary connection to check for name conflicts
         const tempConn = peer.connect(hostPeerId, {
             metadata: { name: clientName, checkNameOnly: true }
         });
-        
+
         tempConn.on('open', () => {
             // Request name check from host
             tempConn.send({
@@ -3313,11 +3314,11 @@ async function connectP2PClient(hostPeerId) {
                 name: clientName
             });
         });
-        
+
         tempConn.on('data', (data) => {
             if (data.type === 'nameCheckResult') {
                 tempConn.close();
-                
+
                 if (data.conflict) {
                     // Name conflict - show modal
                     showP2PNameConflictModal(clientName, hostPeerId, data.existingClientId);
@@ -3327,13 +3328,13 @@ async function connectP2PClient(hostPeerId) {
                 }
             }
         });
-        
+
         tempConn.on('error', (err) => {
             console.error('Name check connection error:', err);
             // If check fails, just proceed with connection
             proceedWithP2PConnection(hostPeerId);
         });
-        
+
     } catch (error) {
         displayStatusMessage('Failed to connect to P2P host: ' + error.message, true);
         console.error('P2P client connect error:', error);
@@ -3344,26 +3345,26 @@ function showP2PNameConflictModal(conflictName, hostPeerId, existingClientId) {
     const modal = document.getElementById('nameConflictModal');
     const conflictNameDisplay = document.getElementById('conflictNameDisplay');
     const newNameInput = document.getElementById('newNameInput');
-    
+
     conflictNameDisplay.textContent = conflictName;
     newNameInput.value = conflictName;
     modal.style.display = 'flex';
     newNameInput.focus();
     newNameInput.select();
-    
+
     // Remove old listeners before adding new ones
     const reconnectBtn = document.getElementById('reconnectSameNameBtn');
     const connectNewBtn = document.getElementById('connectNewNameBtn');
     const cancelBtn = document.getElementById('cancelConnectBtn');
-    
+
     const newReconnectBtn = reconnectBtn.cloneNode(true);
     const newConnectNewBtn = connectNewBtn.cloneNode(true);
     const newCancelBtn = cancelBtn.cloneNode(true);
-    
+
     reconnectBtn.parentNode.replaceChild(newReconnectBtn, reconnectBtn);
     connectNewBtn.parentNode.replaceChild(newConnectNewBtn, connectNewBtn);
     cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    
+
     // Reconnect as the same user (take over the session)
     newReconnectBtn.addEventListener('click', () => {
         modal.style.display = 'none';
@@ -3372,7 +3373,7 @@ function showP2PNameConflictModal(conflictName, hostPeerId, existingClientId) {
         // Connect and tell host to kick the old client
         proceedWithP2PConnection(hostPeerId, existingClientId);
     });
-    
+
     // Connect with a new name
     newConnectNewBtn.addEventListener('click', () => {
         const newName = newNameInput.value.trim();
@@ -3384,19 +3385,19 @@ function showP2PNameConflictModal(conflictName, hostPeerId, existingClientId) {
             displayStatusMessage("Please enter a different name or use 'Reconnect as Same User'.", true);
             return;
         }
-        
+
         modal.style.display = 'none';
         clientName = newName;
         document.getElementById('clientNameInput').value = clientName;
         // Retry connection with new name - need to check again
         connectP2PClient(hostPeerId);
     });
-    
+
     // Cancel
     newCancelBtn.addEventListener('click', () => {
         modal.style.display = 'none';
     });
-    
+
     // Allow Enter key to submit new name
     newNameInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -3409,19 +3410,19 @@ function proceedWithP2PConnection(hostPeerId, kickClientId = null) {
     const conn = peer.connect(hostPeerId, {
         metadata: { name: clientName, kickClientId: kickClientId }
     });
-    
+
     setupP2PConnection(conn);
-    
+
     document.getElementById('serverIDDisplay').value = sessionId;
     document.getElementById('serverIDDisplayContainer').style.display = 'block';
-    
+
     // Hide controls for clients
     const controlsContainer = document.getElementById('controlsContainer');
     if (controlsContainer) controlsContainer.style.display = 'none';
-    
+
     // Hide controls (Select Game, Add Resource) for P2P clients
     setHideAllExceptResources(true);
-    
+
     updateServerClientUI();
 }
 
@@ -3430,27 +3431,27 @@ function generateP2PQRCode() {
     // For hosts: peer.id is correct
     // For clients: sessionId contains the host's peer ID
     const hostPeerId = isP2PHost ? peer?.id : sessionId;
-    
+
     if (!hostPeerId) return;
-    
+
     const qrcodeContainer = document.getElementById('qrcodeCanvas');
-    
+
     // Don't regenerate if QR code already exists for the same peer ID
     if (qrcodeContainer.dataset.peerId === hostPeerId && qrcodeContainer.children.length > 0) {
         return;
     }
-    
+
     qrcodeContainer.innerHTML = '';
     qrcodeContainer.dataset.peerId = hostPeerId;
-    
+
     let baseUrl = window.location.href.split('?')[0];
     if (baseUrl.startsWith('file://')) {
         baseUrl = 'https://smartmuel.github.io/BGRC/index.html';
     }
     const qrCodeData = `${baseUrl}?p2p=${hostPeerId}`;
-    
+
     console.log("P2P QR Code Data:", qrCodeData);
-    
+
     try {
         new QRCode(qrcodeContainer, {
             text: qrCodeData,
@@ -3460,7 +3461,7 @@ function generateP2PQRCode() {
             colorLight: '#ffffff',
             correctLevel: QRCode.CorrectLevel.M
         });
-        
+
         // Apply styles to prevent dark mode inversion (preserve display property)
         qrcodeContainer.style.backgroundColor = '#ffffff';
         qrcodeContainer.style.filter = 'none';
@@ -3477,22 +3478,22 @@ function disconnectP2P() {
         if (conn.open) conn.close();
     });
     p2pConnections = {};
-    
+
     // Destroy peer
     if (peer && !peer.destroyed) {
         peer.destroy();
     }
     peer = null;
-    
+
     isP2PHost = false;
     sessionId = null;
     clientsInSession = {};
     otherClientsResourceCounts = {};
-    
+
     updateServerClientUI();
     updateStatusWindow();
     resources.forEach((_, index) => updateOtherClientsCountsDisplay(index));
-    
+
     displayStatusMessage('P2P disconnected');
 }
 
@@ -3500,11 +3501,11 @@ function disconnectP2P() {
 window.addEventListener('beforeunload', (event) => {
     // Warn if user is a server/host - session will be lost
     const isServer = serverClientMode === 'server' || isP2PHost;
-    
+
     if (hasUnsavedChanges || isServer) {
         event.preventDefault();
-        event.returnValue = isServer 
-            ? 'You are hosting a session. Leaving will disconnect all clients and end the session.' 
+        event.returnValue = isServer
+            ? 'You are hosting a session. Leaving will disconnect all clients and end the session.'
             : '';
     }
 });
@@ -3530,7 +3531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sync dark mode checkbox with actual state
     const isDarkMode = document.body.classList.contains('dark-mode');
     document.getElementById('darkModeToggle').checked = isDarkMode;
-    
+
     // Ensure controls are visible on fresh page load (not hidden)
     setHideAllExceptResources(false);
 
@@ -3547,16 +3548,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for P2P connection first
     const p2pParam = urlParams.get('p2p');
     if (p2pParam) {
-        // Switch to P2P mode and connect
+        // Switch to P2P mode and connect immediately
         connectionType = 'p2p';
         localStorage.setItem('connectionType', 'p2p');
         if (connectionTypeSelect) connectionTypeSelect.value = 'p2p';
         handleConnectionTypeChange();
         document.getElementById('sessionId').value = p2pParam;
         document.getElementById('serverClientMode').value = 'client';
-        handleServerClientModeChange();
-        // Auto-connect after a short delay to let UI update
-        setTimeout(() => connectP2PClient(p2pParam), 500);
+        // Don't call handleServerClientModeChange() as it resets sessionId and sets up Firebase listeners
+        // Instead, just update the UI and connect directly
+        serverClientMode = 'client';
+        updateServerClientUI();
+        // Auto-connect immediately - connectP2PClient handles PeerJS initialization internally
+        connectP2PClient(p2pParam);
     }
     // Check for compact format first (c=), then old format (config=)
     const compactParam = urlParams.get('c');
